@@ -1,4 +1,9 @@
 from .account_statement import AccountStatementResponse
+from .benefit_program_configuration import (
+    BenefitProgramConfigurationPayload,
+    BenefitProgramConfigurationRequest,
+    BenefitProgramConfigurationResponse,
+)
 from .disbursement import (
     DisbursementPayload,
     DisbursementRequest,

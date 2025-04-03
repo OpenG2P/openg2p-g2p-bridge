@@ -16,6 +16,7 @@ from openg2p_g2pconnect_common_lib.oauth_token import OAuthTokenService
 
 from .controllers import (
     AccountStatementController,
+    BenefitProgramConfigurationController,
     DisbursementController,
     DisbursementEnvelopeController,
     DisbursementEnvelopeStatusController,
@@ -23,6 +24,7 @@ from .controllers import (
 )
 from .services import (
     AccountStatementService,
+    BenefitProgramConfigurationService,
     DisbursementEnvelopeService,
     DisbursementEnvelopeStatusService,
     DisbursementService,
@@ -43,11 +45,13 @@ class Initializer(BaseInitializer):
         AccountStatementService()
         DisbursementStatusService()
         DisbursementEnvelopeStatusService()
+        BenefitProgramConfigurationService()
         DisbursementEnvelopeController().post_init()
         DisbursementController().post_init()
         AccountStatementController().post_init()
         DisbursementStatusController().post_init()
         DisbursementEnvelopeStatusController().post_init()
+        BenefitProgramConfigurationController().post_init()
 
     def migrate_database(self, args):
         super().migrate_database(args)
