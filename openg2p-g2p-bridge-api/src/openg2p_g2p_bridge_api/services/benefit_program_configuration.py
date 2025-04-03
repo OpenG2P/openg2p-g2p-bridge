@@ -5,6 +5,9 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.models import BenefitProgramConfiguration
+from openg2p_g2p_bridge_models.errors.exceptions import (
+    BenefitProgramConfigurationException,
+)
 from openg2p_g2p_bridge_models.schemas import (
     BenefitProgramConfigurationPayload,
     BenefitProgramConfigurationRequest,
@@ -27,24 +30,23 @@ class BenefitProgramConfigurationService(BaseService):
     async def create_benefit_program_configuration(
         self, benefit_program_configuration_request: BenefitProgramConfigurationRequest
     ) -> BenefitProgramConfigurationPayload:
-        _logger.info("Creating Disbursements")
+        _logger.info("Creating Benefit Program Configuration")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             try:
                 benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
                     benefit_program_configuration_payload=benefit_program_configuration_request.message
                 )
-
+                _logger.info(f"BENF:{benefit_program_configuration}")
                 session.add(benefit_program_configuration)
                 await session.commit()
             except IntegrityError as e:
                 _logger.error("Integrity Error: %s", e)
                 await session.rollback()
-                return (
-                    await self.construct_benefit_program_configuration_error_response(
-                        G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS
+                raise BenefitProgramConfigurationException(
+                        message="Benefit Program Configuration already exists",
+                        code=G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS,
                     )
-                )
             finally:
                 await session.close()
             _logger.info("Disbursements Created Successfully!")
@@ -66,8 +68,9 @@ class BenefitProgramConfigurationService(BaseService):
             sponsor_bank_branch_code=benefit_program_configuration_payload.sponsor_bank_branch_code,
             sponsor_bank_account_currency=benefit_program_configuration_payload.sponsor_bank_account_currency,
             id_mapper_resolution_required=benefit_program_configuration_payload.id_mapper_resolution_required,
+            active=True,
         )
-        _logger.info("Benefit Program Configuration Constructed!")
+        _logger.info(f"Benefit Program Configuration Constructed{benefit_program_configuration}")
         return benefit_program_configuration
 
     async def construct_benefit_program_configuration_success_response(
@@ -100,6 +103,7 @@ class BenefitProgramConfigurationService(BaseService):
                 message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.rjct,
+                status_reason_message=code
             ),
-            message=code.value,
+            message=None,
         )

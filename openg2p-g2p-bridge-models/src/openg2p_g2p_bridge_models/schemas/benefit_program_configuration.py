@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class BenefitProgramConfigurationPayload(BaseModel):
-    id: Optional[str] = None
     benefit_program_mnemonic: Optional[str] = None
     benefit_program_name: Optional[str] = None
     funding_org_code: Optional[str] = None

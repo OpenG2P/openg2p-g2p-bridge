@@ -40,11 +40,11 @@ class BenefitProgramConfigurationController(BaseController):
     async def create_benefit_program_configuration(
         self,
         benefit_program_configuration_request: BenefitProgramConfigurationRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> BenefitProgramConfigurationResponse:
         _logger.info("Creating benefit program configuration")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
+            # RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 benefit_program_configuration_request
             )
@@ -55,13 +55,13 @@ class BenefitProgramConfigurationController(BaseController):
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: BenefitProgramConfigurationResponse = await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
-                benefit_program_configuration_request, e.code
+                e.code
             )
             return error_response
         except BenefitProgramConfigurationException as e:
             _logger.error("Error creating benefit program configuration")
             error_response: BenefitProgramConfigurationResponse = await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
-                benefit_program_configuration_request, e.code
+                e.code
             )
             return error_response
 
