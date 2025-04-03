@@ -4,10 +4,10 @@ from datetime import datetime
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
-from openg2p_g2p_bridge_models.models import BenefitProgramConfiguration
 from openg2p_g2p_bridge_models.errors.exceptions import (
     BenefitProgramConfigurationException,
 )
+from openg2p_g2p_bridge_models.models import BenefitProgramConfiguration
 from openg2p_g2p_bridge_models.schemas import (
     BenefitProgramConfigurationPayload,
     BenefitProgramConfigurationRequest,
@@ -44,9 +44,9 @@ class BenefitProgramConfigurationService(BaseService):
                 _logger.error("Integrity Error: %s", e)
                 await session.rollback()
                 raise BenefitProgramConfigurationException(
-                        message="Benefit Program Configuration already exists",
-                        code=G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS,
-                    )
+                    message="Benefit Program Configuration already exists",
+                    code=G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS,
+                )
             finally:
                 await session.close()
             _logger.info("Disbursements Created Successfully!")
@@ -70,7 +70,9 @@ class BenefitProgramConfigurationService(BaseService):
             id_mapper_resolution_required=benefit_program_configuration_payload.id_mapper_resolution_required,
             active=True,
         )
-        _logger.info(f"Benefit Program Configuration Constructed{benefit_program_configuration}")
+        _logger.info(
+            f"Benefit Program Configuration Constructed{benefit_program_configuration}"
+        )
         return benefit_program_configuration
 
     async def construct_benefit_program_configuration_success_response(
@@ -103,7 +105,7 @@ class BenefitProgramConfigurationService(BaseService):
                 message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.rjct,
-                status_reason_message=code
+                status_reason_message=code,
             ),
             message=None,
         )
