@@ -40,11 +40,11 @@ class BenefitProgramConfigurationController(BaseController):
     async def create_benefit_program_configuration(
         self,
         benefit_program_configuration_request: BenefitProgramConfigurationRequest,
-        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> BenefitProgramConfigurationResponse:
         _logger.info("Creating benefit program configuration")
         try:
-            # RequestValidation.get_component().validate_signature(is_signature_valid)
+            RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 benefit_program_configuration_request
             )
