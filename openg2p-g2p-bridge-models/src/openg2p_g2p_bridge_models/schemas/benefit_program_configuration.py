@@ -1,25 +1,25 @@
-from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
 
 from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
+from pydantic import BaseModel
+
 
 class BenefitProgramConfigurationPayload(BaseModel):
-    benefit_program_mnemonic: str
-    benefit_program_name: str
-    funding_org_code: str
-    funding_org_name: str
-    sponsor_bank_code: str
-    sponsor_bank_account_number: str
-    sponsor_bank_branch_code: str
-    sponsor_bank_account_currency: str
-    id_mapper_resolution_required: bool = True
+    id: Optional[str] = None
+    benefit_program_mnemonic: Optional[str] = None
+    benefit_program_name: Optional[str] = None
+    funding_org_code: Optional[str] = None
+    funding_org_name: Optional[str] = None
+    sponsor_bank_code: Optional[str] = None
+    sponsor_bank_account_number: Optional[str] = None
+    sponsor_bank_branch_code: Optional[str] = None
+    sponsor_bank_account_currency: Optional[str] = None
+    id_mapper_resolution_required: Optional[bool] = True
 
 
 class BenefitProgramConfigurationRequest(Request):
     message: BenefitProgramConfigurationPayload
 
+
 class BenefitProgramConfigurationResponse(SyncResponse):
     message: Optional[BenefitProgramConfigurationPayload] = None
-
-

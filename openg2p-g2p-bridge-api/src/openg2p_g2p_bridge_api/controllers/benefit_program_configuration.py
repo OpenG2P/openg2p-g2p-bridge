@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated
 
 from fastapi import Depends
 from openg2p_fastapi_common.controller import BaseController
@@ -8,9 +8,9 @@ from openg2p_g2p_bridge_models.errors.exceptions import (
     RequestValidationException,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    BenefitProgramConfigurationResponse,
-    BenefitProgramConfigurationRequest,
     BenefitProgramConfigurationPayload,
+    BenefitProgramConfigurationRequest,
+    BenefitProgramConfigurationResponse,
 )
 from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
@@ -25,18 +25,14 @@ class BenefitProgramConfigurationController(BaseController):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.benefit_program_configuration_service = BenefitProgramConfigurationService.get_component()
+        self.benefit_program_configuration_service = (
+            BenefitProgramConfigurationService.get_component()
+        )
         self.router.tags += ["G2P Bridge Benefit Program Configuration"]
 
         self.router.add_api_route(
             "/create_benefit_program_configuration",
             self.create_benefit_program_configuration,
-            responses={200: {"model": BenefitProgramConfigurationResponse}},
-            methods=["POST"],
-        )
-        self.router.add_api_route(
-            "/amend_benefit_program_configuration",
-            self.amend_benefit_program_configuration,
             responses={200: {"model": BenefitProgramConfigurationResponse}},
             methods=["POST"],
         )
@@ -49,35 +45,29 @@ class BenefitProgramConfigurationController(BaseController):
         _logger.info("Creating benefit program configuration")
         try:
             RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(benefit_program_configuration_request)
+            RequestValidation.get_component().validate_request(
+                benefit_program_configuration_request
+            )
 
             benefit_program_configuration_payload: BenefitProgramConfigurationPayload = await self.benefit_program_configuration_service.create_benefit_program_configuration(
                 benefit_program_configuration_request
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")
-            error_response: BenefitProgramConfigurationResponse = (
-                await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
-                    benefit_program_configuration_request, e.code
-                )
+            error_response: BenefitProgramConfigurationResponse = await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
+                benefit_program_configuration_request, e.code
             )
             return error_response
         except BenefitProgramConfigurationException as e:
             _logger.error("Error creating benefit program configuration")
-            error_response: BenefitProgramConfigurationResponse = (
-                await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
-                    benefit_program_configuration_request, e.code, e.disbursement_payloads
-                )
+            error_response: BenefitProgramConfigurationResponse = await self.benefit_program_configuration_service.construct_benefit_program_configuration_error_response(
+                benefit_program_configuration_request, e.code
             )
             return error_response
 
-        benefit_program_configuration_response: BenefitProgramConfigurationResponse = (
-            await self.benefit_program_configuration_service.construct_benefit_program_configuration_success_response(
-                benefit_program_configuration_request, benefit_program_configuration_payload
-            )
+        benefit_program_configuration_response: BenefitProgramConfigurationResponse = await self.benefit_program_configuration_service.construct_benefit_program_configuration_success_response(
+            benefit_program_configuration_request, benefit_program_configuration_payload
         )
         _logger.info("Benefit program configuration created successfully")
 
         return benefit_program_configuration_response
-
-    

@@ -1,27 +1,21 @@
 import logging
-import time
-import uuid
 from datetime import datetime
-from typing import List
 
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
-from openg2p_g2p_bridge_models.errors.exceptions import BenefitProgramConfigurationException
-from openg2p_g2p_bridge_models.models import (
-   BenefitProgramConfiguration
-)
+from openg2p_g2p_bridge_models.models import BenefitProgramConfiguration
 from openg2p_g2p_bridge_models.schemas import (
-    BenefitProgramConfigurationResponse,
-    BenefitProgramConfigurationRequest,
     BenefitProgramConfigurationPayload,
+    BenefitProgramConfigurationRequest,
+    BenefitProgramConfigurationResponse,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
     SyncResponseHeader,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.future import select
 
 from ..config import Settings
 
@@ -37,24 +31,26 @@ class BenefitProgramConfigurationService(BaseService):
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             try:
-                await self.validate_benefit_program_configuration_request(
-                    session=session,
-                    benefit_program_configuration_payload=benefit_program_configuration_request.message,
+                benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
+                    benefit_program_configuration_payload=benefit_program_configuration_request.message
                 )
-            except BenefitProgramConfigurationException as e:
-                _logger.error(f"Error validating benefit program configuration: {str(e)}")
-                raise e
-            
-            benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
-                benefit_program_configuration_payload=benefit_program_configuration_request.message
-            )
-            
-            session.add(benefit_program_configuration)
-            await session.commit()
+
+                session.add(benefit_program_configuration)
+                await session.commit()
+            except IntegrityError as e:
+                _logger.error("Integrity Error: %s", e)
+                await session.rollback()
+                return (
+                    await self.construct_benefit_program_configuration_error_response(
+                        G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS
+                    )
+                )
+            finally:
+                await session.close()
             _logger.info("Disbursements Created Successfully!")
             return benefit_program_configuration_request.message
-    
-        # noinspection PyMethodMayBeStatic
+
+    # noinspection PyMethodMayBeStatic
     async def construct_benefit_program_configuration(
         self, benefit_program_configuration_payload: BenefitProgramConfigurationPayload
     ) -> BenefitProgramConfiguration:
@@ -74,26 +70,26 @@ class BenefitProgramConfigurationService(BaseService):
         _logger.info("Benefit Program Configuration Constructed!")
         return benefit_program_configuration
 
-
     async def construct_benefit_program_configuration_success_response(
         self,
         benefit_program_configuration_request: BenefitProgramConfigurationRequest,
         benefit_program_configuration_payload: BenefitProgramConfigurationPayload,
     ) -> BenefitProgramConfigurationResponse:
         _logger.info("Constructing Benefit Program Configuration Response")
-        benefit_progra_configuration_response: BenefitProgramConfigurationResponse = BenefitProgramConfigurationResponse(
-            header=SyncResponseHeader(
-                message_id=benefit_program_configuration_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=benefit_program_configuration_request.header.action,
-                status=StatusEnum.succ,
-            ),
-            message=benefit_program_configuration_payload,
+        benefit_progra_configuration_response: BenefitProgramConfigurationResponse = (
+            BenefitProgramConfigurationResponse(
+                header=SyncResponseHeader(
+                    message_id=benefit_program_configuration_request.header.message_id,
+                    message_ts=datetime.now().isoformat(),
+                    action=benefit_program_configuration_request.header.action,
+                    status=StatusEnum.succ,
+                ),
+                message=benefit_program_configuration_payload,
+            )
         )
         _logger.info("Benefit Program Configuration Success Response Constructed!")
         return benefit_progra_configuration_response
-    
-    
+
     async def construct_benefit_program_configuration_error_response(
         self, code: G2PBridgeErrorCodes
     ) -> BenefitProgramConfigurationResponse:

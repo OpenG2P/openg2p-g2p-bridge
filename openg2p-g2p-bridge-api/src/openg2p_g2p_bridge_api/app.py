@@ -16,20 +16,20 @@ from openg2p_g2pconnect_common_lib.oauth_token import OAuthTokenService
 
 from .controllers import (
     AccountStatementController,
+    BenefitProgramConfigurationController,
     DisbursementController,
     DisbursementEnvelopeController,
     DisbursementEnvelopeStatusController,
     DisbursementStatusController,
-    BenefitProgramConfigurationController,
 )
 from .services import (
     AccountStatementService,
+    BenefitProgramConfigurationService,
     DisbursementEnvelopeService,
     DisbursementEnvelopeStatusService,
     DisbursementService,
     DisbursementStatusService,
     RequestValidation,
-    BenefitProgramConfigurationService
 )
 
 _logger = logging.getLogger(_config.logging_default_logger_name)
