@@ -20,6 +20,7 @@ from .controllers import (
     DisbursementEnvelopeController,
     DisbursementEnvelopeStatusController,
     DisbursementStatusController,
+    BenefitProgramConfigurationController,
 )
 from .services import (
     AccountStatementService,
@@ -28,6 +29,7 @@ from .services import (
     DisbursementService,
     DisbursementStatusService,
     RequestValidation,
+    BenefitProgramConfigurationService
 )
 
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -43,11 +45,13 @@ class Initializer(BaseInitializer):
         AccountStatementService()
         DisbursementStatusService()
         DisbursementEnvelopeStatusService()
+        BenefitProgramConfigurationService()
         DisbursementEnvelopeController().post_init()
         DisbursementController().post_init()
         AccountStatementController().post_init()
         DisbursementStatusController().post_init()
         DisbursementEnvelopeStatusController().post_init()
+        BenefitProgramConfigurationController().post_init()
 
     def migrate_database(self, args):
         super().migrate_database(args)
