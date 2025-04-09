@@ -21,7 +21,7 @@ dependencies = [
   "openg2p-g2pconnect-mapper-lib",
   "celery",
   "mt-940",
-  "python-jose"
+  "pyjwt"
 ]
 dynamic = ["version"]
 
