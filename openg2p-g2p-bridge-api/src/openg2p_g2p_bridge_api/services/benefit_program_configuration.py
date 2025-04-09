@@ -17,7 +17,6 @@ from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
     SyncResponseHeader,
 )
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from ..config import Settings
@@ -34,23 +33,49 @@ class BenefitProgramConfigurationService(BaseService):
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             try:
-                benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
-                    benefit_program_configuration_payload=benefit_program_configuration_request.message
+                await self.validate_benefit_program_configuration_request(
+                    session, benefit_program_configuration_request
                 )
-                _logger.info(f"BENF:{benefit_program_configuration}")
-                session.add(benefit_program_configuration)
-                await session.commit()
-            except IntegrityError as e:
-                _logger.error("Integrity Error: %s", e)
-                await session.rollback()
-                raise BenefitProgramConfigurationException(
-                    message="Benefit Program Configuration already exists",
-                    code=G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS,
-                )
-            finally:
-                await session.close()
+            except BenefitProgramConfigurationException as e:
+                raise e
+
+            benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
+                benefit_program_configuration_payload=benefit_program_configuration_request.message
+            )
+            _logger.info(f"BENF:{benefit_program_configuration}")
+            session.add(benefit_program_configuration)
+            await session.commit()
             _logger.info("Disbursements Created Successfully!")
             return benefit_program_configuration_request.message
+
+    async def validate_benefit_program_configuration_request(
+        self,
+        session,
+        benefit_program_configuration_request: BenefitProgramConfigurationRequest,
+    ) -> bool:
+        _logger.info("Validating disbursement envelope request")
+        benefit_program_configuration_payload: BenefitProgramConfigurationPayload = (
+            benefit_program_configuration_request.message
+        )
+        benefit_program_configuration: BenefitProgramConfiguration = (
+            (
+                await session.execute(
+                    dbengine.get()
+                    .query(BenefitProgramConfiguration)
+                    .filter(
+                        BenefitProgramConfiguration.benefit_program_mnemonic
+                        == benefit_program_configuration_payload.benefit_program_mnemonic
+                    )
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if benefit_program_configuration:
+            raise BenefitProgramConfigurationException(
+                message="Benefit Program Configuration already exists",
+                code=G2PBridgeErrorCodes.BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS,
+            )
 
     # noinspection PyMethodMayBeStatic
     async def construct_benefit_program_configuration(
