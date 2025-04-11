@@ -18,6 +18,7 @@ from openg2p_g2pconnect_common_lib.schemas import (
     SyncResponseHeader,
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.future import select
 
 from ..config import Settings
 
@@ -58,19 +59,17 @@ class BenefitProgramConfigurationService(BaseService):
             benefit_program_configuration_request.message
         )
         benefit_program_configuration: BenefitProgramConfiguration = (
-            (
-                await session.execute(
-                    dbengine.get()
-                    .query(BenefitProgramConfiguration)
-                    .filter(
-                        BenefitProgramConfiguration.benefit_program_mnemonic
-                        == benefit_program_configuration_payload.benefit_program_mnemonic
-                    )
+            await session.execute(
+                select(BenefitProgramConfiguration).where(
+                    BenefitProgramConfiguration.benefit_program_mnemonic
+                    == benefit_program_configuration_payload.benefit_program_mnemonic
                 )
             )
-            .scalars()
-            .first()
         )
+        benefit_program_configuration = benefit_program_configuration.scalars().first()
+
+        _logger.info(f"Benefit Program Configuration: {benefit_program_configuration}")
+
         if benefit_program_configuration:
             raise BenefitProgramConfigurationException(
                 message="Benefit Program Configuration already exists",
