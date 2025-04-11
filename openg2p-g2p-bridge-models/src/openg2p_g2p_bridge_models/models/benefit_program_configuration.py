@@ -11,9 +11,7 @@ class BenefitProgramConfiguration(BaseORMModelWithTimes):
     funding_org_code: Mapped[str] = mapped_column(String, nullable=False)
     funding_org_name: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_code: Mapped[str] = mapped_column(String, nullable=False)
-    sponsor_bank_account_number: Mapped[str] = mapped_column(
-        String, nullable=False
-    )
+    sponsor_bank_account_number: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_branch_code: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_account_currency: Mapped[str] = mapped_column(String, nullable=False)
     id_mapper_resolution_required: Mapped[bool] = mapped_column(Boolean, default=True)
