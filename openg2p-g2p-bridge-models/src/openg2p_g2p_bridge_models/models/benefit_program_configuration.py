@@ -12,7 +12,7 @@ class BenefitProgramConfiguration(BaseORMModelWithTimes):
     funding_org_name: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_code: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_account_number: Mapped[str] = mapped_column(
-        String, unique=True, nullable=False
+        String, nullable=False
     )
     sponsor_bank_branch_code: Mapped[str] = mapped_column(String, nullable=False)
     sponsor_bank_account_currency: Mapped[str] = mapped_column(String, nullable=False)
