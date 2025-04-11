@@ -1,7 +1,5 @@
 import logging
-from typing import Annotated
 
-from fastapi import Depends
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.exceptions import (
     BenefitProgramConfigurationException,
@@ -12,7 +10,6 @@ from openg2p_g2p_bridge_models.schemas import (
     BenefitProgramConfigurationRequest,
     BenefitProgramConfigurationResponse,
 )
-from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
 from ..config import Settings
 from ..services import BenefitProgramConfigurationService, RequestValidation
@@ -40,11 +37,11 @@ class BenefitProgramConfigurationController(BaseController):
     async def create_benefit_program_configuration(
         self,
         benefit_program_configuration_request: BenefitProgramConfigurationRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> BenefitProgramConfigurationResponse:
         _logger.info("Creating benefit program configuration")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
+            # RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 benefit_program_configuration_request
             )
