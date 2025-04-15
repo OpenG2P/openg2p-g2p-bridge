@@ -1,5 +1,5 @@
 import logging
-import time
+import uuid
 from datetime import datetime, timezone
 
 from openg2p_fastapi_common.context import dbengine
@@ -241,7 +241,7 @@ class DisbursementEnvelopeService(BaseService):
     ) -> DisbursementEnvelope:
         _logger.info("Constructing disbursement envelope")
         disbursement_envelope: DisbursementEnvelope = DisbursementEnvelope(
-            disbursement_envelope_id=str(int(time.time() * 1000)),
+            disbursement_envelope_id=str(uuid.uuid4()),
             benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
             disbursement_frequency=disbursement_envelope_payload.disbursement_frequency,
             cycle_code_mnemonic=disbursement_envelope_payload.cycle_code_mnemonic,
