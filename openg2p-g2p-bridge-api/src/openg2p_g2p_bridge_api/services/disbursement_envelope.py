@@ -403,14 +403,15 @@ class DisbursementEnvelopeService(BaseService):
                 disbursement_envelope_payload.disbursement_envelope_id
             )
 
-            disbursement_envelope: DisbursementEnvelope = (
-                await session.execute(
-                    select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
-                        == disbursement_envelope_id
-                    )
+            result = await session.execute(
+                select(DisbursementEnvelope)
+                .where(
+                    DisbursementEnvelope.disbursement_envelope_id
+                    == disbursement_envelope_id
                 )
-            ).scalar()
+                .with_for_update()
+            )
+            disbursement_envelope: DisbursementEnvelope = result.scalar_one_or_none()
 
             if disbursement_envelope is None:
                 _logger.error(
