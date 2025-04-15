@@ -28,7 +28,8 @@ def block_funds_with_bank_beat_producer():
         # Check if the disbursement schedule date is today if the configuration is
         # not set to process future disbursement schedules
         date_condition = (
-            DisbursementEnvelope.disbursement_schedule_date == datetime.now(timezone.utc).date()
+            DisbursementEnvelope.disbursement_schedule_date
+            == datetime.now(timezone.utc).date()
             if not _config.process_future_disbursement_schedules
             else literal(True)
         )

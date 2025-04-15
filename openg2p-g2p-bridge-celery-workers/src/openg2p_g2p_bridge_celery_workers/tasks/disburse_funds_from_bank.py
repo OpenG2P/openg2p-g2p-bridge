@@ -232,13 +232,17 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         payment_response.error_code
                     )
 
-            disbursement_batch_status.disbursement_timestamp = datetime.now(timezone.utc)
+            disbursement_batch_status.disbursement_timestamp = datetime.now(
+                timezone.utc
+            )
             disbursement_batch_status.disbursement_attempts += 1
 
         except Exception as e:
             _logger.error(f"Error disbursing funds with bank: {str(e)}")
             disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
-            disbursement_batch_status.disbursement_timestamp = datetime.now(timezone.utc)
+            disbursement_batch_status.disbursement_timestamp = datetime.now(
+                timezone.utc
+            )
             disbursement_batch_status.latest_error_code = str(e)
             disbursement_batch_status.disbursement_attempts += 1
 
