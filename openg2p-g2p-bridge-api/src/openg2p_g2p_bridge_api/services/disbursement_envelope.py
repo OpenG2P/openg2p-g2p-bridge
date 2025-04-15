@@ -279,9 +279,7 @@ class DisbursementEnvelopeService(BaseService):
             .first()
         )
         if benefit_program_configuration is None:
-            _logger.error(
-                f"Benefit program configuration with mnemonic {disbursement_envelope.benefit_program_mnemonic} not found"
-            )
+            _logger.error("Benefit program configuration not found")
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
             )

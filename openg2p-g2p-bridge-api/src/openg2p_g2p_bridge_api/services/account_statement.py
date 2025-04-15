@@ -23,7 +23,7 @@ class AccountStatementService(BaseService):
         try:
             statement_file = await statement_file.read()
         except Exception as e:
-            _logger.error(f"Error reading file {statement_file.filename}: {str(e)}")
+            _logger.error(f"Error reading file: {str(e)}")
             raise e
 
         statement_id = str(uuid.uuid4())
