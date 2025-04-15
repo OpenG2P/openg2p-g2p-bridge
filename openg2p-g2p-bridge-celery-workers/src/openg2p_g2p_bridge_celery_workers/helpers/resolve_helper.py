@@ -2,7 +2,7 @@ import enum
 import logging
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import jwt
@@ -88,7 +88,7 @@ class ResolveHelper(BaseService):
             {
                 "iss": issuer,
                 "aud": audience,
-                "exp": datetime.utcnow() + timedelta(minutes=expiration_minutes),
+                "exp": datetime.now(timezone.utc) + timedelta(minutes=expiration_minutes),
             }
         )
         token = jwt.encode(payload, private_key, algorithm="RS256", headers=headers)

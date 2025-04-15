@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import UploadFile
 from openg2p_fastapi_common.context import dbengine
@@ -27,7 +27,7 @@ class AccountStatementService(BaseService):
             raise e
 
         statement_id = str(uuid.uuid4())
-        statement_date = datetime.utcnow()
+        statement_date = datetime.now(timezone.utc)
 
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:

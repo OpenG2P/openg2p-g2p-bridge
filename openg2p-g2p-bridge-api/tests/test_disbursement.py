@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -47,7 +47,7 @@ async def test_create_disbursements_success(
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now(timezone.utc).isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -64,7 +64,7 @@ async def test_create_disbursements_success(
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now(timezone.utc).isoformat(),
                 action="",
                 status=StatusEnum.succ,
                 status_reason_message="",
@@ -105,7 +105,7 @@ async def test_create_disbursements_failure(
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now(timezone.utc).isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -122,7 +122,7 @@ async def test_create_disbursements_failure(
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now(timezone.utc).isoformat(),
                 action="",
                 status=StatusEnum.rjct,
                 status_reason_message=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
@@ -154,7 +154,7 @@ def mock_cancel_disbursements(is_valid, disbursement_request):
         )
     for payload in disbursement_request.message:
         payload.cancellation_status = CancellationStatus.Cancelled
-        payload.cancellation_time_stamp = datetime.datetime.utcnow()
+        payload.cancellation_time_stamp = datetime.now(timezone.utc)
     return disbursement_request
 
 
@@ -179,7 +179,7 @@ async def test_cancel_disbursements_success(
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now(timezone.utc).isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -196,7 +196,7 @@ async def test_cancel_disbursements_success(
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now(timezone.utc).isoformat(),
                 action="",
                 status=StatusEnum.succ,
                 status_reason_message="",
@@ -242,7 +242,7 @@ async def test_cancel_disbursements_failure(
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now(timezone.utc).isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -259,7 +259,7 @@ async def test_cancel_disbursements_failure(
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now(timezone.utc).isoformat(),
                 action="",
                 status=StatusEnum.rjct,
                 status_reason_message=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED,
