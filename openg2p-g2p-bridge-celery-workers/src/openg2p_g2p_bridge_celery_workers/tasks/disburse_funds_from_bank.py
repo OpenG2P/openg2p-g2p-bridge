@@ -140,7 +140,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                     beneficiary_branch_code=mapper_details.branch_code
                     if mapper_details
                     else None,
-                    payment_date=str(datetime.date(datetime.now(timezone.utc))),
+                    payment_date=str(datetime.date(datetime.now())),
                     beneficiary_id=disbursement.beneficiary_id,
                     beneficiary_name=disbursement.beneficiary_name,
                     beneficiary_account_type=mapper_details.mapper_resolved_fa_type,

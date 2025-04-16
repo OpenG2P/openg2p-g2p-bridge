@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from openg2p_g2p_bridge_bank_connectors.bank_connectors import (
     BankConnectorFactory,
@@ -84,7 +84,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 )
 
             disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.now(timezone.utc)
+                datetime.now()
             )
             disbursement_envelope_batch_status.funds_available_latest_error_code = None
             disbursement_envelope_batch_status.funds_available_attempts += 1
@@ -97,7 +97,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 FundsAvailableWithBankEnum.PENDING_CHECK.value
             )
             disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.now(timezone.utc)
+                datetime.now()
             )
             disbursement_envelope_batch_status.funds_available_latest_error_code = str(
                 e

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,7 +31,7 @@ def mock_create_disbursement_envelope(is_valid, error_code=None):
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
         header=SyncResponseHeader(
@@ -79,7 +79,7 @@ async def test_create_disbursement_envelope_success(
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
 
     disbursement_request = DisbursementEnvelopeRequest(
@@ -146,7 +146,7 @@ async def test_create_disbursement_envelope_errors(
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
 
     request_payload = DisbursementEnvelopeRequest(
@@ -186,7 +186,7 @@ def mock_cancel_disbursement_envelope(is_valid, error_code=None):
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
         header=SyncResponseHeader(
@@ -328,7 +328,7 @@ def mock_amend_disbursement_envelope(is_valid, error_code=None):
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
         header=SyncResponseHeader(
@@ -377,7 +377,7 @@ async def test_amend_disbursement_envelope_success(
         number_of_beneficiaries=100,
         number_of_disbursements=100,
         total_disbursement_amount=5000.00,
-        disbursement_schedule_date=datetime.date(datetime.now(timezone.utc)),
+        disbursement_schedule_date=datetime.date(datetime.now()),
     )
 
     disbursement_request = DisbursementEnvelopeRequest(
