@@ -1,5 +1,4 @@
 import logging
-import time
 import uuid
 from datetime import datetime
 from typing import List
@@ -71,6 +70,7 @@ class DisbursementService(BaseService):
                 disbursements=disbursements
             )
 
+            # Lock the envelope batch status row for update
             disbursement_envelope_batch_status = (
                 await self.update_disbursement_envelope_batch_status(
                     disbursements, session
@@ -119,10 +119,12 @@ class DisbursementService(BaseService):
         disbursement_envelope_batch_status = (
             (
                 await session.execute(
-                    select(DisbursementEnvelopeBatchStatus).where(
+                    select(DisbursementEnvelopeBatchStatus)
+                    .where(
                         DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                         == str(disbursements[0].disbursement_envelope_id)
                     )
+                    .with_for_update()
                 )
             )
             .scalars()
@@ -144,7 +146,7 @@ class DisbursementService(BaseService):
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
             disbursement = Disbursement(
-                disbursement_id=str(int(time.time() * 1000000)),
+                disbursement_id=str(uuid.uuid4()),
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
@@ -366,6 +368,7 @@ class DisbursementService(BaseService):
                     disbursement_payloads=disbursement_request.message,
                 )
 
+            # Fetch and lock disbursements for update
             disbursements_in_db: List[
                 Disbursement
             ] = await self.fetch_disbursements_from_db(disbursement_request, session)
@@ -397,10 +400,8 @@ class DisbursementService(BaseService):
                 raise e
 
             invalid_disbursements_exist = await self.check_for_invalid_disbursements(
-                disbursement_request,
-                disbursements_in_db,
+                disbursement_request, disbursements_in_db
             )
-
             if invalid_disbursements_exist:
                 raise DisbursementException(
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
@@ -413,19 +414,21 @@ class DisbursementService(BaseService):
                 )
                 disbursement.cancellation_time_stamp = datetime.now()
 
+            # Lock the envelope batch status row for update
             disbursement_envelope_batch_status = (
                 (
                     await session.execute(
-                        select(DisbursementEnvelopeBatchStatus).where(
+                        select(DisbursementEnvelopeBatchStatus)
+                        .where(
                             DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                             == str(disbursements_in_db[0].disbursement_envelope_id)
                         )
+                        .with_for_update()
                     )
                 )
                 .scalars()
                 .first()
             )
-
             disbursement_envelope_batch_status.number_of_disbursements_received -= len(
                 disbursements_in_db
             )
@@ -494,7 +497,8 @@ class DisbursementService(BaseService):
         disbursements_in_db = (
             (
                 await session.execute(
-                    select(Disbursement).where(
+                    select(Disbursement)
+                    .where(
                         Disbursement.disbursement_id.in_(
                             [
                                 str(disbursement_payload.disbursement_id)
@@ -502,6 +506,7 @@ class DisbursementService(BaseService):
                             ]
                         )
                     )
+                    .with_for_update()
                 )
             )
             .scalars()
@@ -520,10 +525,12 @@ class DisbursementService(BaseService):
         disbursement_envelope = (
             (
                 await session.execute(
-                    select(DisbursementEnvelope).where(
+                    select(DisbursementEnvelope)
+                    .where(
                         DisbursementEnvelope.disbursement_envelope_id
                         == str(disbursements_in_db[0].disbursement_envelope_id)
                     )
+                    .with_for_update()
                 )
             )
             .scalars()
@@ -576,7 +583,6 @@ class DisbursementService(BaseService):
                 ]
             )
         )
-
         if no_of_disbursements_after_this_request < 0:
             _logger.error("Number of Disbursements Less Than Zero!")
             raise DisbursementException(

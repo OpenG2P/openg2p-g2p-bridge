@@ -60,7 +60,7 @@ class DisbursementController(BaseController):
             _logger.error("Error validating request")
             error_response: DisbursementResponse = (
                 await self.disbursement_service.construct_disbursement_error_response(
-                    disbursement_request, e.code, e.disbursement_payloads
+                    disbursement_request, e.code, []
                 )
             )
             return error_response

@@ -23,11 +23,11 @@ class AccountStatementService(BaseService):
         try:
             statement_file = await statement_file.read()
         except Exception as e:
-            _logger.error(f"Error reading file {statement_file.filename}: {str(e)}")
+            _logger.error(f"Error reading file: {str(e)}")
             raise e
 
         statement_id = str(uuid.uuid4())
-        statement_date = datetime.utcnow()
+        statement_date = datetime.now()
 
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:

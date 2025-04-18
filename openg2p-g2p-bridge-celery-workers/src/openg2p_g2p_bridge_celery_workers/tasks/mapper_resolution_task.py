@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
@@ -167,7 +167,9 @@ def process_and_store_resolution(
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PROCESSED,
-                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.utcnow(),
+                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(
+                        timezone.utc
+                    ),
                     MapperResolutionBatchStatus.latest_error_code: None,
                     MapperResolutionBatchStatus.resolution_attempts: MapperResolutionBatchStatus.resolution_attempts
                     + 1,

@@ -90,7 +90,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                 batch_status.funds_blocked_reference_number = ""
                 batch_status.funds_blocked_latest_error_code = funds_blocked.error_code
 
-            batch_status.funds_blocked_latest_timestamp = datetime.utcnow()
+            batch_status.funds_blocked_latest_timestamp = datetime.now()
 
             batch_status.funds_blocked_attempts += 1
 
@@ -99,7 +99,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.PENDING_CHECK.value
             )
-            batch_status.funds_blocked_latest_timestamp = datetime.utcnow()
+            batch_status.funds_blocked_latest_timestamp = datetime.now()
             batch_status.funds_blocked_latest_error_code = str(e)
             batch_status.funds_blocked_attempts += 1
             batch_status.funds_blocked_reference_number = ""

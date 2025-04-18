@@ -88,7 +88,7 @@ class ResolveHelper(BaseService):
             {
                 "iss": issuer,
                 "aud": audience,
-                "exp": datetime.utcnow() + timedelta(minutes=expiration_minutes),
+                "exp": datetime.now() + timedelta(minutes=expiration_minutes),
             }
         )
         token = jwt.encode(payload, private_key, algorithm="RS256", headers=headers)

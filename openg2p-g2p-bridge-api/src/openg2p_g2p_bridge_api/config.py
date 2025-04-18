@@ -19,3 +19,10 @@ class Settings(BaseSettings):
     openapi_version: str = __version__
 
     db_dbname: str = "openg2p_g2p_bridge_db"
+    max_upload_file_size: int = 10485760  # 10 MB
+    supported_file_types: list[str] = [
+        "application/x-iso8583",
+        "application/x-iso20022",
+        "application/vnd.swift.mt940",
+        "text/plain",
+    ]

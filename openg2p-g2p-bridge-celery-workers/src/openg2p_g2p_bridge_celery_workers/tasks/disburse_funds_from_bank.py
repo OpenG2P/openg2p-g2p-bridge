@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from openg2p_g2p_bridge_bank_connectors.bank_connectors import BankConnectorFactory
 from openg2p_g2p_bridge_bank_connectors.bank_interface.bank_connector_interface import (
@@ -140,7 +140,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                     beneficiary_branch_code=mapper_details.branch_code
                     if mapper_details
                     else None,
-                    payment_date=str(datetime.date(datetime.utcnow())),
+                    payment_date=str(datetime.date(datetime.now())),
                     beneficiary_id=disbursement.beneficiary_id,
                     beneficiary_name=disbursement.beneficiary_name,
                     beneficiary_account_type=mapper_details.mapper_resolved_fa_type,
@@ -232,13 +232,17 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         payment_response.error_code
                     )
 
-            disbursement_batch_status.disbursement_timestamp = datetime.utcnow()
+            disbursement_batch_status.disbursement_timestamp = datetime.now(
+                timezone.utc
+            )
             disbursement_batch_status.disbursement_attempts += 1
 
         except Exception as e:
             _logger.error(f"Error disbursing funds with bank: {str(e)}")
             disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
-            disbursement_batch_status.disbursement_timestamp = datetime.utcnow()
+            disbursement_batch_status.disbursement_timestamp = datetime.now(
+                timezone.utc
+            )
             disbursement_batch_status.latest_error_code = str(e)
             disbursement_batch_status.disbursement_attempts += 1
 
