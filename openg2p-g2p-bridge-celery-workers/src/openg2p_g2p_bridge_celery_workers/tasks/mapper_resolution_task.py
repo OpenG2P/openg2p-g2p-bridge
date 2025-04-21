@@ -89,7 +89,9 @@ async def make_resolve_request(disbursement_batch_controls):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
         single_resolve_requests
     )
-    jwt_token = await resolve_helper.create_jwt_token(resolve_request.model_dump(mode="json"))
+    jwt_token = await resolve_helper.create_jwt_token(
+        resolve_request.model_dump(mode="json")
+    )
     headers = {"content-type": "application/json", "Authorization": jwt_token}
 
     resolve_client = MapperResolveClient()
