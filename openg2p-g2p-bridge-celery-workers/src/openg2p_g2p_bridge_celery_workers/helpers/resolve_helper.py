@@ -81,6 +81,7 @@ class ResolveHelper(BaseService):
 
     async def create_jwt_token(self, payload, expiration_minutes=60):
         private_key = _config.private_key
+        _logger.info(f"private_key: {private_key}") # TODO: Remove this line in production
         headers = {"alg": "RS256", "typ": "JWT"}
         issuer = _config.issuer
         audience = _config.audience
