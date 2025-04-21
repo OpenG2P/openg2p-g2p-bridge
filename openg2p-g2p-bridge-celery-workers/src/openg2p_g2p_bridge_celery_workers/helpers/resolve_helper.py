@@ -68,7 +68,7 @@ class ResolveHelper(BaseService):
                 message_id=str(uuid.uuid4()),
                 message_ts=str(datetime.now()),
                 action="resolve",
-                sender_id="",
+                sender_id=_config.sender_id,
                 sender_uri="",
                 total_count=len(single_resolve_requests),
             ),
@@ -82,15 +82,6 @@ class ResolveHelper(BaseService):
     async def create_jwt_token(self, payload, expiration_minutes=60):
         private_key = _config.private_key
         headers = {"alg": "RS256", "typ": "JWT"}
-        # issuer = _config.issuer
-        # audience = _config.audience
-        # payload.update(
-        #     {
-        #         "iss": issuer,
-        #         "aud": audience,
-        #         "exp": datetime.now() + timedelta(minutes=expiration_minutes),
-        #     }
-        # )
         token = jwt.encode(payload, private_key, algorithm="RS256", headers=headers)
         return token
 
