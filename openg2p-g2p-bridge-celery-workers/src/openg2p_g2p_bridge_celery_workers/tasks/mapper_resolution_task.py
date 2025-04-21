@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
@@ -89,7 +89,7 @@ async def make_resolve_request(disbursement_batch_controls):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
         single_resolve_requests
     )
-    jwt_token = await resolve_helper.create_jwt_token(resolve_request.dict())
+    jwt_token = await resolve_helper.create_jwt_token(resolve_request.model_dump())
     headers = {"content-type": "application/json", "Authorization": jwt_token}
 
     resolve_client = MapperResolveClient()
@@ -167,9 +167,7 @@ def process_and_store_resolution(
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PROCESSED,
-                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(
-                        timezone.utc
-                    ),
+                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(),
                     MapperResolutionBatchStatus.latest_error_code: None,
                     MapperResolutionBatchStatus.resolution_attempts: MapperResolutionBatchStatus.resolution_attempts
                     + 1,
