@@ -83,14 +83,14 @@ class ResolveHelper(BaseService):
         private_key = _config.private_key
         _logger.info(f"private_key: {private_key}") # TODO: Remove this line in production
         headers = {"alg": "RS256", "typ": "JWT"}
-        issuer = _config.issuer
-        audience = _config.audience
-        payload.update(
-            {
-                "iss": issuer,
-                "aud": audience,
-                "exp": datetime.now() + timedelta(minutes=expiration_minutes),
-            }
+        # issuer = _config.issuer
+        # audience = _config.audience
+        # payload.update(
+        #     {
+        #         "iss": issuer,
+        #         "aud": audience,
+        #         "exp": datetime.now() + timedelta(minutes=expiration_minutes),
+        #     }
         )
         token = jwt.encode(payload, private_key, algorithm="RS256", headers=headers)
         return token
