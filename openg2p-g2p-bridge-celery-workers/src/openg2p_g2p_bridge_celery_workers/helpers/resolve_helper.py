@@ -63,7 +63,6 @@ class ResolveHelper(BaseService):
         )
 
         resolve_request = ResolveRequest(
-            signature="",
             header=RequestHeader(
                 message_id=str(uuid.uuid4()),
                 message_ts=str(datetime.now()),
@@ -74,6 +73,7 @@ class ResolveHelper(BaseService):
             ),
             message=resolve_request_message,
         )
+        _logger.info(f"Resolve request: {resolve_request}")
         _logger.info(
             f"Constructed resolve request for {len(single_resolve_requests)} single resolve requests"
         )
