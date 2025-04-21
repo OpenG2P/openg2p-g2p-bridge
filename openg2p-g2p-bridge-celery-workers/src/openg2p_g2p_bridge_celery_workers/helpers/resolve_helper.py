@@ -44,7 +44,7 @@ class ResolveHelper(BaseService):
         _logger.info(f"Constructing single resolve request for ID: {id}")
         single_resolve_request = SingleResolveRequest(
             reference_id=str(uuid.uuid4()),
-            timestamp=datetime.now(),
+            timestamp=str(datetime.now()),
             id=id,
             scope="details",
         )
