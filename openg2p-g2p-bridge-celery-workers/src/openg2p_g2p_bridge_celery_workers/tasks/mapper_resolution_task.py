@@ -167,8 +167,7 @@ def process_and_store_resolution(
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PROCESSED,
-                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(
-                    ),
+                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(),
                     MapperResolutionBatchStatus.latest_error_code: None,
                     MapperResolutionBatchStatus.resolution_attempts: MapperResolutionBatchStatus.resolution_attempts
                     + 1,

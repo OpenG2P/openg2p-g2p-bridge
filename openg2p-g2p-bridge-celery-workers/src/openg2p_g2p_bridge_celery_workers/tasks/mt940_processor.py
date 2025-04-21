@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 
 import mt940
@@ -105,9 +105,7 @@ def mt940_processor_worker(statement_id: str):
                 account_statement.statement_process_error_code = (
                     G2PBridgeErrorCodes.INVALID_ACCOUNT_NUMBER.value
                 )
-                account_statement.statement_process_timestamp = datetime.now(
-                    timezone.utc
-                )
+                account_statement.statement_process_timestamp = datetime.now()
                 account_statement.statement_process_attempts += 1
                 session.commit()
                 return
