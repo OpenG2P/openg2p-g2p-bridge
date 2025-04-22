@@ -95,6 +95,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_attempts += 1
 
         except Exception as e:
+            
             _logger.error(f"Error blocking funds with bank: {str(e)}")
             batch_status.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.PENDING_CHECK.value
@@ -103,6 +104,8 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_latest_error_code = str(e)
             batch_status.funds_blocked_attempts += 1
             batch_status.funds_blocked_reference_number = ""
+            session.commit()
+            raise e
 
         session.commit()
         _logger.info(
