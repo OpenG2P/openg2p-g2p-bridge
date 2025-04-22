@@ -191,7 +191,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                     .one()
                 )
                 _logger.info(f"Lock acquired for envelope {envelope_id}")
-
+                _logger.info(f"Total number of disbursements: {len(payment_payloads)}")
                 # fire the payment
                 payment_response = bank_connector.initiate_payment(payment_payloads)
                 _logger.info(f"Payment response: {payment_response.status}")
