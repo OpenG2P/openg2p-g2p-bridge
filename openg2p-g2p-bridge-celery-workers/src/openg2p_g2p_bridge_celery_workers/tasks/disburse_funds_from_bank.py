@@ -163,9 +163,13 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 )
             )
         # End of for loop
+        
+        bank_connector: BankConnectorInterface = (
+            BankConnectorFactory.get_component().get_bank_connector(
+                benefit_program_configuration.sponsor_bank_code
+            )
+        )
 
-        bank_connector = BankConnectorFactory.get_component()\
-                          .get_bank_connector(envelope.benefit_program_mnemonic)
 
         envelope_id = disbursement_batch_status.disbursement_envelope_id
         envelope = session.query(DisbursementEnvelope).filter_by(
