@@ -36,6 +36,7 @@ def mt940_processor_beat_producer():
         )
 
         for statement in account_statements:
+            statement.statement_process_status = ProcessStatus.PROCESSING
             _logger.info(
                 f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}"
             )
@@ -44,5 +45,5 @@ def mt940_processor_beat_producer():
                 args=[statement.statement_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-
+            session.commit()
         _logger.info("Finished mt940_processor_beat_producer")

@@ -75,10 +75,24 @@ def block_funds_with_bank_beat_producer():
             _logger.info(
                 f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
             )
+            envelope_batch_status = (
+                session.query(DisbursementEnvelopeBatchStatus)
+                .filter(
+                    DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    == envelope.disbursement_envelope_id
+                )
+                .first()
+            )
+            
+            envelope_batch_status.funds_blocked_with_bank = (
+                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
+            )
+            
             celery_app.send_task(
                 "block_funds_with_bank_worker",
                 args=(envelope.disbursement_envelope_id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
+            session.commit()
 
         _logger.info("Completed checking for envelopes to block funds with bank")

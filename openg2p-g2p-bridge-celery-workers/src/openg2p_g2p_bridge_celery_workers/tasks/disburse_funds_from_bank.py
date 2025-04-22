@@ -212,7 +212,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 break
 
             except OperationalError as oe:
-                #session.rollback()
+                session.rollback()
                 _logger.warning(
                     f"Attempt {attempt} to lock envelope {envelope_id} failed: {oe}"
                 )
