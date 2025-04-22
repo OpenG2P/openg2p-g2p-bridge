@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 from datetime import datetime
 from sqlite3 import OperationalError
@@ -172,8 +173,8 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
         envelope_id = disbursement_batch_status.disbursement_envelope_id
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter_by(disbursement_envelope_id=envelope_id)
-            .one_or_none()
+            .filter(DisbursementEnvelope.disbursement_envelope_id==envelope_id)
+            .first()
         )
         if not envelope:
             _logger.error(f"No DisbursementEnvelope {envelope_id}")
@@ -185,7 +186,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 _logger.info(f"Locking envelope {envelope_id}, attempt {attempt}")
                 disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
-                    .filter_by(disbursement_envelope_id=envelope_id)
+                    .filter(DisbursementEnvelopeBatchStatus.disbursement_envelope_id==envelope_id)
                     .with_for_update(nowait=True)
                     .one()
                 )
@@ -211,12 +212,12 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 break
 
             except OperationalError as oe:
-                session.rollback()
+                #session.rollback()
                 _logger.warning(
                     f"Attempt {attempt} to lock envelope {envelope_id} failed: {oe}"
                 )
                 if attempt < max_retries:
-                    time.sleep(2)
+                    time.sleep(random.uniform(5, 10))
                 else:
                     _logger.error(
                         f"Could not lock after {max_retries} tries, marking pending"
