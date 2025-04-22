@@ -34,7 +34,7 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
                     DisbursementBatchControl.mapper_resolution_batch_id
                     == mapper_resolution_batch_id,
                     DisbursementBatchControl.mapper_status.in_(
-                        [ProcessStatus.PENDING.value, ProcessStatus.ERROR.value]
+                        [ProcessStatus.PROCESSING.value, ProcessStatus.ERROR.value]
                     ),
                 )
             )
