@@ -1,13 +1,12 @@
 import logging
-from sqlite3 import OperationalError
 import time
 from datetime import datetime
+from sqlite3 import OperationalError
 
 from openg2p_g2p_bridge_bank_connectors.bank_connectors import BankConnectorFactory
 from openg2p_g2p_bridge_bank_connectors.bank_interface.bank_connector_interface import (
     BankConnectorInterface,
     DisbursementPaymentPayload,
-    PaymentResponse,
     PaymentStatus,
 )
 from openg2p_g2p_bridge_models.models import (
@@ -163,27 +162,28 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 )
             )
         # End of for loop
-        
+
         bank_connector: BankConnectorInterface = (
             BankConnectorFactory.get_component().get_bank_connector(
                 benefit_program_configuration.sponsor_bank_code
             )
         )
 
-
         envelope_id = disbursement_batch_status.disbursement_envelope_id
-        envelope = session.query(DisbursementEnvelope).filter_by(
-            disbursement_envelope_id=envelope_id
-        ).one_or_none()
+        envelope = (
+            session.query(DisbursementEnvelope)
+            .filter_by(disbursement_envelope_id=envelope_id)
+            .one_or_none()
+        )
         if not envelope:
             _logger.error(f"No DisbursementEnvelope {envelope_id}")
             return
-        
+
         max_retries = 5
         for attempt in range(1, max_retries + 1):
             try:
                 _logger.info(f"Locking envelope {envelope_id}, attempt {attempt}")
-                locked_env = (
+                disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
                     .filter_by(disbursement_envelope_id=envelope_id)
                     .with_for_update(nowait=True)
@@ -197,21 +197,15 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
 
                 # update envelope status
                 if payment_response.status == PaymentStatus.SUCCESS:
-                    locked_env.disbursement_status      = ProcessStatus.PROCESSED.value
-                    locked_env.latest_error_code        = None
-                    locked_env.number_of_disbursements_shipped += len(payment_payloads)
+                    disbursement_batch_status.disbursement_status = ProcessStatus.PROCESSED.value
+                    disbursement_batch_status.latest_error_code = None
+                    disbursement_envelope_batch_status.number_of_disbursements_shipped += len(payment_payloads)
                 else:
-                    locked_env.disbursement_status      = ProcessStatus.PENDING.value
-                    locked_env.latest_error_code        = payment_response.error_code
+                    disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
+                    disbursement_batch_status.latest_error_code = payment_response.error_code
 
-                locked_env.disbursement_timestamp = datetime.now()
-                locked_env.disbursement_attempts += 1
-
-                # mirror into the bank‐batch record
-                disbursement_batch_status.disbursement_status      = locked_env.disbursement_status
-                disbursement_batch_status.latest_error_code        = locked_env.latest_error_code
-                disbursement_batch_status.disbursement_timestamp   = locked_env.disbursement_timestamp
-                disbursement_batch_status.disbursement_attempts    = locked_env.disbursement_attempts
+                disbursement_batch_status.disbursement_timestamp = datetime.now()
+                disbursement_batch_status.disbursement_attempts += 1
 
                 session.commit()
                 break
@@ -224,21 +218,29 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 if attempt < max_retries:
                     time.sleep(2)
                 else:
-                    _logger.error(f"Could not lock after {max_retries} tries, marking pending")
-                    disbursement_batch_status.disbursement_status      = ProcessStatus.PENDING.value
-                    disbursement_batch_status.latest_error_code        = "LockTimeout"
-                    disbursement_batch_status.disbursement_timestamp   = datetime.now()
-                    disbursement_batch_status.disbursement_attempts   += 1
+                    _logger.error(
+                        f"Could not lock after {max_retries} tries, marking pending"
+                    )
+                    disbursement_batch_status.disbursement_status = (
+                        ProcessStatus.PENDING.value
+                    )
+                    disbursement_batch_status.latest_error_code = "LockTimeout"
+                    disbursement_batch_status.disbursement_timestamp = datetime.now()
+                    disbursement_batch_status.disbursement_attempts += 1
                     session.commit()
 
             except Exception as e:
                 session.rollback()
                 _logger.error(f"Unexpected error during disbursement: {e}")
-                disbursement_batch_status.disbursement_status      = ProcessStatus.PENDING.value
-                disbursement_batch_status.latest_error_code        = str(e)
-                disbursement_batch_status.disbursement_timestamp   = datetime.now()
-                disbursement_batch_status.disbursement_attempts   += 1
+                disbursement_batch_status.disbursement_status = (
+                    ProcessStatus.PENDING.value
+                )
+                disbursement_batch_status.latest_error_code = str(e)
+                disbursement_batch_status.disbursement_timestamp = datetime.now()
+                disbursement_batch_status.disbursement_attempts += 1
                 session.commit()
                 raise e
 
-        _logger.info(f"Disbursement task for batch {bank_disbursement_batch_id} completed")
+        _logger.info(
+            f"Disbursement task for batch {bank_disbursement_batch_id} completed"
+        )
