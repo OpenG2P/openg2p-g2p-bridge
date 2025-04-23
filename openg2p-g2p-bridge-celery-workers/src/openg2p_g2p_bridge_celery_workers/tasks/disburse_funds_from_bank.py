@@ -2,7 +2,7 @@ import logging
 import random
 import time
 from datetime import datetime
-from sqlite3 import OperationalError
+from sqlalchemy.exc import OperationalError
 
 from openg2p_g2p_bridge_bank_connectors.bank_connectors import BankConnectorFactory
 from openg2p_g2p_bridge_bank_connectors.bank_interface.bank_connector_interface import (
@@ -205,14 +205,8 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         ProcessStatus.PROCESSED.value
                     )
                     disbursement_batch_status.latest_error_code = None
-                    _logger.info(
-                        f"Disbursements shipped already: {disbursement_envelope_batch_status.number_of_disbursements_shipped} for {len(payment_payloads)} disbursements"
-                    )
                     disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
                         payment_payloads
-                    )
-                    _logger.info(
-                        f"Disbursements shipped now: {disbursement_envelope_batch_status.number_of_disbursements_shipped}"
                     )
                 else:
                     disbursement_batch_status.disbursement_status = (
@@ -234,7 +228,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                     f"Attempt {attempt} to lock envelope {envelope_id} failed: {oe}"
                 )
                 if attempt < max_retries:
-                    time.sleep(random.uniform(5, 10))
+                    time.sleep(random.uniform(8, 15))
                 else:
                     _logger.error(
                         f"Could not lock after {max_retries} tries, marking pending"
