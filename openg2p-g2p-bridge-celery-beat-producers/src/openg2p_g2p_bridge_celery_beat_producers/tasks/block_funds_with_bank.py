@@ -83,11 +83,11 @@ def block_funds_with_bank_beat_producer():
                 )
                 .first()
             )
-            
+
             envelope_batch_status.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
             )
-            
+
             celery_app.send_task(
                 "block_funds_with_bank_worker",
                 args=(envelope.disbursement_envelope_id,),

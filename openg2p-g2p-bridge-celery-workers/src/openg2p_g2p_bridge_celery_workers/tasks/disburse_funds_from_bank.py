@@ -173,7 +173,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
         envelope_id = disbursement_batch_status.disbursement_envelope_id
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter(DisbursementEnvelope.disbursement_envelope_id==envelope_id)
+            .filter(DisbursementEnvelope.disbursement_envelope_id == envelope_id)
             .first()
         )
         if not envelope:
@@ -186,7 +186,10 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 _logger.info(f"Locking envelope {envelope_id}, attempt {attempt}")
                 disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
-                    .filter(DisbursementEnvelopeBatchStatus.disbursement_envelope_id==envelope_id)
+                    .filter(
+                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        == envelope_id
+                    )
                     .with_for_update(nowait=True)
                     .one()
                 )
@@ -198,12 +201,20 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
 
                 # update envelope status
                 if payment_response.status == PaymentStatus.SUCCESS:
-                    disbursement_batch_status.disbursement_status = ProcessStatus.PROCESSED.value
+                    disbursement_batch_status.disbursement_status = (
+                        ProcessStatus.PROCESSED.value
+                    )
                     disbursement_batch_status.latest_error_code = None
-                    disbursement_envelope_batch_status.number_of_disbursements_shipped += len(payment_payloads)
+                    disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
+                        payment_payloads
+                    )
                 else:
-                    disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
-                    disbursement_batch_status.latest_error_code = payment_response.error_code
+                    disbursement_batch_status.disbursement_status = (
+                        ProcessStatus.PENDING.value
+                    )
+                    disbursement_batch_status.latest_error_code = (
+                        payment_response.error_code
+                    )
 
                 disbursement_batch_status.disbursement_timestamp = datetime.now()
                 disbursement_batch_status.disbursement_attempts += 1

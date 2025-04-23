@@ -80,7 +80,7 @@ def check_funds_with_bank_beat_producer():
                 )
                 .first()
             )
-            
+
             envelope_batch_status.funds_available_with_bank = (
                 FundsAvailableWithBankEnum.CHECK_IN_PROGRESS.value
             )
