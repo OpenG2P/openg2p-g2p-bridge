@@ -32,10 +32,7 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
             session.execute(
                 select(DisbursementBatchControl).filter(
                     DisbursementBatchControl.mapper_resolution_batch_id
-                    == mapper_resolution_batch_id,
-                    DisbursementBatchControl.mapper_status.in_(
-                        [ProcessStatus.PROCESSING.value, ProcessStatus.ERROR.value]
-                    ),
+                    == mapper_resolution_batch_id
                 )
             )
             .scalars()
