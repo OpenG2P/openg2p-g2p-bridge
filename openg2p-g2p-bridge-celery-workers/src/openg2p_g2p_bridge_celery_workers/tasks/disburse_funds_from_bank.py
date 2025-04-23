@@ -205,8 +205,14 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         ProcessStatus.PROCESSED.value
                     )
                     disbursement_batch_status.latest_error_code = None
+                    _logger.info(
+                        f"Disbursements shipped already: {disbursement_envelope_batch_status.number_of_disbursements_shipped}"
+                    )
                     disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
                         payment_payloads
+                    )
+                    _logger.info(
+                        f"Disbursements shipped now: {disbursement_envelope_batch_status.number_of_disbursements_shipped}"
                     )
                 else:
                     disbursement_batch_status.disbursement_status = (
