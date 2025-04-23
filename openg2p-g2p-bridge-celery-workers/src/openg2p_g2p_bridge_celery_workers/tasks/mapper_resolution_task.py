@@ -42,6 +42,10 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
             .all()
         )
 
+        _logger.info(
+            f"Found {len(disbursement_batch_controls)} disbursement batch controls"
+        )
+
         beneficiary_disbursement_map = {
             control.beneficiary_id: control.disbursement_id
             for control in disbursement_batch_controls
