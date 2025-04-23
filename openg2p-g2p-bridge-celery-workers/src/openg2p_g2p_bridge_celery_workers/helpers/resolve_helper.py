@@ -73,7 +73,6 @@ class ResolveHelper(BaseService):
             ),
             message=resolve_request_message,
         )
-        _logger.info(f"Resolve request: {resolve_request}")
         _logger.info(
             f"Constructed resolve request for {len(single_resolve_requests)} single resolve requests"
         )
@@ -102,24 +101,23 @@ class ResolveHelper(BaseService):
         return deconstructed_list
 
     def deconstruct_fa(self, fa: str) -> dict:
-        _logger.info(f"Deconstructing FA: {fa}")
+        _logger.info(f"Deconstructing FA")
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
             deconstructed_fa = {
                 pair.key.value: pair.value for pair in deconstructed_pairs
             }
-            _logger.info(f"Deconstructed FA: {fa}")
             return deconstructed_fa
         return {}
 
     def _get_deconstruct_strategy(self, fa: str) -> str:
-        _logger.info(f"Getting deconstruction strategy for FA: {fa}")
+        _logger.info(f"Getting deconstruction strategy")
         if fa.endswith(MapperResolvedFaType.BANK_ACCOUNT.value):
             return _config.bank_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.MOBILE_WALLET.value):
             return _config.mobile_wallet_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.EMAIL_WALLET.value):
             return _config.email_wallet_fa_deconstruct_strategy
-        _logger.info(f"Deconstruction strategy not found for FA: {fa}")
+        _logger.info(f"Deconstruction strategy not found!")
         return ""
