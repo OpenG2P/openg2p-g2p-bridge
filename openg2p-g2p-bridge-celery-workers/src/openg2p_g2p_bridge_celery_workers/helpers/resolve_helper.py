@@ -101,7 +101,7 @@ class ResolveHelper(BaseService):
         return deconstructed_list
 
     def deconstruct_fa(self, fa: str) -> dict:
-        _logger.info(f"Deconstructing FA")
+        _logger.info("Deconstructing FA")
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
@@ -112,12 +112,12 @@ class ResolveHelper(BaseService):
         return {}
 
     def _get_deconstruct_strategy(self, fa: str) -> str:
-        _logger.info(f"Getting deconstruction strategy")
+        _logger.info("Getting deconstruction strategy")
         if fa.endswith(MapperResolvedFaType.BANK_ACCOUNT.value):
             return _config.bank_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.MOBILE_WALLET.value):
             return _config.mobile_wallet_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.EMAIL_WALLET.value):
             return _config.email_wallet_fa_deconstruct_strategy
-        _logger.info(f"Deconstruction strategy not found!")
+        _logger.info("Deconstruction strategy not found!")
         return ""
