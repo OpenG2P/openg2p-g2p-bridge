@@ -83,7 +83,9 @@ def disburse_funds_from_bank_beat_producer():
                     (batch.bank_disbursement_batch_id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
-                session.commit()
+                session.add(batch)
+                _logger.info("Added batch to session")
+            session.commit()
 
             _logger.info(
                 f"Sent tasks to disburse funds for {len(pending_batches)} batches"
