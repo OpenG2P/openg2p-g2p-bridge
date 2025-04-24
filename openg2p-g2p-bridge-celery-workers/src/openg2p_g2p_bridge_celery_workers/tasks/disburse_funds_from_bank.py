@@ -82,26 +82,6 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
             )
             return
 
-        # TODO: Check if all the disbursement_batch_controls for the batch are processed, cross check this
-        # Move to Beat
-        unprocessed_disbursement_batch_control = (
-            session.query(DisbursementBatchControl)
-            .filter(
-                DisbursementBatchControl.bank_disbursement_batch_id
-                == bank_disbursement_batch_id,
-                DisbursementBatchControl.mapper_status != ProcessStatus.PROCESSED.value,
-            )
-            .first()
-        )
-
-        if unprocessed_disbursement_batch_control:
-            _logger.info(
-                f"Batch {bank_disbursement_batch_id} has un-processed controls; skipping."
-            )
-            disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
-            session.commit()
-            return
-
         disbursement_batch_controls = (
             session.query(DisbursementBatchControl)
             .filter(

@@ -3,6 +3,7 @@ from datetime import datetime
 
 from openg2p_g2p_bridge_models.models import (
     BankDisbursementBatchStatus,
+    DisbursementBatchControl,
     CancellationStatus,
     DisbursementEnvelope,
     DisbursementEnvelopeBatchStatus,
@@ -74,6 +75,23 @@ def disburse_funds_from_bank_beat_producer():
             )
 
             for batch in pending_batches:
+
+                unprocessed_disbursement_batch_control = (
+                    session.query(DisbursementBatchControl)
+                    .filter(
+                        DisbursementBatchControl.bank_disbursement_batch_id
+                        == batch.bank_disbursement_batch_id,
+                        DisbursementBatchControl.mapper_status != ProcessStatus.PROCESSED.value,
+                    )
+                    .first()
+                )
+
+                if unprocessed_disbursement_batch_control:
+                    _logger.info(
+                        f"Batch {batch.bank_disbursement_batch_id} has un-processed controls; skipping."
+                    )
+                    return
+
                 _logger.info(
                     f"Sending task to disburse funds for batch {batch.bank_disbursement_batch_id}"
                 )
