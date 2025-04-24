@@ -1,5 +1,5 @@
 import logging
-import uuid
+import shortuuid
 from datetime import datetime
 from typing import List
 
@@ -146,7 +146,7 @@ class DisbursementService(BaseService):
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
             disbursement = Disbursement(
-                disbursement_id=str(uuid.uuid4()),
+                disbursement_id=str(shortuuid.uuid()),
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
