@@ -53,7 +53,7 @@ def disburse_funds_from_bank_beat_producer():
                 )
             )
             .scalars()
-            .all()
+            .all()  # TODO: Add a limit to the number of envelopes to process, add _config.no_of_beat_records_to_process
         )
         for envelope in envelopes:
             pending_batches = (

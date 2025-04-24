@@ -77,11 +77,13 @@ class ResolveHelper(BaseService):
             f"Constructed resolve request for {len(single_resolve_requests)} single resolve requests"
         )
         return resolve_request
-    async def detach_payload_from_jwt(token: str) -> str:
+
+    async def detach_payload_from_jwt(self, token: str) -> str:
         jwt_header_b64, _, jwt_signature_b64 = token.split(".")
         detached_jwt = f"{jwt_header_b64}..{jwt_signature_b64}"
 
         return detached_jwt
+
     async def create_jwt_token(self, payload, expiration_minutes=60):
         private_key = _config.private_key
         headers = {"alg": "RS256", "typ": "JWT"}
