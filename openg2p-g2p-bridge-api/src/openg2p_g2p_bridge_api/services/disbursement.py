@@ -1,8 +1,8 @@
 import logging
-import shortuuid
 from datetime import datetime
 from typing import List
 
+import shortuuid
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes

@@ -3,8 +3,8 @@ from datetime import datetime
 
 from openg2p_g2p_bridge_models.models import (
     BankDisbursementBatchStatus,
-    DisbursementBatchControl,
     CancellationStatus,
+    DisbursementBatchControl,
     DisbursementEnvelope,
     DisbursementEnvelopeBatchStatus,
     FundsBlockedWithBankEnum,
@@ -75,13 +75,13 @@ def disburse_funds_from_bank_beat_producer():
             )
 
             for batch in pending_batches:
-
                 unprocessed_disbursement_batch_control = (
                     session.query(DisbursementBatchControl)
                     .filter(
                         DisbursementBatchControl.bank_disbursement_batch_id
                         == batch.bank_disbursement_batch_id,
-                        DisbursementBatchControl.mapper_status != ProcessStatus.PROCESSED.value,
+                        DisbursementBatchControl.mapper_status
+                        != ProcessStatus.PROCESSED.value,
                     )
                     .first()
                 )
