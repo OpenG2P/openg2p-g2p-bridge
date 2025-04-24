@@ -90,21 +90,20 @@ def disburse_funds_from_bank_beat_producer():
                     _logger.info(
                         f"Batch {batch.bank_disbursement_batch_id} has un-processed controls; skipping."
                     )
-                    return
+                    continue
 
                 _logger.info(
                     f"Sending task to disburse funds for batch {batch.bank_disbursement_batch_id}"
                 )
                 batch.disbursement_status = ProcessStatus.PROCESSING.value
+                session.add(batch)
+                _logger.info("Added batch to session")
+                session.commit()
                 celery_app.send_task(
                     "disburse_funds_from_bank_worker",
                     (batch.bank_disbursement_batch_id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
-                session.add(batch)
-                _logger.info("Added batch to session")
-            session.commit()
-
             _logger.info(
                 f"Sent tasks to disburse funds for {len(pending_batches)} batches"
             )
