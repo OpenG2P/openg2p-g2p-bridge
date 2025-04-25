@@ -73,6 +73,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                 == disbursement_envelope_id
             )
+            .populate_existing()
             .first()
         )
 
@@ -191,6 +192,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         == envelope_id
                     )
                     .with_for_update(nowait=True)
+                    .populate_existing()
                     .one()
                 )
                 _logger.info(f"Lock acquired for envelope {envelope_id}")
