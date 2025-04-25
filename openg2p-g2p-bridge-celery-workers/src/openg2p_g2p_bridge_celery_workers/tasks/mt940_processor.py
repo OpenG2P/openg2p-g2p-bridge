@@ -393,9 +393,6 @@ def construct_parsed_transaction(
     parsed_transaction = {}
     transaction_amount = transaction.data["amount"].amount
     customer_reference = transaction.data["customer_reference"]
-    _logger.info(
-        f"Transaction amount: {transaction_amount}, customer reference: {customer_reference}"
-    )
     remittance_reference_number = transaction.data["bank_reference"]
     narratives = transaction.data["transaction_details"].split("\n")
     disbursement_id = bank_connector.retrieve_disbursement_id(
@@ -455,12 +452,6 @@ def get_disbursement_envelope_id(disbursement_id, session):
         session.query(Disbursement)
         .filter(Disbursement.disbursement_id == disbursement_id)
         .first()
-    )
-    _logger.info(
-        f"Disbursement id: {disbursement_id}"
-    )
-    _logger.info(
-        f"Disbursement object: {disbursement}"
     )
 
     if not disbursement:
