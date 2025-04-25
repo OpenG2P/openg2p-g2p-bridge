@@ -35,7 +35,7 @@ _engine = get_engine()
 @celery_app.task(name="mt940_processor_worker")
 def mt940_processor_worker(statement_id: str):
     _logger.info(f"Processing account statement with statement_id: {statement_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine)
 
     with session_maker() as session:
         account_statement = (
@@ -510,6 +510,7 @@ def update_envelope_batch_status_reconciled(
 
         status.number_of_disbursements_reconciled += count
         session.add(status)
+        session.commit()
 
 
 def update_envelope_batch_status_reversed(
@@ -572,3 +573,4 @@ def update_envelope_batch_status_reversed(
 
         disbursement_envelope_batch_status.number_of_disbursements_reversed += count
         session.add(disbursement_envelope_batch_status)
+        session.commit()
