@@ -254,7 +254,6 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 disbursement_batch_status.disbursement_attempts += 1
                 session.commit()
 
-
         _logger.info(
             f"Disbursement task for batch {bank_disbursement_batch_id} completed"
         )

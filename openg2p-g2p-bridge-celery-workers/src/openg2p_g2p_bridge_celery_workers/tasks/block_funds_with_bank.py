@@ -105,7 +105,6 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_reference_number = ""
             session.commit()
 
-
         session.commit()
         _logger.info(
             f"Completed blocking funds with bank for envelope: {disbursement_envelope_id}"
