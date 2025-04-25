@@ -202,7 +202,6 @@ def mt940_processor_worker(statement_id: str):
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
             session.commit()
-            raise e
 
 
 def process_reversal_of_debits(
