@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-import shortuuid
+from fastnanoid import generate
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
@@ -167,8 +167,9 @@ class DisbursementService(BaseService):
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
+            generated_id: str = generate(size=16)
             disbursement = Disbursement(
-                disbursement_id=str(shortuuid.uuid()),
+                disbursement_id=generated_id,
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
