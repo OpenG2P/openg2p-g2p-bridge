@@ -456,9 +456,15 @@ def get_disbursement_envelope_id(disbursement_id, session):
         .filter(Disbursement.disbursement_id == disbursement_id)
         .first()
     )
+    _logger.info(
+        f"Disbursement id: {disbursement_id}"
+    )
+    _logger.info(
+        f"Disbursement envelope id: {disbursement.disbursement_envelope_id}"
+    )
 
     if not disbursement:
-        disbursement.disbursement_envelope_id = None
+        return None
 
     return disbursement.disbursement_envelope_id
 
