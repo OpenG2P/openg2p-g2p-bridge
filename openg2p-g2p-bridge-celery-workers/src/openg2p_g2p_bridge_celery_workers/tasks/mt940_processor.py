@@ -460,7 +460,7 @@ def get_disbursement_envelope_id(disbursement_id, session):
         f"Disbursement id: {disbursement_id}"
     )
     _logger.info(
-        f"Disbursement envelope id: {disbursement.disbursement_envelope_id}"
+        f"Disbursement object: {disbursement}"
     )
 
     if not disbursement:
