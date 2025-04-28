@@ -25,71 +25,57 @@ _engine = get_engine()
 def disburse_funds_from_bank_beat_producer():
     _logger.info("Running disburse_funds_from_bank_beat_producer")
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    
     with session_maker() as session:
-        # Check if the disbursement schedule date is today if the configuration is
-        # not set to process future disbursement schedules
         date_condition = (
             DisbursementEnvelope.disbursement_schedule_date == datetime.now().date()
             if not _config.process_future_disbursement_schedules
             else literal(True)
         )
-        envelopes = (
-            session.execute(
-                select(DisbursementEnvelope)
-                .filter(
-                    date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
-                )
-                .join(
-                    DisbursementEnvelopeBatchStatus,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
-                )
-                .filter(
-                    DisbursementEnvelope.number_of_disbursements
-                    == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
-                    DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
-                    == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
-                )
-                .limit(_config.no_of_disbursement_envelopes_to_process)
+
+        stmt = (
+            select(DisbursementEnvelope)
+            .join(
+                DisbursementEnvelopeBatchStatus,
+                DisbursementEnvelope.disbursement_envelope_id == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
             )
-            .scalars()
-            .all()
+            .filter(
+                date_condition,
+                DisbursementEnvelope.cancellation_status == CancellationStatus.Not_Cancelled.value,
+                DisbursementEnvelope.number_of_disbursements == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
+                DisbursementEnvelopeBatchStatus.funds_blocked_with_bank == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
+            )
+            .limit(_config.no_of_disbursement_envelopes_to_process)
         )
+
+        envelopes = session.execute(stmt).scalars().yield_per(100)
+
         for envelope in envelopes:
-            pending_batches = (
-                session.execute(
-                    select(BankDisbursementBatchStatus).filter(
-                        and_(
-                            BankDisbursementBatchStatus.disbursement_envelope_id
-                            == envelope.disbursement_envelope_id,
-                            BankDisbursementBatchStatus.disbursement_status
-                            == ProcessStatus.PENDING.value,
-                            BankDisbursementBatchStatus.disbursement_attempts
-                            < _config.funds_disbursement_attempts,
-                        )
+            pending_batches_stmt = (
+                select(BankDisbursementBatchStatus)
+                .filter(
+                    and_(
+                        BankDisbursementBatchStatus.disbursement_envelope_id == envelope.disbursement_envelope_id,
+                        BankDisbursementBatchStatus.disbursement_status == ProcessStatus.PENDING.value,
+                        BankDisbursementBatchStatus.disbursement_attempts < _config.funds_disbursement_attempts,
                     )
                 )
-                .scalars()
-                .all()
             )
+            pending_batches = session.execute(pending_batches_stmt).scalars().yield_per(50)
 
             for batch in pending_batches:
-                unprocessed_disbursement_batch_control = (
+                unprocessed_control = (
                     session.query(DisbursementBatchControl)
                     .filter(
-                        DisbursementBatchControl.bank_disbursement_batch_id
-                        == batch.bank_disbursement_batch_id,
-                        DisbursementBatchControl.mapper_status
-                        != ProcessStatus.PROCESSED.value,
+                        DisbursementBatchControl.bank_disbursement_batch_id == batch.bank_disbursement_batch_id,
+                        DisbursementBatchControl.mapper_status != ProcessStatus.PROCESSED.value,
                     )
                     .first()
                 )
 
-                if unprocessed_disbursement_batch_control:
+                if unprocessed_control:
                     _logger.info(
-                        f"Batch {batch.bank_disbursement_batch_id} has un-processed controls; skipping."
+                        f"Batch {batch.bank_disbursement_batch_id} has unprocessed controls; skipping."
                     )
                     continue
 
@@ -98,13 +84,20 @@ def disburse_funds_from_bank_beat_producer():
                 )
                 batch.disbursement_status = ProcessStatus.PROCESSING.value
                 session.add(batch)
-                _logger.info("Added batch to session")
                 session.commit()
+
                 celery_app.send_task(
                     "disburse_funds_from_bank_worker",
                     (batch.bank_disbursement_batch_id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
+
+                _logger.info(
+                    f"Task sent for batch {batch.bank_disbursement_batch_id}"
+                )
+
             _logger.info(
-                f"Sent tasks to disburse funds for {len(pending_batches)} batches"
+                f"Completed sending tasks for all pending batches of envelope {envelope.disbursement_envelope_id}"
             )
+
+    _logger.info("Completed disburse_funds_from_bank_beat_producer")
