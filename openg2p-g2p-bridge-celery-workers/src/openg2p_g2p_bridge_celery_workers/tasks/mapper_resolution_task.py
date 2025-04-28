@@ -102,6 +102,9 @@ async def make_resolve_request(disbursement_batch_controls):
         )
         return resolve_response, None
     except Exception as e:
+        _logger.info(
+            f"Failed to resolve the request, response: {resolve_response}"
+        )
         _logger.error(f"Failed to resolve the request: {e}")
         error_msg = f"Failed to resolve the request: {e}"
         return None, error_msg
