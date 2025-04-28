@@ -81,7 +81,6 @@ class ResolveHelper(BaseService):
     async def detach_payload_from_jwt(self, token: str) -> str:
         jwt_header_b64, _, jwt_signature_b64 = token.split(".")
         detached_jwt = f"{jwt_header_b64}..{jwt_signature_b64}"
-
         return detached_jwt
 
     async def create_jwt_token(self, payload, expiration_minutes=60):
