@@ -35,4 +35,6 @@ class Settings(BaseSettings):
     funds_disbursement_frequency: int = 3600
     mt940_processor_frequency: int = 3600
 
+    no_of_disbursement_envelopes_to_process: int = 4
+
     process_future_disbursement_schedules: bool = False

@@ -52,9 +52,10 @@ def disburse_funds_from_bank_beat_producer():
                     DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
                     == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
                 )
+                .limit(_config.no_of_disbursement_envelopes_to_process)
             )
             .scalars()
-            .all()  # TODO: Add a limit to the number of envelopes to process, add _config.no_of_beat_records_to_process
+            .all()
         )
         for envelope in envelopes:
             pending_batches = (
