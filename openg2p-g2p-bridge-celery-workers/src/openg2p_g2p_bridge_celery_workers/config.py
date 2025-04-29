@@ -32,3 +32,5 @@ class Settings(BaseSettings):
     private_key: str = ""
     issuer: str = ""
     audience: str = ""
+
+    sender_id: str = ""

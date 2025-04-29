@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -204,14 +205,17 @@ def test_mt940_processor_lob_not_found(mock_session_maker):
     assert not mock_session_maker.committed
 
 
-def test_mt940_processor_exception(mock_session_maker, mock_bank_connector_factory):
+def test_mt940_processor_exception(
+    mock_session_maker, mock_bank_connector_factory, caplog
+):
     # Mock mt940.models.Transactions to raise an exception
     with patch("mt940.models.Transactions") as mock_transactions:
         mock_transactions.side_effect = Exception("TEST_ERROR")
 
-        with pytest.raises(Exception, match="TEST_ERROR"):
+        with caplog.at_level(logging.ERROR):
             mt940_processor_worker("test_statement_id")
 
+        assert "TEST_ERROR" in caplog.text
         assert (
             mock_session_maker.account_statement.statement_process_status
             == ProcessStatus.PENDING
@@ -234,9 +238,11 @@ def test_get_disbursement_envelope_id_success(mock_session_maker):
 
 def test_get_disbursement_envelope_id_not_found(mock_session_maker):
     mock_session_maker.disbursement = None
+    disbursement_envelope_id = get_disbursement_envelope_id(
+        "test_disbursement_id", mock_session_maker
+    )
 
-    with pytest.raises(AttributeError):
-        get_disbursement_envelope_id("test_disbursement_id", mock_session_maker)
+    assert disbursement_envelope_id is None
 
 
 def test_construct_parsed_transaction(mock_session_maker, mock_bank_connector_factory):
@@ -463,7 +469,7 @@ def test_update_envelope_batch_status_reconciled(mock_session_maker):
         == 2
     )
     assert mock_session_maker.added
-    assert mock_session_maker.flushed
+    assert mock_session_maker.committed
 
 
 def test_update_envelope_batch_status_reversed(mock_session_maker):

@@ -36,6 +36,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not envelope:
+            _logger.error(
+                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         disbursement_envelope_batch_status = (
@@ -48,6 +51,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not disbursement_envelope_batch_status:
+            _logger.error(
+                f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         benefit_program_configuration = (

@@ -38,6 +38,9 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not envelope:
+            _logger.error(
+                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         batch_status = (
@@ -50,6 +53,9 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not batch_status:
+            _logger.error(
+                f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         benefit_program_configuration = (
@@ -95,7 +101,9 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_attempts += 1
 
         except Exception as e:
-            _logger.error(f"Error blocking funds with bank: {str(e)}")
+            _logger.error(
+                f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
+            )
             batch_status.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.PENDING_CHECK.value
             )
@@ -103,6 +111,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_latest_error_code = str(e)
             batch_status.funds_blocked_attempts += 1
             batch_status.funds_blocked_reference_number = ""
+            session.commit()
 
         session.commit()
         _logger.info(

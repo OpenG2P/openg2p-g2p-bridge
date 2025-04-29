@@ -22,7 +22,8 @@ def mt940_processor_beat_producer():
     with session_maker() as session:
         account_statements = (
             session.execute(
-                select(AccountStatement).filter(
+                select(AccountStatement)
+                .filter(
                     and_(
                         AccountStatement.statement_process_status
                         == ProcessStatus.PENDING,
@@ -30,12 +31,14 @@ def mt940_processor_beat_producer():
                         < _config.statement_process_attempts,
                     )
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()
         )
 
         for statement in account_statements:
+            statement.statement_process_status = ProcessStatus.PROCESSING
             _logger.info(
                 f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}"
             )
@@ -44,5 +47,5 @@ def mt940_processor_beat_producer():
                 args=[statement.statement_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-
+            session.commit()
         _logger.info("Finished mt940_processor_beat_producer")

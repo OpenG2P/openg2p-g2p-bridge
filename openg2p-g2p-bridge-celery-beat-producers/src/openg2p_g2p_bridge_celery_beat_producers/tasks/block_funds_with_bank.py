@@ -36,17 +36,15 @@ def block_funds_with_bank_beat_producer():
         envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
-                .filter(
-                    date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
-                )
                 .join(
                     DisbursementEnvelopeBatchStatus,
                     DisbursementEnvelope.disbursement_envelope_id
                     == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
                 )
                 .filter(
+                    date_condition,
+                    DisbursementEnvelope.cancellation_status
+                    == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
                     == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
                     DisbursementEnvelopeBatchStatus.funds_available_with_bank
@@ -66,6 +64,7 @@ def block_funds_with_bank_beat_producer():
                         ),
                     ),
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()
@@ -75,10 +74,24 @@ def block_funds_with_bank_beat_producer():
             _logger.info(
                 f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
             )
+            envelope_batch_status = (
+                session.query(DisbursementEnvelopeBatchStatus)
+                .filter(
+                    DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    == envelope.disbursement_envelope_id
+                )
+                .first()
+            )
+
+            envelope_batch_status.funds_blocked_with_bank = (
+                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
+            )
+
             celery_app.send_task(
                 "block_funds_with_bank_worker",
                 args=(envelope.disbursement_envelope_id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
+            session.commit()
 
         _logger.info("Completed checking for envelopes to block funds with bank")

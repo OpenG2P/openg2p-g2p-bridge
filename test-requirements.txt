@@ -1,4 +1,4 @@
-jwt
+python-jose
 pytest-cov
 pytest-asyncio
 git+https://github.com/openg2p/openg2p-fastapi-common@1.1#subdirectory=openg2p-fastapi-common

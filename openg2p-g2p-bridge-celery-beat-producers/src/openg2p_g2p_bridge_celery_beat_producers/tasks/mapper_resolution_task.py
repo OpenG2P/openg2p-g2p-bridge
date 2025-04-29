@@ -22,7 +22,8 @@ def mapper_resolution_beat_producer():
     with session_maker() as session:
         mapper_resolution_batch_statuses = (
             session.execute(
-                select(MapperResolutionBatchStatus).filter(
+                select(MapperResolutionBatchStatus)
+                .filter(
                     and_(
                         MapperResolutionBatchStatus.resolution_status
                         == ProcessStatus.PENDING,
@@ -30,6 +31,7 @@ def mapper_resolution_beat_producer():
                         < _config.mapper_resolve_attempts,
                     )
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()
@@ -42,10 +44,12 @@ def mapper_resolution_beat_producer():
             _logger.info(
                 f"Sending mapper_resolution_worker task for mapper_resolution_batch_id: {mapper_resolution_batch_status.mapper_resolution_batch_id}"
             )
+            mapper_resolution_batch_status.resolution_status = ProcessStatus.PROCESSING
             celery_app.send_task(
                 "mapper_resolution_worker",
                 args=[mapper_resolution_batch_status.mapper_resolution_batch_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
+            session.commit()
 
         _logger.info("Finished mapper_resolution_beat_producer")
