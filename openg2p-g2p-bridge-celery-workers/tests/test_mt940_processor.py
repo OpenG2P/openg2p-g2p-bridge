@@ -205,7 +205,9 @@ def test_mt940_processor_lob_not_found(mock_session_maker):
     assert not mock_session_maker.committed
 
 
-def test_mt940_processor_exception(mock_session_maker, mock_bank_connector_factory, caplog):
+def test_mt940_processor_exception(
+    mock_session_maker, mock_bank_connector_factory, caplog
+):
     # Mock mt940.models.Transactions to raise an exception
     with patch("mt940.models.Transactions") as mock_transactions:
         mock_transactions.side_effect = Exception("TEST_ERROR")
@@ -236,7 +238,9 @@ def test_get_disbursement_envelope_id_success(mock_session_maker):
 
 def test_get_disbursement_envelope_id_not_found(mock_session_maker):
     mock_session_maker.disbursement = None
-    disbursement_envelope_id = get_disbursement_envelope_id("test_disbursement_id", mock_session_maker)
+    disbursement_envelope_id = get_disbursement_envelope_id(
+        "test_disbursement_id", mock_session_maker
+    )
 
     assert disbursement_envelope_id is None
 

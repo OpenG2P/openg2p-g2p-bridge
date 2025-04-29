@@ -200,7 +200,10 @@ def test_disburse_funds_exception(
         mock_session_maker.bank_disbursement_batch_status.disbursement_status
         == ProcessStatus.PENDING.value
     )
-    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code == "TEST_EXCEPTION"
+    assert (
+        mock_session_maker.bank_disbursement_batch_status.latest_error_code
+        == "TEST_EXCEPTION"
+    )
     assert mock_session_maker.bank_disbursement_batch_status.disbursement_attempts == 5
     assert mock_session_maker.committed
 
