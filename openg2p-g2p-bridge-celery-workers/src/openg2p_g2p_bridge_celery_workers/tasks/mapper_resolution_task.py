@@ -57,7 +57,9 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
             loop.close()
 
         if not resolve_response:
-            _logger.error(f"Failed to resolve the request: {error_msg}")
+            _logger.error(
+                f"Failed to resolve the request for batch {mapper_resolution_batch_id}: {error_msg}"
+            )
             session.query(MapperResolutionBatchStatus).filter(
                 MapperResolutionBatchStatus.mapper_resolution_batch_id
                 == mapper_resolution_batch_id

@@ -184,7 +184,9 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
         max_retries = 5
         for attempt in range(1, max_retries + 1):
             try:
-                _logger.info(f"Locking envelope {envelope_id}, attempt {attempt}")
+                _logger.info(
+                    f"Locking envelope {envelope_id}, attempt {attempt} / {max_retries}"
+                )
                 disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
                     .filter(
@@ -199,7 +201,9 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 _logger.info(f"Total number of disbursements: {len(payment_payloads)}")
                 # fire the payment
                 payment_response = bank_connector.initiate_payment(payment_payloads)
-                _logger.info(f"Payment response: {payment_response.status}")
+                _logger.info(
+                    f"Payment response for envelope {envelope_id} on attempt {attempt}: {payment_response.status}"
+                )
 
                 # update envelope status
                 if payment_response.status == PaymentStatus.SUCCESS:
@@ -245,7 +249,9 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
 
             except Exception as e:
                 session.rollback()
-                _logger.error(f"Unexpected error during disbursement: {e}")
+                _logger.error(
+                    f"Unexpected error during disbursement for envelope {envelope_id}: {e}"
+                )
                 disbursement_batch_status.disbursement_status = (
                     ProcessStatus.PENDING.value
                 )
