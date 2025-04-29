@@ -2,6 +2,8 @@ name: OpenAPI JSON Generate Workflow
 
 on:
   push:
+    branches:
+      - "**"
     tags-ignore:
       - '**'
   workflow_dispatch:
