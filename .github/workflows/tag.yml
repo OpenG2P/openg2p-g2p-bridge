@@ -63,10 +63,12 @@ jobs:
 
       - name: Changing version
         run: |
+          NEW_VERSION="${{ inputs.new-tag }}"
+          NEW_VERSION=${NEW_VERSION#v}
           for init_file in $(grep -rl "__version__ ="); do
             if [[ $init_file == *.py ]]; then
               version_line=$(grep "__version__" $init_file)
-              sed -i "s/$version_line/__version__ = \"${{ inputs.new-tag }}\"/g" $init_file
+              sed -i "s/$version_line/__version__ = \"${NEW_VERSION}\"/g" $init_file
             fi
           done
       - name: Removing github development package dependencies

@@ -22,7 +22,6 @@ dependencies = [
   "celery",
   "psycopg2",
   "mt-940",
-  "python-jose",
 ]
 dynamic = ["version"]
 
