@@ -21,7 +21,11 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           for changed_file in ${{ steps.files.outputs.all }}; do
-            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || ${changed_file} =~ ^openg2p-g2p-bridge-api || ${changed_file} =~ Dockerfile.api || ${changed_file} =~ *.dockerignore ]]; then
+            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || \
+                  ${changed_file} =~ ^openg2p-g2p-bridge-api || \
+                  ${changed_file} == Dockerfile.api || \
+                  ${changed_file} == *.dockerignore ]]
+            then
               echo DOCKER_BUILD=true >> $GITHUB_ENV
               break
             fi
@@ -47,7 +51,12 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           for changed_file in ${{ steps.files.outputs.all }}; do
-            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || ${changed_file} =~ ^openg2p-g2p-bridge-celery-beat-producers || ${changed_file} =~ Dockerfile.producers || ${changed_file} =~ *.dockerignore ]]; then
+            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || \
+                  ${changed_file} =~ ^openg2p-g2p-bridge-bank-connectors || \
+                  ${changed_file} =~ ^openg2p-g2p-bridge-celery-beat-producers || \
+                  ${changed_file} == Dockerfile.producers || \
+                  ${changed_file} == *.dockerignore ]]
+            then
               echo DOCKER_BUILD=true >> $GITHUB_ENV
               break
             fi
@@ -73,7 +82,12 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' }}
         run: |
           for changed_file in ${{ steps.files.outputs.all }}; do
-            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || ${changed_file} =~ ^openg2p-g2p-bridge-celery-workers || ${changed_file} =~ Dockerfile.workers || ${changed_file} =~ *.dockerignore ]]; then
+            if [[ ${changed_file} =~ ^openg2p-g2p-bridge-models || \
+                  ${changed_file} =~ ^openg2p-g2p-bridge-bank-connectors || \
+                  ${changed_file} =~ ^openg2p-g2p-bridge-celery-workers || \
+                  ${changed_file} == Dockerfile.workers || \
+                  ${changed_file} == *.dockerignore ]]
+            then
               echo DOCKER_BUILD=true >> $GITHUB_ENV
               break
             fi

@@ -13,9 +13,9 @@ RUN install_packages libpq-dev \
 
 WORKDIR /app
 
-ADD openg2p-g2p-bridge-models /app
-ADD openg2p-g2p-bridge-bank-connectors /app
-ADD openg2p-g2p-bridge-celery-workers /app
+ADD openg2p-g2p-bridge-models /app/openg2p-g2p-bridge-models
+ADD openg2p-g2p-bridge-bank-connectors /app/openg2p-g2p-bridge-bank-connectors
+ADD openg2p-g2p-bridge-celery-workers /app/openg2p-g2p-bridge-celery-workers
 RUN mv /app/openg2p-g2p-bridge-celery-workers/main.py /app
 
 RUN python3 -m pip install git+https://github.com/openg2p/openg2p-fastapi-common@1.1\#subdirectory=openg2p-fastapi-common  # to_be_removed_on_tag

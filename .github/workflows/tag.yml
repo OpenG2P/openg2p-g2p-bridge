@@ -64,7 +64,7 @@ jobs:
       - name: Changing version
         run: |
           for init_file in $(grep -rl "__version__ ="); do
-            if [[ $init_file =~ *.py ]]; then
+            if [[ $init_file == *.py ]]; then
               version_line=$(grep "__version__" $init_file)
               sed -i "s/$version_line/__version__ = \"${{ inputs.new-tag }}\"/g" $init_file
             fi
