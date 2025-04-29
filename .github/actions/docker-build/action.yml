@@ -1,29 +1,30 @@
 name: Dockers Build and Push
-
+description: ""
 inputs:
   NAMESPACE:
     required: false
-    type: string
+    description: Docker Hub Namespace or Organization
   SERVICE_NAME:
     required: true
-    type: string
+    description: Docker Repository
   TAG:
     required: false
-    type: string
+    description: Docker Tag
   DOCKERFILE_PATH:
     required: true
-    type: string
+    description: Path to Dockerfile
   DOCKER_HUB_TOKEN:
     required: false
-    type: string
+    description: Docker Hub Token
   DOCKER_HUB_ACTOR:
     required: false
-    type: string
+    description: Docker Hub Actor
 
 runs:
   using: composite
   steps:
   - name: Docker build
+    shell: bash
     run: |
       if [ -z '${{ inputs.TAG }}' ]; then
         VERSION=$(echo ${{ github.ref }} | sed -e 's,.*/\(.*\),\1,')
@@ -46,6 +47,7 @@ runs:
         echo DOCKER_PUSH=$DOCKER_PUSH >> $GITHUB_ENV
       fi
   - name: Docker push
+    shell: bash
     if: env.DOCKER_PUSH == 'true'
     run: |
       echo "${{ inputs.DOCKER_HUB_TOKEN }}" | docker login -u ${{ inputs.DOCKER_HUB_ACTOR }} --password-stdin

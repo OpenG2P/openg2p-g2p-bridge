@@ -1,20 +1,23 @@
 name: PyPI Publish
-
+description: ""
 inputs:
   MODULE_PATH:
     required: true
-    type: string
+    description: Python Module Path
   PYPI_API_TOKEN:
     required: true
-    type: string
+    description: PyPI API Token
 runs:
   using: composite
   steps:
   - name: Install build dependencies
+    shell: bash
     run: pip install build
   - name: Build distribution
+    shell: bash
     run: python -m build ${{ inputs.MODULE_PATH }}
   - name: Publish
+    shell: bash
     uses: pypa/gh-action-pypi-publish@release/v1
     with:
       password: ${{ inputs.PYPI_API_TOKEN }}

@@ -26,7 +26,7 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build.yml
+      - uses: ./.github/actions/docker-build
         if: ${{ github.event_name != 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
@@ -52,7 +52,7 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build.yml
+      - uses: ./.github/actions/docker-build
         if: ${{ github.event_name != 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
@@ -78,7 +78,7 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build.yml
+      - uses: ./.github/actions/docker-build
         if: ${{ github.event_name != 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}

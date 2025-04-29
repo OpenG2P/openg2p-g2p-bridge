@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Generate openapi json
-        uses: ./.github/actions/openapi-generate.yml
+        uses: ./.github/actions/openapi-generate
       - name: Commit Changes
         uses: EndBug/add-and-commit@v7
         if: env.OPENAPI_CHANGED == 'true'
