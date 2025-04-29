@@ -24,6 +24,7 @@ from openg2p_g2p_bridge_models.models import (
 class MockSession:
     def __init__(self):
         self.committed = False
+        self.rollbacked = False
         self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
@@ -82,6 +83,9 @@ class MockSession:
         self.filter_args = args
         return self
 
+    def one(self):
+        return self.first()
+
     def first(self):
         if self.query_args[0] is BankDisbursementBatchStatus:
             return self.bank_disbursement_batch_status
@@ -110,6 +114,9 @@ class MockSession:
 
     def commit(self):
         self.committed = True
+
+    def rollback(self):
+        self.rolled_back = True
 
     def close(self):
         pass
@@ -188,13 +195,13 @@ def test_disburse_funds_exception(
     with caplog.at_level(logging.ERROR):
         disburse_funds_from_bank_worker("test_batch_id")
 
-    assert "Unable to acquire lock" in caplog.text
+    assert "TEST_EXCEPTION" in caplog.text
     assert (
         mock_session_maker.bank_disbursement_batch_status.disbursement_status
         == ProcessStatus.PENDING.value
     )
-    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code is None
-    assert mock_session_maker.bank_disbursement_batch_status.disbursement_attempts == 1
+    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code == "TEST_EXCEPTION"
+    assert mock_session_maker.bank_disbursement_batch_status.disbursement_attempts == 5
     assert mock_session_maker.committed
 
 

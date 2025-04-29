@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-import jwt
+from jose import jwt
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.models import MapperResolvedFaType
 from openg2p_g2pconnect_common_lib.schemas import RequestHeader
