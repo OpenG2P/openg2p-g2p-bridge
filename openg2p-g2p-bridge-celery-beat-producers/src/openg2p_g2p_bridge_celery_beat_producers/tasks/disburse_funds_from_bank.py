@@ -83,6 +83,7 @@ def disburse_funds_from_bank_beat_producer():
                             < _config.funds_disbursement_attempts,
                         )
                     )
+                    .limit(_config.no_of_tasks_to_process)
                 )
                 .scalars()
                 .all()
