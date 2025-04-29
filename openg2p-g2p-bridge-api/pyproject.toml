@@ -21,6 +21,7 @@ dependencies = [
   "asyncpg",
   "fastnanoid",
   "python-jose",
+  "python-magic",
 ]
 dynamic = ["version"]
 
