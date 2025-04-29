@@ -1,0 +1,21 @@
+name: PyPI Publish
+
+inputs:
+  MODULE_PATH:
+    required: true
+    type: string
+  PYPI_API_TOKEN:
+    required: true
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Install build dependencies
+    run: pip install build
+  - name: Build distribution
+    run: python -m build ${{ inputs.MODULE_PATH }}
+  - name: Publish
+    uses: pypa/gh-action-pypi-publish@release/v1
+    with:
+      password: ${{ inputs.PYPI_API_TOKEN }}
+      packages-dir: ${{ inputs.MODULE_PATH }}/dist/

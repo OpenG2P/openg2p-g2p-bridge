@@ -25,9 +25,9 @@ class Settings(BaseSettings):
 
     mapper_resolve_api_url: str = ""
 
-    bank_fa_deconstruct_strategy: str = ""
-    mobile_wallet_deconstruct_strategy: str = ""
-    email_wallet_deconstruct_strategy: str = ""
+    bank_fa_deconstruct_strategy: str = r"^account_number:(?P<account_number>.*)\.branch_code:(?P<branch_code>.*)\.bank_code:(?P<bank_code>.*)\.mobile_number:(?P<mobile_number>.*)\.email_address:(?P<email_address>.*)\.fa_type:(?P<fa_type>.*)$"
+    mobile_wallet_deconstruct_strategy: str = r"^mobile_number:(?P<mobile_number>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
+    email_wallet_deconstruct_strategy: str = r"^email_address:(?P<email_address>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
 
     private_key: str = ""
     issuer: str = ""

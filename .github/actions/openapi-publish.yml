@@ -1,0 +1,18 @@
+name: OpenAPI Generate and Publish For API Tag
+inputs:
+  STOPLIGHT_PROJECT_TOKEN:
+    required: true
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Get tag name
+    run: |
+      echo "TAG_NAME=$(echo ${{ github.ref }} | sed -e 's,.*/\(.*\),\1,')" >> $GITHUB_ENV
+  - name: Setup nodejs
+    uses: actions/setup-node@v4
+    with:
+      node-version: '18'
+  - name: Publish to stoplight
+    run: |
+      npx @stoplight/cli@5 push --ci-token ${{ inputs.STOPLIGHT_PROJECT_TOKEN }} --url https://openg2p.stoplight.io --branch ${{ env.TAG_NAME }} --directory api-docs/generated

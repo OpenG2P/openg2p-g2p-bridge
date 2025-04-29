@@ -12,7 +12,6 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementEnvelope,
     DisbursementEnvelopeBatchStatus,
 )
-from openg2p_g2pconnect_common_lib.oauth_token import OAuthTokenService
 
 from .controllers import (
     AccountStatementController,
@@ -38,7 +37,6 @@ _logger = logging.getLogger(_config.logging_default_logger_name)
 class Initializer(BaseInitializer):
     def initialize(self, **kwargs):
         super().initialize()
-        OAuthTokenService()
         RequestValidation()
         DisbursementEnvelopeService()
         DisbursementService()
