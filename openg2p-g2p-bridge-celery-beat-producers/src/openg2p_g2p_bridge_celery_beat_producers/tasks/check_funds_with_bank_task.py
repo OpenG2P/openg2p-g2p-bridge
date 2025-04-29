@@ -33,17 +33,15 @@ def check_funds_with_bank_beat_producer():
         envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
-                .filter(
-                    date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
-                )
                 .join(
                     DisbursementEnvelopeBatchStatus,
                     DisbursementEnvelope.disbursement_envelope_id
                     == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
                 )
                 .filter(
+                    date_condition,
+                    DisbursementEnvelope.cancellation_status
+                    == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
                     == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
                     DisbursementEnvelope.total_disbursement_amount
@@ -63,6 +61,7 @@ def check_funds_with_bank_beat_producer():
                         ),
                     ),
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()

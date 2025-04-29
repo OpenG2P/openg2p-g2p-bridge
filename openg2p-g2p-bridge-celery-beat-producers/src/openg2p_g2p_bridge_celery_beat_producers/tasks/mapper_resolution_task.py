@@ -22,7 +22,8 @@ def mapper_resolution_beat_producer():
     with session_maker() as session:
         mapper_resolution_batch_statuses = (
             session.execute(
-                select(MapperResolutionBatchStatus).filter(
+                select(MapperResolutionBatchStatus)
+                .filter(
                     and_(
                         MapperResolutionBatchStatus.resolution_status
                         == ProcessStatus.PENDING,
@@ -30,6 +31,7 @@ def mapper_resolution_beat_producer():
                         < _config.mapper_resolve_attempts,
                     )
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()

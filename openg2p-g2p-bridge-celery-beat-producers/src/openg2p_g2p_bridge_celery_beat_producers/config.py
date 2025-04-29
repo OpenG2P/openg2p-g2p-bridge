@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     funds_disbursement_frequency: int = 3600
     mt940_processor_frequency: int = 3600
 
-    no_of_disbursement_envelopes_to_process: int = 4
+    no_of_tasks_to_process: int = 4
     disbursement_retry_threshold_minutes: int = (
         30  # Will reset stuck processing batches older than threshold
     )

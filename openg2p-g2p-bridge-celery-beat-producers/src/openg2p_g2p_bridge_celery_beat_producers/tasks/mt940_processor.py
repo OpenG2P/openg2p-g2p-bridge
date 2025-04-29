@@ -22,7 +22,8 @@ def mt940_processor_beat_producer():
     with session_maker() as session:
         account_statements = (
             session.execute(
-                select(AccountStatement).filter(
+                select(AccountStatement)
+                .filter(
                     and_(
                         AccountStatement.statement_process_status
                         == ProcessStatus.PENDING,
@@ -30,6 +31,7 @@ def mt940_processor_beat_producer():
                         < _config.statement_process_attempts,
                     )
                 )
+                .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()
