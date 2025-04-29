@@ -58,7 +58,7 @@ class RequestValidation(BaseService):
             )
 
         # read a small chunk to detect the real MIME type
-        sample = request.file.read(2048)
+        sample = request.file.read(1024)
         request.file.seek(0)
         detector = magic.Magic(mime=True)
         real_mime = detector.from_buffer(sample)
