@@ -44,6 +44,9 @@ def disburse_funds_from_bank_beat_producer():
             )
             .values(disbursement_status=ProcessStatus.PENDING.value)
         )
+        _logger.info(
+            f"Resetting stale batches older than {stale_at} to PENDING"
+        )
         session.execute(reset_stmt)
         session.commit()
 
@@ -74,6 +77,9 @@ def disburse_funds_from_bank_beat_producer():
         )
 
         envelopes = session.execute(stmt).scalars().yield_per(_config.batch_fetch_size)
+        _logger.info(
+            f"Found {len(list(envelopes))} envelopes to process"
+        )
 
         for envelope in envelopes:
             # 3. Fetch pending batches for this envelope (streamed)
@@ -97,6 +103,9 @@ def disburse_funds_from_bank_beat_producer():
                 .scalars()
                 .yield_per(_config.pending_batch_fetch_size)
             )
+            _logger.info(
+                f"Found {len(list(batches))} pending batches for envelope {envelope.disbursement_envelope_id}"
+            )
 
             for batch in batches:
                 # Skip if there are unprocessed controls
@@ -119,6 +128,9 @@ def disburse_funds_from_bank_beat_producer():
                 # Mark as processing and commit
                 batch.disbursement_status = ProcessStatus.PROCESSING.value
                 session.add(batch)
+                _logger.info(
+                    f"Marking batch {batch.bank_disbursement_batch_id} as processing."
+                )
                 try:
                     session.commit()
                 except Exception:
