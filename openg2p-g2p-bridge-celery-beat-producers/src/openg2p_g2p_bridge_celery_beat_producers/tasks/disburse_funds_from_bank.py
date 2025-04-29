@@ -73,7 +73,8 @@ def disburse_funds_from_bank_beat_producer():
         for envelope in envelopes:
             pending_batches = (
                 session.execute(
-                    select(BankDisbursementBatchStatus).filter(
+                    select(BankDisbursementBatchStatus)
+                    .filter(
                         and_(
                             BankDisbursementBatchStatus.disbursement_envelope_id
                             == envelope.disbursement_envelope_id,
