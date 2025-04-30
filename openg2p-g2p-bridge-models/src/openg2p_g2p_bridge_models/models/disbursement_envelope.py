@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class FundsAvailableWithBankEnum(Enum):
     PENDING_CHECK = "PENDING_CHECK"
+    CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_AVAILABLE = "FUNDS_AVAILABLE"
     FUNDS_NOT_AVAILABLE = "FUNDS_NOT_AVAILABLE"
     ERROR = "ERROR"
@@ -16,6 +17,7 @@ class FundsAvailableWithBankEnum(Enum):
 
 class FundsBlockedWithBankEnum(Enum):
     PENDING_CHECK = "PENDING_CHECK"
+    CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_BLOCK_SUCCESS = "FUNDS_BLOCK_SUCCESS"
     FUNDS_BLOCK_FAILURE = "FUNDS_BLOCK_FAILURE"
     ERROR = "ERROR"

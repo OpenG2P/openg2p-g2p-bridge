@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 from datetime import datetime
 
@@ -6,7 +7,6 @@ from openg2p_g2p_bridge_bank_connectors.bank_connectors import BankConnectorFact
 from openg2p_g2p_bridge_bank_connectors.bank_interface.bank_connector_interface import (
     BankConnectorInterface,
     DisbursementPaymentPayload,
-    PaymentResponse,
     PaymentStatus,
 )
 from openg2p_g2p_bridge_models.models import (
@@ -19,6 +19,7 @@ from openg2p_g2p_bridge_models.models import (
     MapperResolutionDetails,
     ProcessStatus,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app, get_engine
@@ -72,6 +73,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                 == disbursement_envelope_id
             )
+            .populate_existing()
             .first()
         )
 
@@ -169,59 +171,47 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
             )
         )
 
-        try:
-            max_retries = 5
-            retry_count = 0
-            payment_response: PaymentResponse = None
+        envelope_id = disbursement_batch_status.disbursement_envelope_id
+        envelope = (
+            session.query(DisbursementEnvelope)
+            .filter(DisbursementEnvelope.disbursement_envelope_id == envelope_id)
+            .first()
+        )
+        if not envelope:
+            _logger.error(f"No DisbursementEnvelope {envelope_id}")
+            return
 
-            while retry_count < max_retries:
-                try:
-                    _logger.info(
-                        f"Attempting to acquire lock for disbursement envelope: {disbursement_envelope_id}"
-                    )
-
-                    # Attempt to acquire the lock and execute the query
-                    envelope_batch_status = (
-                        session.query(DisbursementEnvelopeBatchStatus)
-                        .filter(
-                            DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                            == disbursement_envelope_id
-                        )
-                        .with_for_update(nowait=True)
-                        .populate_existing()
-                        .first()
-                    )
-                    _logger.info(
-                        f"Lock acquired for disbursement envelope: {disbursement_envelope_id}"
-                    )
-                    # Process if lock acquired
-                    payment_response = bank_connector.initiate_payment(payment_payloads)
-                    _logger.info(
-                        f"Payment response received for disbursement envelope: {payment_response.status}"
-                    )
-                    break
-
-                except Exception as e:
-                    _logger.info(f"Error: {str(e)}")
-                    time.sleep(2)
-                    _logger.warning(
-                        f"Attempt {retry_count + 1} failed to acquire lock. Retrying..."
-                    )
-                    retry_count += 1
-
-            if retry_count == max_retries:
-                _logger.error(f"Unable to acquire lock after {max_retries} attempts")
-
-            else:
+        max_retries = 5
+        for attempt in range(1, max_retries + 1):
+            try:
                 _logger.info(
-                    f"Payment response received for disbursement envelope: {payment_response.status}"
+                    f"Locking envelope {envelope_id}, attempt {attempt} / {max_retries}"
                 )
+                disbursement_envelope_batch_status = (
+                    session.query(DisbursementEnvelopeBatchStatus)
+                    .filter(
+                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        == envelope_id
+                    )
+                    .with_for_update(nowait=True)
+                    .populate_existing()
+                    .one()
+                )
+                _logger.info(f"Lock acquired for envelope {envelope_id}")
+                _logger.info(f"Total number of disbursements: {len(payment_payloads)}")
+                # fire the payment
+                payment_response = bank_connector.initiate_payment(payment_payloads)
+                _logger.info(
+                    f"Payment response for envelope {envelope_id} on attempt {attempt}: {payment_response.status}"
+                )
+
+                # update envelope status
                 if payment_response.status == PaymentStatus.SUCCESS:
                     disbursement_batch_status.disbursement_status = (
                         ProcessStatus.PROCESSED.value
                     )
                     disbursement_batch_status.latest_error_code = None
-                    envelope_batch_status.number_of_disbursements_shipped += len(
+                    disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
                         payment_payloads
                     )
                 else:
@@ -232,17 +222,44 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                         payment_response.error_code
                     )
 
-            disbursement_batch_status.disbursement_timestamp = datetime.now()
-            disbursement_batch_status.disbursement_attempts += 1
+                disbursement_batch_status.disbursement_timestamp = datetime.now()
+                disbursement_batch_status.disbursement_attempts += 1
 
-        except Exception as e:
-            _logger.error(f"Error disbursing funds with bank: {str(e)}")
-            disbursement_batch_status.disbursement_status = ProcessStatus.PENDING.value
-            disbursement_batch_status.disbursement_timestamp = datetime.now()
-            disbursement_batch_status.latest_error_code = str(e)
-            disbursement_batch_status.disbursement_attempts += 1
+                session.commit()
+                break
+
+            except OperationalError as oe:
+                session.rollback()
+                _logger.warning(
+                    f"Attempt {attempt} to lock envelope {envelope_id} failed: {oe}"
+                )
+                if attempt < max_retries:
+                    time.sleep(random.uniform(8, 15))
+                else:
+                    _logger.error(
+                        f"Could not lock after {max_retries} tries, marking pending"
+                    )
+                    disbursement_batch_status.disbursement_status = (
+                        ProcessStatus.PENDING.value
+                    )
+                    disbursement_batch_status.latest_error_code = "LockTimeout"
+                    disbursement_batch_status.disbursement_timestamp = datetime.now()
+                    disbursement_batch_status.disbursement_attempts += 1
+                    session.commit()
+
+            except Exception as e:
+                session.rollback()
+                _logger.error(
+                    f"Unexpected error during disbursement for envelope {envelope_id}: {e}"
+                )
+                disbursement_batch_status.disbursement_status = (
+                    ProcessStatus.PENDING.value
+                )
+                disbursement_batch_status.latest_error_code = str(e)
+                disbursement_batch_status.disbursement_timestamp = datetime.now()
+                disbursement_batch_status.disbursement_attempts += 1
+                session.commit()
 
         _logger.info(
-            f"Disbursing funds with bank for batch: {bank_disbursement_batch_id} completed"
+            f"Disbursement task for batch {bank_disbursement_batch_id} completed"
         )
-        session.commit()

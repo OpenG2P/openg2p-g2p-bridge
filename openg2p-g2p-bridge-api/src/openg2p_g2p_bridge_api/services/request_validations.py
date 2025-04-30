@@ -1,3 +1,4 @@
+import magic
 from fastapi import UploadFile
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.exceptions import RequestValidationException
@@ -38,18 +39,29 @@ class RequestValidation(BaseService):
         return None
 
     def validate_mt940_file(self, request: UploadFile) -> None:
-        # Validate file size: get file size by seeking to the end.
+        # --- size check (unchanged) ---
         request.file.seek(0, 2)
         file_size = request.file.tell()
         request.file.seek(0)
-
         if file_size > _config.max_upload_file_size:
             raise RequestValidationException(
                 code=SyncResponseStatusReasonCodeEnum.rjct_file_size_exceeded,
                 message=SyncResponseStatusReasonCodeEnum.rjct_file_size_exceeded,
             )
-        # Validate file type using the content_type attribute
+
+        # --- header MIME check (optional) ---
         if request.content_type not in _config.supported_file_types:
+            raise RequestValidationException(
+                code=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
+                message=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
+            )
+
+        # read a small chunk to detect the real MIME type
+        sample = request.file.read(1024)
+        request.file.seek(0)
+        detector = magic.Magic(mime=True)
+        real_mime = detector.from_buffer(sample)
+        if real_mime not in _config.supported_file_types:
             raise RequestValidationException(
                 code=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
                 message=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,

@@ -2,10 +2,10 @@ import enum
 import logging
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List
 
-import jwt
+from jose import jwt
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.models import MapperResolvedFaType
 from openg2p_g2pconnect_common_lib.schemas import RequestHeader
@@ -44,7 +44,7 @@ class ResolveHelper(BaseService):
         _logger.info(f"Constructing single resolve request for ID: {id}")
         single_resolve_request = SingleResolveRequest(
             reference_id=str(uuid.uuid4()),
-            timestamp=datetime.now(),
+            timestamp=str(datetime.now()),
             id=id,
             scope="details",
         )
@@ -63,12 +63,11 @@ class ResolveHelper(BaseService):
         )
 
         resolve_request = ResolveRequest(
-            signature="",
             header=RequestHeader(
                 message_id=str(uuid.uuid4()),
                 message_ts=str(datetime.now()),
                 action="resolve",
-                sender_id="",
+                sender_id=_config.sender_id,
                 sender_uri="",
                 total_count=len(single_resolve_requests),
             ),
@@ -79,20 +78,17 @@ class ResolveHelper(BaseService):
         )
         return resolve_request
 
+    async def detach_payload_from_jwt(self, token: str) -> str:
+        jwt_header_b64, _, jwt_signature_b64 = token.split(".")
+        detached_jwt = f"{jwt_header_b64}..{jwt_signature_b64}"
+        return detached_jwt
+
     async def create_jwt_token(self, payload, expiration_minutes=60):
         private_key = _config.private_key
         headers = {"alg": "RS256", "typ": "JWT"}
-        issuer = _config.issuer
-        audience = _config.audience
-        payload.update(
-            {
-                "iss": issuer,
-                "aud": audience,
-                "exp": datetime.now() + timedelta(minutes=expiration_minutes),
-            }
-        )
         token = jwt.encode(payload, private_key, algorithm="RS256", headers=headers)
-        return token
+        detached_jwt = await self.detach_payload_from_jwt(token)
+        return detached_jwt
 
     def _deconstruct(self, value: str, strategy: str) -> List[KeyValuePair]:
         _logger.info(f"Deconstructing ID/FA: {value}")
@@ -111,24 +107,23 @@ class ResolveHelper(BaseService):
         return deconstructed_list
 
     def deconstruct_fa(self, fa: str) -> dict:
-        _logger.info(f"Deconstructing FA: {fa}")
+        _logger.info("Deconstructing FA")
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
             deconstructed_fa = {
                 pair.key.value: pair.value for pair in deconstructed_pairs
             }
-            _logger.info(f"Deconstructed FA: {fa}")
             return deconstructed_fa
         return {}
 
     def _get_deconstruct_strategy(self, fa: str) -> str:
-        _logger.info(f"Getting deconstruction strategy for FA: {fa}")
+        _logger.info("Getting deconstruction strategy")
         if fa.endswith(MapperResolvedFaType.BANK_ACCOUNT.value):
             return _config.bank_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.MOBILE_WALLET.value):
             return _config.mobile_wallet_fa_deconstruct_strategy
         elif fa.endswith(MapperResolvedFaType.EMAIL_WALLET.value):
             return _config.email_wallet_fa_deconstruct_strategy
-        _logger.info(f"Deconstruction strategy not found for FA: {fa}")
+        _logger.info("Deconstruction strategy not found!")
         return ""

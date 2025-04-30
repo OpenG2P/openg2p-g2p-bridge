@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 from datetime import datetime
 from typing import List
@@ -20,6 +21,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementRecon,
     ProcessStatus,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app, get_engine
@@ -33,7 +35,7 @@ _engine = get_engine()
 @celery_app.task(name="mt940_processor_worker")
 def mt940_processor_worker(statement_id: str):
     _logger.info(f"Processing account statement with statement_id: {statement_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine)
 
     with session_maker() as session:
         account_statement = (
@@ -202,7 +204,6 @@ def mt940_processor_worker(statement_id: str):
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
             session.commit()
-            raise e
 
 
 def process_reversal_of_debits(
@@ -455,7 +456,7 @@ def get_disbursement_envelope_id(disbursement_id, session):
     )
 
     if not disbursement:
-        disbursement.disbursement_envelope_id = None
+        return None
 
     return disbursement.disbursement_envelope_id
 
@@ -463,54 +464,53 @@ def get_disbursement_envelope_id(disbursement_id, session):
 def update_envelope_batch_status_reconciled(
     disbursement_recons: List[DisbursementRecon], session
 ):
-    # Get the unique disbursement envelope ids and count of disbursements
+    # Count how many reversals per envelope
     disbursement_envelope_id_count = {}
-    for disbursement_recon in disbursement_recons:
-        if (
-            disbursement_recon.disbursement_envelope_id
-            in disbursement_envelope_id_count
-        ):
-            disbursement_envelope_id_count[
-                disbursement_recon.disbursement_envelope_id
-            ] += 1
-        else:
-            disbursement_envelope_id_count[
-                disbursement_recon.disbursement_envelope_id
-            ] = 1
+    for recon in disbursement_recons:
+        eid = recon.disbursement_envelope_id
+        disbursement_envelope_id_count[eid] = (
+            disbursement_envelope_id_count.get(eid, 0) + 1
+        )
 
-    # Update the disbursement envelope batch status
-    for disbursement_envelope_id, count in disbursement_envelope_id_count.items():
+    # Update each envelope, retrying on lock conflicts
+    for envelope_id, count in disbursement_envelope_id_count.items():
         max_retries = 5
-        retry_count = 0
-        while retry_count < max_retries:
+        last_exc = None
+
+        while max_retries:
             try:
-                disbursement_envelope_batch_status = (
+                status = (
                     session.query(DisbursementEnvelopeBatchStatus)
                     .filter(
                         DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                        == disbursement_envelope_id
+                        == envelope_id
                     )
                     .with_for_update(nowait=True)
                     .populate_existing()
                     .first()
                 )
-                disbursement_envelope_batch_status.number_of_disbursements_reconciled += (
-                    count
-                )
-                session.add(disbursement_envelope_batch_status)
-                # Flush changes to release the lock without committing the transaction
-                session.flush()
-                # Break out of retry loop once successful
-                _logger.info(
-                    f"Successfully updated number_of_disbursements_reconciled for envelope id: {disbursement_envelope_id}"
-                )
                 break
-            except Exception:
-                _logger.info(
-                    f"Error updating number_of_disbursements_reconciled for envelope id: {disbursement_envelope_id}"
+
+            except OperationalError as e:
+                last_exc = e
+                wait = random.randint(8, 15)
+                _logger.warning(
+                    f"Lock attempt failed for envelope {envelope_id}: {e}. "
+                    f"{max_retries} retries left, sleeping {wait}s…"
                 )
-                time.sleep(2)
-                retry_count += 1
+                session.rollback()
+                time.sleep(wait)
+                max_retries -= 1
+
+        else:
+            _logger.error(
+                f"Could not acquire lock for envelope {envelope_id} after retries"
+            )
+            raise last_exc
+
+        status.number_of_disbursements_reconciled += count
+        session.add(status)
+        session.commit()
 
 
 def update_envelope_batch_status_reversed(
@@ -536,14 +536,41 @@ def update_envelope_batch_status_reversed(
         _logger.info(
             f"Disbursement envelope id: {disbursement_envelope_id}, count: {count}"
         )
-        disbursement_envelope_batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
-            .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                == disbursement_envelope_id
+
+        max_retries = 5
+        last_exc = None
+
+        while max_retries:
+            try:
+                disbursement_envelope_batch_status = (
+                    session.query(DisbursementEnvelopeBatchStatus)
+                    .filter(
+                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        == disbursement_envelope_id
+                    )
+                    .with_for_update(nowait=True)
+                    .populate_existing()
+                    .first()
+                )
+                break
+
+            except OperationalError as e:
+                last_exc = e
+                wait = random.randint(8, 15)
+                _logger.warning(
+                    f"Lock attempt failed for envelope {disbursement_envelope_id}: {e}. "
+                    f"{max_retries} retries left, sleeping {wait}s…"
+                )
+                session.rollback()
+                time.sleep(wait)
+                max_retries -= 1
+
+        else:
+            _logger.error(
+                f"Could not acquire lock for envelope {disbursement_envelope_id} after retries"
             )
-            .populate_existing()
-            .first()
-        )
+            raise last_exc
+
         disbursement_envelope_batch_status.number_of_disbursements_reversed += count
         session.add(disbursement_envelope_batch_status)
+        session.commit()

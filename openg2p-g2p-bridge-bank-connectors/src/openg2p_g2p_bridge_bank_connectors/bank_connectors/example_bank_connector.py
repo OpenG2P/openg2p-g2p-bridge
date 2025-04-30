@@ -173,6 +173,9 @@ class ExampleBankConnector(BankConnectorInterface):
                     bank_payment_payloads.append(bank_payment_payload.model_dump())
 
                 request_data = bank_payment_payloads
+                _logger.info(f"Request data: {request_data}")
+                _logger.info("Total payments to be initiated: %s", len(request_data))
+                _logger.info("Initiating payment with Example Bank")
 
                 response = client.post(
                     _config.funds_disbursement_url_example_bank, json=request_data
