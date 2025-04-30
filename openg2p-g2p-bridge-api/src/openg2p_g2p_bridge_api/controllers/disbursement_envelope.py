@@ -139,7 +139,6 @@ class DisbursementEnvelopeController(BaseController):
             RequestValidation.get_component().validate_request(
                 disbursement_envelope_request
             )
-            # TODO: Request header validation
             disbursement_envelope_payload: DisbursementEnvelopePayload = (
                 await self.disbursement_envelope_service.amend_disbursement_envelope(
                     disbursement_envelope_request
