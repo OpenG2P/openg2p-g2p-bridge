@@ -30,8 +30,9 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build
-        if: ${{ github.event_name != 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
+      - name: Docker build and push
+        uses: ./.github/actions/docker-build
+        if: ${{ github.event_name == 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
           SERVICE_NAME: openg2p-g2p-bridge-api
@@ -61,8 +62,9 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build
-        if: ${{ github.event_name != 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
+      - name: Docker build and push
+        uses: ./.github/actions/docker-build
+        if: ${{ github.event_name == 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
           SERVICE_NAME: openg2p-g2p-bridge-celery-beat-producers
@@ -92,7 +94,8 @@ jobs:
               break
             fi
           done
-      - uses: ./.github/actions/docker-build
+      - name: Docker build and push
+        uses: ./.github/actions/docker-build
         if: ${{ github.event_name == 'workflow_dispatch' || env.DOCKER_BUILD == 'true' }}
         with:
           NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}

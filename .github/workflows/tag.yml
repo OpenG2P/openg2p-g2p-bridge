@@ -11,18 +11,7 @@ on:
         required: true
         type: string
         default: latest
-      push-to-docker:
-        description: Build and Push Dockers
-        type: boolean
-        default: true
-      push-to-pypi:
-        description: Push modules to PyPI
-        type: boolean
-        default: true
-      push-to-stoplight:
-        description: Push API Docs to Stoplight
-        type: boolean
-        default: true
+
 jobs:
   tag-repo:
     name: Tag Repo
@@ -78,7 +67,6 @@ jobs:
           done
 
       - name: Generate openapi json
-        if: ${{ inputs.push-to-stoplight }}
         uses: ./.github/actions/openapi-generate
 
       - name: Commit Changes
@@ -89,71 +77,3 @@ jobs:
           add: "**/*.py Dockerfile.* api-docs"
           push: false
           tag: ${{ inputs.new-tag }}
-
-      - name: Push module to PyPI - openg2p-g2p-bridge-models
-        if: ${{ inputs.push-to-pypi }}
-        uses: ./.github/actions/pypi-publish
-        with:
-          MODULE_PATH: openg2p-g2p-bridge-models
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      - name: Push module to PyPI - openg2p-g2p-bridge-api
-        if: ${{ inputs.push-to-pypi }}
-        uses: ./.github/actions/pypi-publish
-        with:
-          MODULE_PATH: openg2p-g2p-bridge-api
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      - name: Push module to PyPI - openg2p-g2p-bridge-bank-connectors
-        if: ${{ inputs.push-to-pypi }}
-        uses: ./.github/actions/pypi-publish
-        with:
-          MODULE_PATH: openg2p-g2p-bridge-bank-connectors
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      - name: Push module to PyPI - openg2p-g2p-bridge-celery-beat-producers
-        if: ${{ inputs.push-to-pypi }}
-        uses: ./.github/actions/pypi-publish
-        with:
-          MODULE_PATH: openg2p-g2p-bridge-celery-beat-producers
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      - name: Push module to PyPI - openg2p-g2p-bridge-celery-workers
-        if: ${{ inputs.push-to-pypi }}
-        uses: ./.github/actions/pypi-publish
-        with:
-          MODULE_PATH: openg2p-g2p-bridge-celery-workers
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Push OpenAPI to Stoplight
-        if: ${{ inputs.push-to-stoplight }}
-        uses: ./.github/actions/openapi-publish
-        with:
-          STOPLIGHT_PROJECT_TOKEN: ${{ secrets.STOPLIGHT_PROJECT_TOKEN }}
-
-      - name: Build and Push Docker for API
-        uses: ./.github/actions/docker-build
-        if: ${{ inputs.push-to-docker }}
-        with:
-          NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
-          SERVICE_NAME: openg2p-g2p-bridge-api
-          DOCKERFILE_PATH: Dockerfile.api
-          DOCKER_HUB_TOKEN: ${{ secrets.docker_hub_token }}
-          DOCKER_HUB_ACTOR: ${{ secrets.docker_hub_actor }}
-          TAG: ${{ inputs.new-tag }}
-      - name: Build and Push Docker for Celery Producers
-        uses: ./.github/actions/docker-build
-        if: ${{ inputs.push-to-docker }}
-        with:
-          NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
-          SERVICE_NAME: openg2p-g2p-bridge-celery-beat-producers
-          DOCKERFILE_PATH: Dockerfile.producers
-          DOCKER_HUB_TOKEN: ${{ secrets.docker_hub_token }}
-          DOCKER_HUB_ACTOR: ${{ secrets.docker_hub_actor }}
-          TAG: ${{ inputs.new-tag }}
-      - name: Build and Push Docker for Celery Workers
-        uses: ./.github/actions/docker-build
-        if: ${{ inputs.push-to-docker }}
-        with:
-          NAMESPACE: ${{ secrets.docker_hub_organisation || 'openg2p' }}
-          SERVICE_NAME: openg2p-g2p-bridge-celery-workers
-          DOCKERFILE_PATH: Dockerfile.workers
-          DOCKER_HUB_TOKEN: ${{ secrets.docker_hub_token }}
-          DOCKER_HUB_ACTOR: ${{ secrets.docker_hub_actor }}
-          TAG: ${{ inputs.new-tag }}
