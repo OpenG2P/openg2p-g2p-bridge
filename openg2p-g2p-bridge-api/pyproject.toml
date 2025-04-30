@@ -22,6 +22,7 @@ dependencies = [
   "python-jose",
   "asyncpg",
   "psycopg2",
+  "python-magic",
 ]
 dynamic = ["version"]
 
