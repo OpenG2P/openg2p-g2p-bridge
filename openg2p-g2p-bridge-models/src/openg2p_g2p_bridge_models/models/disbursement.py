@@ -22,9 +22,7 @@ class MapperResolvedFaType(Enum):
 
 class Disbursement(BaseORMModelWithTimes):
     __tablename__ = "disbursements"
-    disbursement_id: Mapped[str] = mapped_column(
-        String, unique=True
-    )
+    disbursement_id: Mapped[str] = mapped_column(String, unique=True)
     mis_reference_number: Mapped[str] = mapped_column(
         String, nullable=True, default=None
     )
