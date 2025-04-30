@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class FundsAvailableWithBankEnum(Enum):
     PENDING_CHECK = "PENDING_CHECK"
+    CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_AVAILABLE = "FUNDS_AVAILABLE"
     FUNDS_NOT_AVAILABLE = "FUNDS_NOT_AVAILABLE"
     ERROR = "ERROR"
@@ -16,6 +17,7 @@ class FundsAvailableWithBankEnum(Enum):
 
 class FundsBlockedWithBankEnum(Enum):
     PENDING_CHECK = "PENDING_CHECK"
+    CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_BLOCK_SUCCESS = "FUNDS_BLOCK_SUCCESS"
     FUNDS_BLOCK_FAILURE = "FUNDS_BLOCK_FAILURE"
     ERROR = "ERROR"
@@ -52,7 +54,7 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
     disbursement_currency_code: Mapped[str] = mapped_column(String)
     disbursement_schedule_date: Mapped[datetime.date] = mapped_column(Date())
     receipt_time_stamp: Mapped[datetime] = mapped_column(
-        DateTime(), default=datetime.utcnow()
+        DateTime(), default=datetime.now()
     )
     cancellation_status: Mapped[CancellationStatus] = mapped_column(
         String, default=CancellationStatus.Not_Cancelled

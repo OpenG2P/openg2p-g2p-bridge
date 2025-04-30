@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -29,7 +29,13 @@ def mock_create_disbursements(is_valid, disbursement_request):
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
-async def test_create_disbursements_success(mock_service_get_component):
+@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+async def test_create_disbursements_success(
+    mock_request_validation, mock_service_get_component
+):
+    mock_request_validation.validate_signature.return_value = None
+    mock_request_validation.validate_request.return_value = None
+
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
@@ -41,7 +47,7 @@ async def test_create_disbursements_success(mock_service_get_component):
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now().isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -58,7 +64,7 @@ async def test_create_disbursements_success(mock_service_get_component):
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.succ,
                 status_reason_message="",
@@ -72,14 +78,22 @@ async def test_create_disbursements_success(mock_service_get_component):
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.create_disbursements(request_payload)
+    response = await controller.create_disbursements(
+        request_payload, is_signature_valid=True
+    )
 
     assert response.message == disbursement_payloads
 
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
-async def test_create_disbursements_failure(mock_service_get_component):
+@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+async def test_create_disbursements_failure(
+    mock_request_validation, mock_service_get_component
+):
+    mock_request_validation.validate_signature.return_value = None
+    mock_request_validation.validate_request.return_value = None
+
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
@@ -91,7 +105,7 @@ async def test_create_disbursements_failure(mock_service_get_component):
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now().isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -108,7 +122,7 @@ async def test_create_disbursements_failure(mock_service_get_component):
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.rjct,
                 status_reason_message=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
@@ -122,7 +136,9 @@ async def test_create_disbursements_failure(mock_service_get_component):
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.create_disbursements(request_payload)
+    response = await controller.create_disbursements(
+        request_payload, is_signature_valid=True
+    )
 
     assert (
         response.header.status_reason_message
@@ -138,13 +154,19 @@ def mock_cancel_disbursements(is_valid, disbursement_request):
         )
     for payload in disbursement_request.message:
         payload.cancellation_status = CancellationStatus.Cancelled
-        payload.cancellation_time_stamp = datetime.datetime.utcnow()
+        payload.cancellation_time_stamp = datetime.now()
     return disbursement_request
 
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
-async def test_cancel_disbursements_success(mock_service_get_component):
+@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+async def test_cancel_disbursements_success(
+    mock_request_validation, mock_service_get_component
+):
+    mock_request_validation.validate_signature.return_value = None
+    mock_request_validation.validate_request.return_value = None
+
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
@@ -157,7 +179,7 @@ async def test_cancel_disbursements_success(mock_service_get_component):
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now().isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -174,7 +196,7 @@ async def test_cancel_disbursements_success(mock_service_get_component):
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.succ,
                 status_reason_message="",
@@ -188,7 +210,9 @@ async def test_cancel_disbursements_success(mock_service_get_component):
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.cancel_disbursements(request_payload)
+    response = await controller.cancel_disbursements(
+        request_payload, is_signature_valid=True
+    )
 
     assert response.header.status == StatusEnum.succ
     assert all(
@@ -199,7 +223,13 @@ async def test_cancel_disbursements_success(mock_service_get_component):
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
-async def test_cancel_disbursements_failure(mock_service_get_component):
+@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+async def test_cancel_disbursements_failure(
+    mock_request_validation, mock_service_get_component
+):
+    mock_request_validation.validate_signature.return_value = None
+    mock_request_validation.validate_request.return_value = None
+
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
@@ -212,7 +242,7 @@ async def test_cancel_disbursements_failure(mock_service_get_component):
     disbursement_request = DisbursementRequest(
         header=RequestHeader(
             message_id="123",
-            message_ts=datetime.datetime.now().isoformat(),
+            message_ts=datetime.now().isoformat(),
             action="",
             sender_id="",
             sender_uri="",
@@ -229,7 +259,7 @@ async def test_cancel_disbursements_failure(mock_service_get_component):
         return_value=DisbursementResponse(
             header=SyncResponseHeader(
                 message_id="",
-                message_ts=datetime.datetime.now().isoformat(),
+                message_ts=datetime.now().isoformat(),
                 action="",
                 status=StatusEnum.rjct,
                 status_reason_message=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED,
@@ -243,7 +273,9 @@ async def test_cancel_disbursements_failure(mock_service_get_component):
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.cancel_disbursements(request_payload)
+    response = await controller.cancel_disbursements(
+        request_payload, is_signature_valid=True
+    )
 
     assert response.header.status == StatusEnum.rjct
     assert (

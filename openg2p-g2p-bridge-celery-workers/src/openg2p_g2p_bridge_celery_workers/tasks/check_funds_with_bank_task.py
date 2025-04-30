@@ -36,6 +36,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not envelope:
+            _logger.error(
+                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         disbursement_envelope_batch_status = (
@@ -48,6 +51,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not disbursement_envelope_batch_status:
+            _logger.error(
+                f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
+            )
             return
 
         benefit_program_configuration = (
@@ -84,7 +90,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 )
 
             disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.utcnow()
+                datetime.now()
             )
             disbursement_envelope_batch_status.funds_available_latest_error_code = None
             disbursement_envelope_batch_status.funds_available_attempts += 1
@@ -97,7 +103,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 FundsAvailableWithBankEnum.PENDING_CHECK.value
             )
             disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.utcnow()
+                datetime.now()
             )
             disbursement_envelope_batch_status.funds_available_latest_error_code = str(
                 e

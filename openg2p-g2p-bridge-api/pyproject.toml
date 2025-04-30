@@ -18,6 +18,11 @@ classifiers = [
 dependencies = [
   "openg2p-fastapi-common",
   "openg2p-fastapi-auth",
+  "fastnanoid",
+  "python-jose",
+  "asyncpg",
+  "psycopg2",
+  "python-magic",
 ]
 dynamic = ["version"]
 

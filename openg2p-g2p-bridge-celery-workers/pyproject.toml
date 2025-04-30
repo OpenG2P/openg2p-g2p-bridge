@@ -19,6 +19,7 @@ dependencies = [
   "openg2p-fastapi-common",
   "openg2p-fastapi-auth",
   "openg2p-g2pconnect-mapper-lib",
+  "python-jose",
   "celery",
   "mt-940"
 ]
