@@ -22,6 +22,11 @@ dependencies = [
   "celery",
   "psycopg2",
   "asyncpg",
+  "python-dotenv",
+  "redis",
+  "hiredis",
+  "python-jose",
+  "parse",
 ]
 dynamic = ["version"]
 
