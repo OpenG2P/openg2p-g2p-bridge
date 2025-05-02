@@ -24,6 +24,11 @@ dependencies = [
   "mt-940",
   "psycopg2",
   "asyncpg",
+  "python-dotenv",
+  "redis",
+  "hiredis",
+  "python-jose",
+  "parse",
 ]
 dynamic = ["version"]
 
