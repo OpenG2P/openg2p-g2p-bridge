@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import Depends, File, UploadFile
 from openg2p_fastapi_common.controller import BaseController
@@ -39,8 +40,8 @@ class AccountStatementController(BaseController):
 
     async def upload_mt940(
         self,
+        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
         statement_file: UploadFile = File(...),
-        is_signature_valid: bool = Depends(JWTSignatureValidator),
     ) -> AccountStatementResponse:
         _logger.info("Uploading statement file")
         try:
