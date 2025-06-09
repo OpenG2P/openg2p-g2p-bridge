@@ -32,8 +32,8 @@ class DisbursementEnvelopeController(BaseController):
         self.router.tags += ["G2P Bridge Disbursement Envelope"]
 
         self.router.add_api_route(
-            "/create_disbursement_envelope",
-            self.create_disbursement_envelope,
+            "/create_disbursement_envelopes",
+            self.create_disbursement_envelopes,
             responses={200: {"model": DisbursementEnvelopeResponse}},
             methods=["POST"],
         )
@@ -50,12 +50,12 @@ class DisbursementEnvelopeController(BaseController):
             methods=["POST"],
         )
 
-    async def create_disbursement_envelope(
+    async def create_disbursement_envelopes(
         self,
         disbursement_envelope_request: DisbursementEnvelopeRequest,
         is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementEnvelopeResponse:
-        _logger.info("Creating disbursement envelope")
+        _logger.info("Bulk creating disbursement envelopes")
         try:
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
@@ -64,11 +64,8 @@ class DisbursementEnvelopeController(BaseController):
             RequestValidation.get_component().validate_create_disbursement_envelope_request_header(
                 disbursement_envelope_request
             )
-
-            disbursement_envelope_payload: DisbursementEnvelopePayload = (
-                await self.disbursement_envelope_service.create_disbursement_envelope(
-                    disbursement_envelope_request
-                )
+            payloads = await self.disbursement_envelope_service.create_disbursement_envelopes(
+                disbursement_envelope_request
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")
@@ -77,16 +74,16 @@ class DisbursementEnvelopeController(BaseController):
             )
             return error_response
         except DisbursementEnvelopeException as e:
-            _logger.error("Error creating disbursement envelope")
+            _logger.error("Error creating disbursement envelopes")
             error_response: DisbursementEnvelopeResponse = await self.disbursement_envelope_service.construct_disbursement_envelope_error_response(
                 disbursement_envelope_request, e.code
             )
             return error_response
 
         disbursement_envelope_response: DisbursementEnvelopeResponse = await self.disbursement_envelope_service.construct_disbursement_envelope_success_response(
-            disbursement_envelope_request, disbursement_envelope_payload
+            disbursement_envelope_request, payloads
         )
-        _logger.info("Disbursement envelope created successfully")
+        _logger.info("Disbursement envelopes created successfully")
         return disbursement_envelope_response
 
     async def cancel_disbursement_envelope(

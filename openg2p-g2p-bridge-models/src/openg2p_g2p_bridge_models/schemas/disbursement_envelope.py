@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
 from pydantic import BaseModel
@@ -21,8 +21,8 @@ class DisbursementEnvelopePayload(BaseModel):
 
 
 class DisbursementEnvelopeRequest(Request):
-    message: DisbursementEnvelopePayload
+    message: List[DisbursementEnvelopePayload]
 
 
 class DisbursementEnvelopeResponse(SyncResponse):
-    message: Optional[DisbursementEnvelopePayload] = None
+    message: Optional[List[DisbursementEnvelopePayload]] = None

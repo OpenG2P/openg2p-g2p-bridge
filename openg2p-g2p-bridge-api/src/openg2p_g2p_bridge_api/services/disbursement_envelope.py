@@ -34,47 +34,33 @@ _logger = logging.getLogger(_config.logging_default_logger_name)
 
 
 class DisbursementEnvelopeService(BaseService):
-    async def create_disbursement_envelope(
+    async def create_disbursement_envelopes(
         self, disbursement_envelope_request: DisbursementEnvelopeRequest
-    ) -> DisbursementEnvelopePayload:
-        _logger.info("Creating disbursement envelope")
+    ) -> list[DisbursementEnvelopePayload]:
+        _logger.info("Bulk creating disbursement envelopes")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
+        results = []
+        envelopes = []
+        batch_statuses = []
+        payloads = disbursement_envelope_request.message
         async with session_maker() as session:
-            try:
-                await self.validate_envelope_request(disbursement_envelope_request)
-            except DisbursementEnvelopeException as e:
-                raise e
-
-            disbursement_envelope: DisbursementEnvelope = (
-                await self.construct_disbursement_envelope(
-                    disbursement_envelope_payload=disbursement_envelope_request.message
-                )
-            )
-
-            try:
-                disbursement_envelope_batch_status: DisbursementEnvelopeBatchStatus = (
-                    await self.construct_disbursement_envelope_batch_status(
-                        disbursement_envelope, session
-                    )
-                )
-            except Exception as e:
-                _logger.error("Error creating disbursement envelope")
-                await session.rollback()
-                raise e
-
-            session.add(disbursement_envelope)
-            session.add(disbursement_envelope_batch_status)
-
+            for payload in payloads:
+                try:
+                    await self.validate_envelope_request(DisbursementEnvelopeRequest(message=payload, header=disbursement_envelope_request.header))
+                except DisbursementEnvelopeException as e:
+                    raise e
+                disbursement_envelope = await self.construct_disbursement_envelope(disbursement_envelope_payload=payload)
+                envelopes.append(disbursement_envelope)
+                batch_status = await self.construct_disbursement_envelope_batch_status(disbursement_envelope, session)
+                batch_statuses.append(batch_status)
+            session.add_all(envelopes)
+            session.add_all(batch_statuses)
             await session.commit()
-
-            disbursement_envelope_payload: DisbursementEnvelopePayload = (
-                disbursement_envelope_request.message
-            )
-            disbursement_envelope_payload.disbursement_envelope_id = (
-                disbursement_envelope.disbursement_envelope_id
-            )
-            _logger.info("Disbursement envelope created successfully")
-            return disbursement_envelope_payload
+            for envelope, payload in zip(envelopes, payloads):
+                payload.disbursement_envelope_id = envelope.disbursement_envelope_id
+                results.append(payload)
+        _logger.info("Bulk disbursement envelopes created successfully")
+        return results
 
     async def cancel_disbursement_envelope(
         self, disbursement_envelope_request: DisbursementEnvelopeRequest
@@ -129,7 +115,7 @@ class DisbursementEnvelopeService(BaseService):
     async def construct_disbursement_envelope_success_response(
         self,
         disbursement_envelope_request: DisbursementEnvelopeRequest,
-        disbursement_envelope_payload: DisbursementEnvelopePayload,
+        disbursement_envelope_payloads: list[DisbursementEnvelopePayload],
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Constructing disbursement envelope success response")
         disbursement_envelope_response: DisbursementEnvelopeResponse = (
@@ -140,7 +126,7 @@ class DisbursementEnvelopeService(BaseService):
                     action=disbursement_envelope_request.header.action,
                     status=StatusEnum.succ,
                 ),
-                message=disbursement_envelope_payload,
+                message=disbursement_envelope_payloads,
             )
         )
         _logger.info("Disbursement envelope success response constructed")

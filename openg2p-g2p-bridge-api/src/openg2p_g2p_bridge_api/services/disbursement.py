@@ -71,7 +71,8 @@ class DisbursementService(BaseService):
             disbursement_batch_controls: List[
                 DisbursementBatchControl
             ] = await self.construct_disbursement_batch_controls(
-                disbursements=disbursements
+                disbursements=disbursements,
+                envelope=disbursements[0].disbursement_envelope
             )
 
             # Lock the envelope batch status row for update (nowait)
@@ -89,7 +90,7 @@ class DisbursementService(BaseService):
                     MapperResolutionBatchStatus(
                         mapper_resolution_batch_id=disbursement_batch_controls[
                             0
-                        ].mapper_resolution_batch_id,
+                        ].disbursement_batch_control_id,
                         resolution_status=ProcessStatus.PENDING,
                         latest_error_code="",
                         active=True,
@@ -102,7 +103,7 @@ class DisbursementService(BaseService):
                 BankDisbursementBatchStatus(
                     bank_disbursement_batch_id=disbursement_batch_controls[
                         0
-                    ].bank_disbursement_batch_id,
+                    ].disbursement_batch_control_id,
                     disbursement_envelope_id=disbursement_batch_controls[
                         0
                     ].disbursement_envelope_id,
@@ -187,20 +188,50 @@ class DisbursementService(BaseService):
         return disbursements
 
     async def construct_disbursement_batch_controls(
-        self, disbursements: List[Disbursement]
+        self, disbursements: List[Disbursement], envelope: DisbursementEnvelope
     ):
         _logger.info("Constructing Disbursement Batch Controls")
+        from openg2p_g2p_bridge_models.models.disbursement_envelope import BenefitType, CashDistributionMode
+        from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
+        import uuid
         disbursement_batch_controls = []
-        mapper_resolution_batch_id = str(uuid.uuid4())
-        bank_disbursement_batch_id = str(uuid.uuid4())
+        disbursement_batch_control_id = str(uuid.uuid4())
+        # Determine statuses based on benefit_type and cash_distribution_mode
+        if envelope.benefit_type == BenefitType.CASH and envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+            fa_resolution_status = ProcessStatus.PENDING
+            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
+            geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE
+            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
+        else:
+            fa_resolution_status = ProcessStatus.NOT_APPLICABLE
+            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
+            geo_resolutuon_status = ProcessStatus.PENDING
+            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
         for disbursement in disbursements:
+            disbursement.disbursement_batch_control_id = disbursement_batch_control_id
             disbursement_batch_control = DisbursementBatchControl(
-                disbursement_id=disbursement.disbursement_id,
-                disbursement_envelope_id=str(disbursement.disbursement_envelope_id),
-                beneficiary_id=disbursement.beneficiary_id,
-                bank_disbursement_batch_id=bank_disbursement_batch_id,
-                mapper_resolution_batch_id=mapper_resolution_batch_id,
-                active=True,
+                disbursement_batch_control_id=disbursement_batch_control_id,
+                disbursement_cycle_id=envelope.disbursement_cycle_id,
+                disbursement_envelope_id=envelope.disbursement_envelope_id,
+                fa_resolution_status=fa_resolution_status,
+                sponsor_bank_dispatch_status=sponsor_bank_dispatch_status,
+                geo_resolutuon_status=geo_resolutuon_status,
+                warehouse_allocation_status=warehouse_allocation_status,
+                # The following fields are set to None or 0 by default
+                fa_resolution_timestamp=None,
+                fa_resolution_latest_error_code=None,
+                fa_resolution_attempts=0,
+                sponsor_bank_dispatch_timestamp=None,
+                sponsor_bank_dispatch_latest_error_code=None,
+                sponsor_bank_dispatch_attempts=0,
+                geo_resolution_timestamp=None,
+                geo_resolution_latest_error_code=None,
+                geo_resolution_attempts=0,
+                warehouse_allocation_timestamp=None,
+                warehouse_allocation_latest_error_code=None,
+                warehouse_allocation_attempts=0,
             )
             disbursement_batch_controls.append(disbursement_batch_control)
         _logger.info("Disbursement Batch Controls Constructed!")
@@ -612,7 +643,7 @@ class DisbursementService(BaseService):
                 disbursement_payloads,
             )
 
-        # we don’t need a lock for this read
+        # we don't need a lock for this read
         batch_status = (
             (
                 await session.execute(

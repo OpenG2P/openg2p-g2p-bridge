@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 
 from openg2p_fastapi_common.models import BaseORMModelWithTimes
 from sqlalchemy import Boolean, Date, DateTime, Integer, String
@@ -40,18 +41,34 @@ class CancellationStatus(Enum):
     Cancelled = "Cancelled"
 
 
+class BenefitType(Enum):
+    COMMODITY = "COMMODITY"
+    SERVICE = "SERVICE"
+    CASH = "CASH"
+    COMBINATION = "COMBINATION"
+
+
+class CashDistributionMode(Enum):
+    PHYSICAL = "PHYSICAL"
+    DIGITAL = "DIGITAL"
+
+
 class DisbursementEnvelope(BaseORMModelWithTimes):
     __tablename__ = "disbursement_envelopes"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     benefit_program_mnemonic: Mapped[str] = mapped_column(String)
+    benefit_code: Mapped[str] = mapped_column(String)
+    benefit_type: Mapped[BenefitType] = mapped_column(SqlEnum(BenefitType))
+    cash_distribution_mode: Mapped[CashDistributionMode] = mapped_column(SqlEnum(CashDistributionMode))
+    disbursement_cycle_id: Mapped[str] = mapped_column(UUID)
     disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(
         SqlEnum(DisbursementFrequency)
     )
     cycle_code_mnemonic: Mapped[str] = mapped_column(String)
     number_of_beneficiaries: Mapped[int] = mapped_column(Integer)
     number_of_disbursements: Mapped[int] = mapped_column(Integer)
-    total_disbursement_amount: Mapped[float] = mapped_column(Integer)
-    disbursement_currency_code: Mapped[str] = mapped_column(String)
+    total_disbursed_quantity: Mapped[float] = mapped_column(Integer)
+    measurement_unit: Mapped[str] = mapped_column(String)
     disbursement_schedule_date: Mapped[datetime.date] = mapped_column(Date())
     receipt_time_stamp: Mapped[datetime] = mapped_column(
         DateTime(), default=datetime.now()
@@ -68,8 +85,7 @@ class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
     __tablename__ = "disbursement_envelope_batch_statuses"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     number_of_disbursements_received: Mapped[int] = mapped_column(Integer)
-    total_disbursement_amount_received: Mapped[int] = mapped_column(Integer)
-
+    total_disbursement_quantity_received: Mapped[int] = mapped_column(Integer)
     funds_available_with_bank: Mapped[FundsAvailableWithBankEnum] = mapped_column(
         String
     )
@@ -80,7 +96,6 @@ class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
         String, nullable=True
     )
     funds_available_attempts: Mapped[int] = mapped_column(Integer, default=0)
-
     funds_blocked_with_bank: Mapped[FundsBlockedWithBankEnum] = mapped_column(String)
     funds_blocked_latest_timestamp: Mapped[datetime] = mapped_column(
         DateTime(), default=None, nullable=True
@@ -88,9 +103,7 @@ class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
     funds_blocked_latest_error_code: Mapped[str] = mapped_column(String, nullable=True)
     funds_blocked_attempts: Mapped[int] = mapped_column(Integer, default=0)
     funds_blocked_reference_number: Mapped[str] = mapped_column(String, nullable=True)
-
     id_mapper_resolution_required: Mapped[bool] = mapped_column(Boolean, default=True)
-
     number_of_disbursements_shipped: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reconciled: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reversed: Mapped[int] = mapped_column(Integer, default=0)
