@@ -19,9 +19,16 @@ dependencies = [
   "openg2p-fastapi-common",
   "openg2p-fastapi-auth",
   "openg2p-g2pconnect-mapper-lib",
+  "python-jose",
   "celery",
   "mt-940",
-  "pyjwt"
+  "psycopg2",
+  "asyncpg",
+  "python-dotenv",
+  "redis",
+  "hiredis",
+  "python-jose",
+  "parse",
 ]
 dynamic = ["version"]
 

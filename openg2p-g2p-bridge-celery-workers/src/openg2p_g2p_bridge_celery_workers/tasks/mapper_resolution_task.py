@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
@@ -32,14 +32,15 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
             session.execute(
                 select(DisbursementBatchControl).filter(
                     DisbursementBatchControl.mapper_resolution_batch_id
-                    == mapper_resolution_batch_id,
-                    DisbursementBatchControl.mapper_status.in_(
-                        [ProcessStatus.PENDING.value, ProcessStatus.ERROR.value]
-                    ),
+                    == mapper_resolution_batch_id
                 )
             )
             .scalars()
             .all()
+        )
+
+        _logger.info(
+            f"Found {len(disbursement_batch_controls)} disbursement batch controls"
         )
 
         beneficiary_disbursement_map = {
@@ -56,7 +57,9 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
             loop.close()
 
         if not resolve_response:
-            _logger.error(f"Failed to resolve the request: {error_msg}")
+            _logger.error(
+                f"Failed to resolve the request for batch {mapper_resolution_batch_id}: {error_msg}"
+            )
             session.query(MapperResolutionBatchStatus).filter(
                 MapperResolutionBatchStatus.mapper_resolution_batch_id
                 == mapper_resolution_batch_id
@@ -89,8 +92,10 @@ async def make_resolve_request(disbursement_batch_controls):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
         single_resolve_requests
     )
-    jwt_token = await resolve_helper.create_jwt_token(resolve_request.dict())
-    headers = {"content-type": "application/json", "Authorization": jwt_token}
+    jwt_token = await resolve_helper.create_jwt_token(
+        resolve_request.model_dump(mode="json")
+    )
+    headers = {"content-type": "application/json", "Signature": jwt_token}
 
     resolve_client = MapperResolveClient()
     try:
@@ -167,9 +172,7 @@ def process_and_store_resolution(
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PROCESSED,
-                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(
-                        timezone.utc
-                    ),
+                    MapperResolutionBatchStatus.resolution_time_stamp: datetime.now(),
                     MapperResolutionBatchStatus.latest_error_code: None,
                     MapperResolutionBatchStatus.resolution_attempts: MapperResolutionBatchStatus.resolution_attempts
                     + 1,

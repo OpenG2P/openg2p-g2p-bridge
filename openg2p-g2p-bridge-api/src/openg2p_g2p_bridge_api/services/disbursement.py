@@ -1,8 +1,11 @@
+import asyncio
 import logging
+import random
 import uuid
 from datetime import datetime
 from typing import List
 
+from fastnanoid import generate
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
@@ -27,6 +30,7 @@ from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
     SyncResponseHeader,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.future import select
 
@@ -70,7 +74,7 @@ class DisbursementService(BaseService):
                 disbursements=disbursements
             )
 
-            # Lock the envelope batch status row for update
+            # Lock the envelope batch status row for update (nowait)
             disbursement_envelope_batch_status = (
                 await self.update_disbursement_envelope_batch_status(
                     disbursements, session
@@ -116,25 +120,43 @@ class DisbursementService(BaseService):
 
     async def update_disbursement_envelope_batch_status(self, disbursements, session):
         _logger.info("Updating Disbursement Envelope Batch Status")
-        disbursement_envelope_batch_status = (
-            (
-                await session.execute(
+        max_retries = 5
+        last_exc = None
+
+        while max_retries:
+            try:
+                result = await session.execute(
                     select(DisbursementEnvelopeBatchStatus)
                     .where(
                         DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                         == str(disbursements[0].disbursement_envelope_id)
                     )
-                    .with_for_update()
+                    .with_for_update(nowait=True)
                 )
+                disbursement_envelope_batch_status = result.scalars().first()
+                break
+
+            except OperationalError as e:
+                last_exc = e
+                wait = random.randint(8, 15)
+                _logger.warning(
+                    f"Lock attempt failed updating envelope batch status: {e}. "
+                    f"{max_retries} retries left, sleeping {wait}s…"
+                )
+                await asyncio.sleep(wait)
+                max_retries -= 1
+
+        else:
+            _logger.error(
+                "Unable to acquire lock on DisbursementEnvelopeBatchStatus after retries"
             )
-            .scalars()
-            .first()
-        )
+            raise last_exc
+
         disbursement_envelope_batch_status.number_of_disbursements_received += len(
             disbursements
         )
         disbursement_envelope_batch_status.total_disbursement_amount_received += sum(
-            [disbursement.disbursement_amount for disbursement in disbursements]
+            d.disbursement_amount for d in disbursements
         )
         _logger.info("Disbursement Envelope Batch Status Updated!")
         return disbursement_envelope_batch_status
@@ -145,8 +167,9 @@ class DisbursementService(BaseService):
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
+            generated_id: str = generate(size=16)
             disbursement = Disbursement(
-                disbursement_id=str(uuid.uuid4()),
+                disbursement_id=generated_id,
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
@@ -368,7 +391,7 @@ class DisbursementService(BaseService):
                     disbursement_payloads=disbursement_request.message,
                 )
 
-            # Fetch and lock disbursements for update
+            # Fetch and lock disbursements for update (nowait)
             disbursements_in_db: List[
                 Disbursement
             ] = await self.fetch_disbursements_from_db(disbursement_request, session)
@@ -414,7 +437,7 @@ class DisbursementService(BaseService):
                 )
                 disbursement.cancellation_time_stamp = datetime.now()
 
-            # Lock the envelope batch status row for update
+            # Lock the envelope batch status row for update (nowait)
             disbursement_envelope_batch_status = (
                 (
                     await session.execute(
@@ -423,7 +446,7 @@ class DisbursementService(BaseService):
                             DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                             == str(disbursements_in_db[0].disbursement_envelope_id)
                         )
-                        .with_for_update()
+                        .with_for_update(nowait=True)
                     )
                 )
                 .scalars()
@@ -494,24 +517,40 @@ class DisbursementService(BaseService):
         self, disbursement_request, session
     ) -> List[Disbursement]:
         _logger.info("Fetching Disbursements from DB")
-        disbursements_in_db = (
-            (
-                await session.execute(
+        max_retries = 5
+        last_exc = None
+
+        while max_retries:
+            try:
+                result = await session.execute(
                     select(Disbursement)
                     .where(
                         Disbursement.disbursement_id.in_(
                             [
-                                str(disbursement_payload.disbursement_id)
-                                for disbursement_payload in disbursement_request.message
+                                str(p.disbursement_id)
+                                for p in disbursement_request.message
                             ]
                         )
                     )
-                    .with_for_update()
+                    .with_for_update(nowait=True)
                 )
-            )
-            .scalars()
-            .all()
-        )
+                disbursements_in_db = result.scalars().all()
+                break
+
+            except OperationalError as e:
+                last_exc = e
+                wait = random.randint(8, 15)
+                _logger.warning(
+                    f"Lock attempt failed fetching disbursements: {e}. "
+                    f"{max_retries} retries left, sleeping {wait}s…"
+                )
+                await asyncio.sleep(wait)
+                max_retries -= 1
+
+        else:
+            _logger.error("Unable to acquire lock on Disbursement rows after retries")
+            raise last_exc
+
         _logger.info("Disbursements Fetched from DB!")
         return disbursements_in_db
 
@@ -522,20 +561,36 @@ class DisbursementService(BaseService):
         session,
     ):
         _logger.info("Validating Envelope for Disbursement Cancellation")
-        disbursement_envelope = (
-            (
-                await session.execute(
+        max_retries = 5
+        last_exc = None
+
+        while max_retries:
+            try:
+                result = await session.execute(
                     select(DisbursementEnvelope)
                     .where(
                         DisbursementEnvelope.disbursement_envelope_id
                         == str(disbursements_in_db[0].disbursement_envelope_id)
                     )
-                    .with_for_update()
+                    .with_for_update(nowait=True)
                 )
-            )
-            .scalars()
-            .first()
-        )
+                disbursement_envelope = result.scalars().first()
+                break
+
+            except OperationalError as e:
+                last_exc = e
+                wait = random.randint(8, 15)
+                _logger.warning(
+                    f"Lock attempt failed on DisbursementEnvelope: {e}. "
+                    f"{max_retries} retries left, sleeping {wait}s…"
+                )
+                await asyncio.sleep(wait)
+                max_retries -= 1
+
+        else:
+            _logger.error("Unable to lock DisbursementEnvelope after retries")
+            raise last_exc
+
         if not disbursement_envelope:
             _logger.error("Disbursement Envelope Not Found!")
             raise DisbursementException(
@@ -557,7 +612,8 @@ class DisbursementService(BaseService):
                 disbursement_payloads,
             )
 
-        disbursement_envelope_batch_status = (
+        # we don’t need a lock for this read
+        batch_status = (
             (
                 await session.execute(
                     select(DisbursementEnvelopeBatchStatus).where(
@@ -570,52 +626,26 @@ class DisbursementService(BaseService):
             .first()
         )
 
-        no_of_disbursements_after_this_request = (
-            disbursement_envelope_batch_status.number_of_disbursements_received
-            - len(disbursement_payloads)
+        no_of_after = batch_status.number_of_disbursements_received - len(
+            disbursements_in_db
         )
-        total_disbursement_amount_after_this_request = (
-            disbursement_envelope_batch_status.total_disbursement_amount_received
-            - sum(
-                [
-                    disbursement.disbursement_amount
-                    for disbursement in disbursements_in_db
-                ]
-            )
+        total_amt_after = batch_status.total_disbursement_amount_received - sum(
+            d.disbursement_amount for d in disbursements_in_db
         )
-        if no_of_disbursements_after_this_request < 0:
+
+        if no_of_after < 0:
             _logger.error("Number of Disbursements Less Than Zero!")
             raise DisbursementException(
                 G2PBridgeErrorCodes.NO_OF_DISBURSEMENTS_LESS_THAN_ZERO,
                 disbursement_payloads,
             )
 
-        if total_disbursement_amount_after_this_request < 0:
+        if total_amt_after < 0:
             _logger.error("Total Disbursement Amount Less Than Zero!")
             raise DisbursementException(
                 G2PBridgeErrorCodes.TOTAL_DISBURSEMENT_AMOUNT_LESS_THAN_ZERO,
                 disbursement_payloads,
             )
+
         _logger.info("Envelope Validated for Disbursement Cancellation!")
         return True
-
-    async def validate_request_payload(
-        self, disbursement_payloads: List[DisbursementPayload]
-    ):
-        _logger.info("Validating Request Payload")
-        absolutely_no_error = True
-
-        for disbursement_payload in disbursement_payloads:
-            disbursement_payload.response_error_codes = []
-            if (
-                disbursement_payload.disbursement_id is None
-                or disbursement_payload.disbursement_id == ""
-            ):
-                disbursement_payload.response_error_codes.append(
-                    G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID
-                )
-
-            if len(disbursement_payload.response_error_codes) > 0:
-                absolutely_no_error = False
-        _logger.info("Request Payload Validated!")
-        return absolutely_no_error
