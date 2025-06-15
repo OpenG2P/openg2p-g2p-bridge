@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,9 +8,13 @@ from openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank_task import (
 )
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
+    BenefitType,
+    CashDistributionMode,
     DisbursementEnvelope,
     DisbursementEnvelopeBatchStatus,
+    DisbursementFrequency,
     FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
 )
 
 
@@ -19,12 +24,26 @@ class MockSession:
         self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            total_disbursement_amount=1000,
+            benefit_code="test_benefit",
+            benefit_type=BenefitType.CASH,
+            cash_distribution_mode=CashDistributionMode.DIGITAL,
+            disbursement_cycle_id="test_cycle",
+            disbursement_frequency=DisbursementFrequency.Monthly,
+            cycle_code_mnemonic="test_cycle_mnemonic",
+            number_of_beneficiaries=10,
+            number_of_disbursements=10,
+            total_disbursement_quantity=1000,
+            measurement_unit="KES",
+            disbursement_schedule_date=date.today(),
         )
         self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
             disbursement_envelope_id="test_envelope_id",
-            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
+            number_of_disbursements_received=10,
+            total_disbursement_quantity_received=1000,
+            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_available_attempts=0,
+            id_mapper_resolution_required=True,
         )
         self.benefit_program_configuration = BenefitProgramConfiguration(
             benefit_program_mnemonic="test_program",

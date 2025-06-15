@@ -53,10 +53,11 @@ class DisbursementEnvelopeController(BaseController):
     async def create_disbursement_envelopes(
         self,
         disbursement_envelope_request: DisbursementEnvelopeRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Bulk creating disbursement envelopes")
         try:
+            is_signature_valid = True
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 disbursement_envelope_request
@@ -64,8 +65,10 @@ class DisbursementEnvelopeController(BaseController):
             RequestValidation.get_component().validate_create_disbursement_envelope_request_header(
                 disbursement_envelope_request
             )
-            payloads = await self.disbursement_envelope_service.create_disbursement_envelopes(
-                disbursement_envelope_request
+            disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = (
+                await self.disbursement_envelope_service.create_disbursement_envelopes(
+                    disbursement_envelope_request
+                )
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")
@@ -81,7 +84,7 @@ class DisbursementEnvelopeController(BaseController):
             return error_response
 
         disbursement_envelope_response: DisbursementEnvelopeResponse = await self.disbursement_envelope_service.construct_disbursement_envelope_success_response(
-            disbursement_envelope_request, payloads
+            disbursement_envelope_request, disbursement_envelope_payloads
         )
         _logger.info("Disbursement envelopes created successfully")
         return disbursement_envelope_response

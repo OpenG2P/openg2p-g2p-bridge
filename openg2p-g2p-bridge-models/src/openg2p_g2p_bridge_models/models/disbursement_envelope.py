@@ -59,15 +59,17 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
     benefit_program_mnemonic: Mapped[str] = mapped_column(String)
     benefit_code: Mapped[str] = mapped_column(String)
     benefit_type: Mapped[BenefitType] = mapped_column(SqlEnum(BenefitType))
-    cash_distribution_mode: Mapped[CashDistributionMode] = mapped_column(SqlEnum(CashDistributionMode))
-    disbursement_cycle_id: Mapped[str] = mapped_column(UUID)
+    cash_distribution_mode: Mapped[CashDistributionMode] = mapped_column(
+        SqlEnum(CashDistributionMode)
+    )
+    disbursement_cycle_id: Mapped[str] = mapped_column(String)
     disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(
         SqlEnum(DisbursementFrequency)
     )
     cycle_code_mnemonic: Mapped[str] = mapped_column(String)
     number_of_beneficiaries: Mapped[int] = mapped_column(Integer)
     number_of_disbursements: Mapped[int] = mapped_column(Integer)
-    total_disbursed_quantity: Mapped[float] = mapped_column(Integer)
+    total_disbursement_quantity: Mapped[float] = mapped_column(Integer)
     measurement_unit: Mapped[str] = mapped_column(String)
     disbursement_schedule_date: Mapped[datetime.date] = mapped_column(Date())
     receipt_time_stamp: Mapped[datetime] = mapped_column(

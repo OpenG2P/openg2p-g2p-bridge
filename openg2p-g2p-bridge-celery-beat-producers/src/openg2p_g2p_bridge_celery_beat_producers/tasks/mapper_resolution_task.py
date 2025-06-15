@@ -1,55 +1,75 @@
 import logging
+from datetime import datetime, timedelta
 
-from openg2p_g2p_bridge_models.models import (
-    MapperResolutionBatchStatus,
-    ProcessStatus,
+from openg2p_g2p_bridge_celery_beat_producers.producer_context import (
+    ProducerContext,
+    producer_context,
 )
-from sqlalchemy import and_, select
-from sqlalchemy.orm import sessionmaker
+from openg2p_g2p_bridge_models.models import DisbursementBatchControl, ProcessStatus
+from openg2p_g2p_bridge_models.models.settings import Settings
+from sqlalchemy import select, update
 
-from ..app import celery_app, get_engine
-from ..config import Settings
-
-_config = Settings.get_config()
-_logger = logging.getLogger(_config.logging_default_logger_name)
-_engine = get_engine()
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="mapper_resolution_beat_producer")
-def mapper_resolution_beat_producer():
-    _logger.info("Running mapper_resolution_beat_producer")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
-    with session_maker() as session:
-        mapper_resolution_batch_statuses = (
-            session.execute(
-                select(MapperResolutionBatchStatus)
-                .filter(
-                    and_(
-                        MapperResolutionBatchStatus.resolution_status
-                        == ProcessStatus.PENDING,
-                        MapperResolutionBatchStatus.resolution_attempts
-                        < _config.mapper_resolve_attempts,
-                    )
-                )
-                .limit(_config.no_of_tasks_to_process)
+def mapper_resolution_producer(context: ProducerContext = producer_context) -> None:
+    """
+    A Celery beat producer that periodically checks for disbursement batches
+    that require mapper resolution and triggers the mapper resolution worker.
+    """
+    logger.info("Mapper Resolution Producer running...")
+
+    with context.session as session:
+        # Get the setting for stale tasks
+        stale_at_setting = session.get(Settings, "stale_at")
+        stale_at = (
+            int(stale_at_setting.value) if stale_at_setting else (24 * 60 * 60)
+        )  # Default to 24 hours
+        stale_at_datetime = datetime.now() - timedelta(seconds=stale_at)
+
+        # 1. Reset tasks that are in progress for too long (stale)
+        session.execute(
+            update(DisbursementBatchControl)
+            .where(
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.IN_PROGRESS,
+                DisbursementBatchControl.updated_at < stale_at_datetime,
             )
-            .scalars()
-            .all()
+            .values(fa_resolution_status=ProcessStatus.PENDING)
         )
-        for mapper_resolution_batch_status in mapper_resolution_batch_statuses:
-            _logger.info(
-                f"{mapper_resolution_batch_status.resolution_attempts} / {_config.mapper_resolve_attempts} attempts done"
-            )
 
-            _logger.info(
-                f"Sending mapper_resolution_worker task for mapper_resolution_batch_id: {mapper_resolution_batch_status.mapper_resolution_batch_id}"
+        # 2. Select pending tasks
+        pending_batches = session.scalars(
+            select(DisbursementBatchControl).where(
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING,
+                DisbursementBatchControl.fa_resolution_attempts
+                < _config.mapper_resolution_max_attempts,
             )
-            mapper_resolution_batch_status.resolution_status = ProcessStatus.PROCESSING
-            celery_app.send_task(
-                "mapper_resolution_worker",
-                args=[mapper_resolution_batch_status.mapper_resolution_batch_id],
-                queue="g2p_bridge_celery_worker_tasks",
-            )
+        ).all()
+
+        if not pending_batches:
+            logger.info("No pending disbursement batches for mapper resolution.")
+            return
+
+        for batch in pending_batches:
+            # 3. Mark as in progress
+            batch.fa_resolution_status = ProcessStatus.IN_PROGRESS
+            session.add(batch)
             session.commit()
 
-        _logger.info("Finished mapper_resolution_beat_producer")
+            # 4. Publish to Celery queue
+            context.celery.send_task(
+                "mapper-resolution-worker",
+                args=[batch.disbursement_batch_control_id],
+            )
+            logger.info(
+                f"Published disbursement batch {batch.disbursement_batch_control_id} to mapper-resolution-worker."
+            )
+
+        logger.info(
+            f"Published {len(pending_batches)} disbursement batches for mapper resolution."
+        )
+
+_config = producer_context.config
+if __name__ == "__main__":
+    mapper_resolution_producer()

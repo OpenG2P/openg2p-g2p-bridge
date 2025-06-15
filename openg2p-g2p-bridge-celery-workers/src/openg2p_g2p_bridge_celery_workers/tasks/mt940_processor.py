@@ -311,17 +311,17 @@ def get_disbursement_recon(parsed_transaction, session):
 
 
 def get_bank_batch_id(parsed_transaction, session):
-    bank_disbursement_batch_id = (
+    # Look up the DisbursementBatchControl by disbursement_batch_control_id
+    batch_control = (
         session.query(DisbursementBatchControl)
         .filter(
-            DisbursementBatchControl.disbursement_id
-            == parsed_transaction["disbursement_id"]
+            DisbursementBatchControl.disbursement_batch_control_id == parsed_transaction["disbursement_batch_control_id"]
         )
         .first()
     )
-    if not bank_disbursement_batch_id:
-        bank_disbursement_batch_id.bank_disbursement_batch_id = None
-    return bank_disbursement_batch_id.bank_disbursement_batch_id
+    if not batch_control:
+        return None
+    return batch_control.disbursement_batch_control_id
 
 
 def construct_disbursement_error_recon(

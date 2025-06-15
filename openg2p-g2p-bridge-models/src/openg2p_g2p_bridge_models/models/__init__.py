@@ -7,13 +7,11 @@ from .account_statement import (
 from .benefit_program_configuration import BenefitProgramConfiguration
 from .common_enums import ProcessStatus
 from .disbursement import (
-    BankDisbursementBatchStatus,
     Disbursement,
     DisbursementBatchControl,
     DisbursementCancellationStatus,
-    MapperResolutionBatchStatus,
-    MapperResolutionDetails,
     MapperResolvedFaType,
+    DisbursementResolutionFinancialAddress,
 )
 from .disbursement_envelope import (
     CancellationStatus,
@@ -22,4 +20,10 @@ from .disbursement_envelope import (
     DisbursementFrequency,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
+    BenefitType,
+    CashDistributionMode,
+)
+from .disbursement_geo import (
+    DisbursementBatchControlGeo,
+    DisbursementResolutionGeoAddress,
 )

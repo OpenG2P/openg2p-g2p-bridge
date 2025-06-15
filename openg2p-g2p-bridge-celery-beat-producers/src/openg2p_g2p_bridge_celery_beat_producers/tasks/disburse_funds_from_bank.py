@@ -2,13 +2,15 @@ import logging
 from datetime import datetime, timedelta
 
 from openg2p_g2p_bridge_models.models import (
-    BankDisbursementBatchStatus,
+    DisbursementEnvelopeBatchStatus,
     CancellationStatus,
     DisbursementBatchControl,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
     FundsBlockedWithBankEnum,
     ProcessStatus,
+    DisbursementBatchControlGeo,
+    DisbursementResolutionFinancialAddress,
+    DisbursementResolutionGeoAddress,
 )
 from sqlalchemy import and_, literal, select, update
 from sqlalchemy.orm import sessionmaker
@@ -31,11 +33,11 @@ def disburse_funds_from_bank_beat_producer():
             minutes=_config.disbursement_retry_threshold_minutes
         )
         reset_stmt = (
-            update(BankDisbursementBatchStatus)
+            update(DisbursementEnvelopeBatchStatus)
             .where(
-                BankDisbursementBatchStatus.disbursement_status
+                DisbursementEnvelopeBatchStatus.disbursement_status
                 == ProcessStatus.PROCESSING.value,
-                BankDisbursementBatchStatus.updated_at < stale_at,
+                DisbursementEnvelopeBatchStatus.updated_at < stale_at,
             )
             .values(disbursement_status=ProcessStatus.PENDING.value)
         )
@@ -73,14 +75,14 @@ def disburse_funds_from_bank_beat_producer():
         for envelope in envelopes:
             pending_batches = (
                 session.execute(
-                    select(BankDisbursementBatchStatus)
+                    select(DisbursementEnvelopeBatchStatus)
                     .filter(
                         and_(
-                            BankDisbursementBatchStatus.disbursement_envelope_id
+                            DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                             == envelope.disbursement_envelope_id,
-                            BankDisbursementBatchStatus.disbursement_status
+                            DisbursementEnvelopeBatchStatus.disbursement_status
                             == ProcessStatus.PENDING.value,
-                            BankDisbursementBatchStatus.disbursement_attempts
+                            DisbursementEnvelopeBatchStatus.disbursement_attempts
                             < _config.funds_disbursement_attempts,
                         )
                     )
