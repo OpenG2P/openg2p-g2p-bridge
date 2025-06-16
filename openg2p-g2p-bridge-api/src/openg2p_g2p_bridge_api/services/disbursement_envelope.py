@@ -14,6 +14,8 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementFrequency,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
+    BenefitType,
+    CashDistributionMode,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopePayload,
@@ -268,17 +270,27 @@ class DisbursementEnvelopeService(BaseService):
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
             )
-
+        
+        if disbursement_envelope.benefit_type == BenefitType.CASH and disbursement_envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
+        else:
+            funds_available_with_bank=FundsAvailableWithBankEnum.NOT_APPLICABLE.value
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.NOT_APPLICABLE.value
+            
+        funds_available_latest_timestamp=None
+        funds_blocked_latest_timestamp=None
+        
         disbursement_envelope_batch_status: DisbursementEnvelopeBatchStatus = DisbursementEnvelopeBatchStatus(
             disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
             number_of_disbursements_received=0,
             total_disbursement_quantity_received=0,
-            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
-            funds_available_latest_timestamp=datetime.now(),
+            funds_available_with_bank=funds_available_with_bank,
+            funds_available_latest_timestamp=funds_available_latest_timestamp,
             funds_available_latest_error_code="",
             funds_available_attempts=0,
-            funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
-            funds_blocked_latest_timestamp=datetime.now(),
+            funds_blocked_with_bank=funds_blocked_with_bank,
+            funds_blocked_latest_timestamp=funds_blocked_latest_timestamp,
             funds_blocked_attempts=0,
             funds_blocked_latest_error_code="",
             active=True,

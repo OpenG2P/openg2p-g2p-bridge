@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     funds_disbursement_attempts: int = 3
     statement_process_attempts: int = 3
 
-    mapper_resolve_frequency: int = 3600
+    mapper_resolve_frequency: int = 5
     funds_available_check_frequency: int = 3600
     funds_blocked_frequency: int = 3600
     funds_disbursement_frequency: int = 3600

@@ -52,16 +52,14 @@ def block_funds_with_bank_beat_producer():
                     or_(
                         and_(
                             DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
-                            == FundsBlockedWithBankEnum.PENDING_CHECK.value,
-                            DisbursementEnvelopeBatchStatus.funds_blocked_attempts
-                            < _config.funds_blocked_attempts,
+                            == FundsBlockedWithBankEnum.PENDING_CHECK.value
                         ),
                         and_(
                             DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
                             == FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value,
                             DisbursementEnvelopeBatchStatus.funds_blocked_attempts
                             < _config.funds_blocked_attempts,
-                        ),
+                        ), # TODO: Do not pick up DisbursementEnvelopeBatchStatus if FUNDS_BLOCK_FAILURE
                     ),
                 )
                 .limit(_config.no_of_tasks_to_process)

@@ -88,6 +88,16 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     warehouse_allocation_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    agency_allocation_status: Mapped[ProcessStatus] = mapped_column(
+        SqlEnum(ProcessStatus)
+    )
+    agency_allocation_timestamp: Mapped[datetime] = mapped_column(
+        DateTime, nullable=True, default=None
+    )
+    agency_allocation_latest_error_code: Mapped[str] = mapped_column(
+        String, nullable=True, default=None
+    )
+    agency_allocation_attempts: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class DisbursementResolutionFinancialAddress(BaseORMModelWithTimes):

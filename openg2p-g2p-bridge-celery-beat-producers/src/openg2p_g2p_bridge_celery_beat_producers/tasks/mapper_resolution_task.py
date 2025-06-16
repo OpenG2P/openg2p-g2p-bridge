@@ -1,26 +1,28 @@
 import logging
 from datetime import datetime, timedelta
 
-from openg2p_g2p_bridge_celery_beat_producers.producer_context import (
-    ProducerContext,
-    producer_context,
-)
 from openg2p_g2p_bridge_models.models import DisbursementBatchControl, ProcessStatus
-from openg2p_g2p_bridge_models.models.settings import Settings
 from sqlalchemy import select, update
-
-# Configure logging
-logger = logging.getLogger(__name__)
+from sqlalchemy.orm import sessionmaker
 
 
-def mapper_resolution_producer(context: ProducerContext = producer_context) -> None:
+from ..app import celery_app, get_engine
+from ..config import Settings
+
+_config = Settings.get_config()
+_logger = logging.getLogger(_config.logging_default_logger_name)
+_engine = get_engine()
+
+@celery_app.task(name="mapper_resolution_beat_producer")
+def mapper_resolution_beat_producer():
     """
     A Celery beat producer that periodically checks for disbursement batches
     that require mapper resolution and triggers the mapper resolution worker.
     """
-    logger.info("Mapper Resolution Producer running...")
+    _logger.info("Mapper Resolution Producer running...")
 
-    with context.session as session:
+    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    with session_maker() as session:
         # Get the setting for stale tasks
         stale_at_setting = session.get(Settings, "stale_at")
         stale_at = (
@@ -48,7 +50,7 @@ def mapper_resolution_producer(context: ProducerContext = producer_context) -> N
         ).all()
 
         if not pending_batches:
-            logger.info("No pending disbursement batches for mapper resolution.")
+            _logger.info("No pending disbursement batches for mapper resolution.")
             return
 
         for batch in pending_batches:
@@ -58,18 +60,14 @@ def mapper_resolution_producer(context: ProducerContext = producer_context) -> N
             session.commit()
 
             # 4. Publish to Celery queue
-            context.celery.send_task(
+            celery_app.send_task(
                 "mapper-resolution-worker",
                 args=[batch.disbursement_batch_control_id],
             )
-            logger.info(
+            _logger.info(
                 f"Published disbursement batch {batch.disbursement_batch_control_id} to mapper-resolution-worker."
             )
 
-        logger.info(
+        _logger.info(
             f"Published {len(pending_batches)} disbursement batches for mapper resolution."
         )
-
-_config = producer_context.config
-if __name__ == "__main__":
-    mapper_resolution_producer()

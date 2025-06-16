@@ -131,7 +131,7 @@ def process_and_store_resolution(
                 f"Resolved the request for beneficiary: {single_response.id}"
             )
             deconstructed_fa = resolve_helper.deconstruct_fa(single_response.fa)
-            details = DisbursementResolutionFinancialAddress(
+            disbursement_resolution_financial_address = DisbursementResolutionFinancialAddress(
                 disbursement_batch_control_id=disbursement_batch_control_id,
                 disbursement_id=disbursement_id,
                 beneficiary_id=single_response.id,
@@ -141,7 +141,7 @@ def process_and_store_resolution(
                 else None,
                 **deconstructed_fa,
             )
-            details_list.append(details)
+            details_list.append(disbursement_resolution_financial_address)
         else:
             _logger.error(
                 f"Failed to resolve the request for beneficiary: {single_response.id}"

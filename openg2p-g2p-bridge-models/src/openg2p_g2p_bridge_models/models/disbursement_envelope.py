@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 class FundsAvailableWithBankEnum(Enum):
+    NOT_APPLICABLE = "NOT_APPLICABLE"
     PENDING_CHECK = "PENDING_CHECK"
     CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_AVAILABLE = "FUNDS_AVAILABLE"
@@ -17,6 +18,7 @@ class FundsAvailableWithBankEnum(Enum):
 
 
 class FundsBlockedWithBankEnum(Enum):
+    NOT_APPLICABLE = "NOT_APPLICABLE"
     PENDING_CHECK = "PENDING_CHECK"
     CHECK_IN_PROGRESS = "CHECK_IN_PROGRESS"
     FUNDS_BLOCK_SUCCESS = "FUNDS_BLOCK_SUCCESS"
@@ -82,7 +84,7 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
         DateTime(), nullable=True, default=None
     )
 
-
+# TODO: EnvelopeControl & EnvelopeBatchStatusForDigitalCash
 class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
     __tablename__ = "disbursement_envelope_batch_statuses"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
@@ -105,7 +107,7 @@ class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
     funds_blocked_latest_error_code: Mapped[str] = mapped_column(String, nullable=True)
     funds_blocked_attempts: Mapped[int] = mapped_column(Integer, default=0)
     funds_blocked_reference_number: Mapped[str] = mapped_column(String, nullable=True)
-    id_mapper_resolution_required: Mapped[bool] = mapped_column(Boolean, default=True)
+    # id_mapper_resolution_required: Mapped[bool] = mapped_column(Boolean, default=True)
     number_of_disbursements_shipped: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reconciled: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reversed: Mapped[int] = mapped_column(Integer, default=0)

@@ -62,22 +62,22 @@ class DisbursementService(BaseService):
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
                     disbursement_payloads=disbursement_request.message,
                 )
-            disbursements: List[Disbursement] = await self.construct_disbursements(
-                disbursement_payloads=disbursement_request.message
-            )
+             
             disbursement_envelope = (
                 await session.execute(
                     select(DisbursementEnvelope).where(
                         DisbursementEnvelope.disbursement_envelope_id
-                        == str(disbursements[0].disbursement_envelope_id)
+                        == str(disbursement_request.message.disbursement_envelope_id)
                     )
                 )
             ).scalars().first()
-            disbursement_batch_controls: List[
-                DisbursementBatchControl
-            ] = await self.construct_disbursement_batch_controls(
-                disbursements=disbursements,
+
+            disbursement_batch_control: DisbursementBatchControl = await self.construct_disbursement_batch_control(
                 disbursement_envelope=disbursement_envelope,
+            )
+
+            disbursements: List[Disbursement] = await self.construct_disbursements(
+                disbursement_payloads=disbursement_request.message, disbursement_batch_control_id=disbursement_batch_control.id
             )
 
             # Lock the envelope batch status row for update (nowait)
@@ -86,8 +86,8 @@ class DisbursementService(BaseService):
                     disbursements, session
                 )
             )
+            session.add(disbursement_batch_control)
             session.add_all(disbursements)
-            session.add_all(disbursement_batch_controls)
             session.add(disbursement_envelope_batch_status)
 
             await session.commit()
@@ -138,7 +138,7 @@ class DisbursementService(BaseService):
         return disbursement_envelope_batch_status
 
     async def construct_disbursements(
-        self, disbursement_payloads: List[DisbursementPayload]
+        self, disbursement_payloads: List[DisbursementPayload], disbursement_batch_control_id: str = None
     ) -> List[Disbursement]:
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
@@ -153,8 +153,9 @@ class DisbursementService(BaseService):
                 beneficiary_id=disbursement_payload.beneficiary_id,
                 beneficiary_name=disbursement_payload.beneficiary_name,
                 disbursement_quantity=disbursement_payload.disbursement_quantity,
-                disbursement_cycle_id=disbursement_payload.disbursement_cycle_id,
                 narrative=disbursement_payload.narrative,
+                disbursement_cycle_id=disbursement_payload.disbursement_cycle_id,
+                disbursement_batch_control_id=disbursement_batch_control_id,
                 active=True,
             )
             disbursement_payload.id = disbursement.id
@@ -163,10 +164,10 @@ class DisbursementService(BaseService):
         _logger.info("Disbursements Constructed!")
         return disbursements
 
-    async def construct_disbursement_batch_controls(
-        self, disbursements: List[Disbursement], disbursement_envelope: DisbursementEnvelope
+    async def construct_disbursement_batch_control(
+        self, disbursement_envelope: DisbursementEnvelope
     ):
-        _logger.info("Constructing Disbursement Batch Controls")
+        _logger.info("Constructing Disbursement Batch Control")
         import uuid
 
         from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
@@ -175,7 +176,6 @@ class DisbursementService(BaseService):
             CashDistributionMode,
         )
 
-        disbursement_batch_controls = []
         disbursement_batch_control_id = str(uuid.uuid4())
         # Determine statuses based on benefit_type and cash_distribution_mode
         if (
@@ -191,34 +191,36 @@ class DisbursementService(BaseService):
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
             geo_resolutuon_status = ProcessStatus.PENDING
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
-        for disbursement in disbursements:
-            disbursement.disbursement_batch_control_id = disbursement_batch_control_id
-            disbursement_batch_control = DisbursementBatchControl(
-                disbursement_batch_control_id=disbursement_batch_control_id,
-                disbursement_cycle_id=disbursement_envelope.disbursement_cycle_id,
-                disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
-                fa_resolution_status=fa_resolution_status,
-                sponsor_bank_dispatch_status=sponsor_bank_dispatch_status,
-                geo_resolutuon_status=geo_resolutuon_status,
-                warehouse_allocation_status=warehouse_allocation_status,
-                # The following fields are set to None or 0 by default
-                fa_resolution_timestamp=None,
-                fa_resolution_latest_error_code=None,
-                fa_resolution_attempts=0,
-                sponsor_bank_dispatch_timestamp=None,
-                sponsor_bank_dispatch_latest_error_code=None,
-                sponsor_bank_dispatch_attempts=0,
-                geo_resolution_timestamp=None,
-                geo_resolution_latest_error_code=None,
-                geo_resolution_attempts=0,
-                warehouse_allocation_timestamp=None,
-                warehouse_allocation_latest_error_code=None,
-                warehouse_allocation_attempts=0,
-                active=True,
-            )
-            disbursement_batch_controls.append(disbursement_batch_control)
-        _logger.info("Disbursement Batch Controls Constructed!")
-        return disbursement_batch_controls
+            agency_allocation_status = ProcessStatus.PENDING
+            
+        disbursement_batch_control = DisbursementBatchControl(
+            disbursement_batch_control_id=disbursement_batch_control_id,
+            disbursement_cycle_id=disbursement_envelope.disbursement_cycle_id,
+            disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
+            fa_resolution_status=fa_resolution_status,
+            sponsor_bank_dispatch_status=sponsor_bank_dispatch_status,
+            geo_resolutuon_status=geo_resolutuon_status,
+            warehouse_allocation_status=warehouse_allocation_status,
+            agency_allocation_status=agency_allocation_status,
+            # The following fields are set to None or 0 by default
+            fa_resolution_timestamp=None,
+            fa_resolution_latest_error_code=None,
+            fa_resolution_attempts=0,
+            sponsor_bank_dispatch_timestamp=None,
+            sponsor_bank_dispatch_latest_error_code=None,
+            sponsor_bank_dispatch_attempts=0,
+            geo_resolution_timestamp=None,
+            geo_resolution_latest_error_code=None,
+            geo_resolution_attempts=0,
+            warehouse_allocation_timestamp=None,
+            warehouse_allocation_latest_error_code=None,
+            warehouse_allocation_attempts=0,
+            agency_allocation_timestamp=None,
+            agency_allocation_latest_error_code=None,
+            active=True,
+        )
+        _logger.info("Disbursement Batch Control Constructed!")
+        return disbursement_batch_control
 
     async def validate_disbursement_request(
         self, disbursement_payloads: List[DisbursementPayload]

@@ -13,9 +13,7 @@ from openg2p_g2p_bridge_models.models import (
     Disbursement,
     DisbursementEnvelopeBatchStatus,
     DisbursementBatchControl,
-    DisbursementBatchControlGeo,
     DisbursementResolutionFinancialAddress,
-    DisbursementResolutionGeoAddress,
     BenefitProgramConfiguration,
     ProcessStatus,
     DisbursementEnvelope,
@@ -32,71 +30,43 @@ _engine = get_engine()
 
 
 @celery_app.task(name="disburse_funds_from_bank_worker")
-def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
-    _logger.info(f"Disbursing funds with bank for batch: {bank_disbursement_batch_id}")
+def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
+    _logger.info(f"Disbursing funds with bank for batch: {disbursement_batch_control}")
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
 
     with session_maker() as session:
-        disbursement_batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
+        disbursement_batch_control = (
+            session.query(DisbursementBatchControl)
             .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id == bank_disbursement_batch_id
-            )
-            .first()
+                DisbursementBatchControl.disbursement_batch_control_id == disbursement_batch_control_id,
+            ).first()
         )
 
-        if not disbursement_batch_status:
-            _logger.error(
-                f"Bank Disbursement Batch Status not found for batch: {bank_disbursement_batch_id}"
-            )
-            return
-
-        disbursement_envelope_id = disbursement_batch_status.disbursement_envelope_id
+        disbursement_envelope_id = disbursement_batch_control.disbursement_envelope_id
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter(
-                DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
-
         if not envelope:
-            _logger.error(
-                f"Disbursement Envelope not found for envelope: {disbursement_envelope_id}"
-            )
+            _logger.error(f"No DisbursementEnvelope {disbursement_envelope_id}")
             return
-
+        
         envelope_batch_status = (
             session.query(DisbursementEnvelopeBatchStatus)
             .filter(
                 DisbursementEnvelopeBatchStatus.disbursement_envelope_id
                 == disbursement_envelope_id
             )
-            .populate_existing()
             .first()
         )
-
         if not envelope_batch_status:
-            _logger.error(
-                f"Disbursement Envelope Batch Status not found for envelope: {disbursement_envelope_id}"
-            )
+            _logger.error(f"No DisbursementEnvelopeBatchStatus for {disbursement_envelope_id}")
             return
 
-        disbursement_batch_controls = (
-            session.query(DisbursementBatchControl)
-            .filter(
-                DisbursementBatchControl.disbursement_envelope_id == disbursement_envelope_id,
-                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PROCESSED,
-            )
-            .all()
-        )
-
-        disbursement_batch_control_ids = [
-            control.disbursement_batch_control_id for control in disbursement_batch_controls
-        ]
         disbursements = (
             session.query(Disbursement)
-            .filter(Disbursement.disbursement_batch_control_id.in_(disbursement_batch_control_ids))
+            .filter(Disbursement.disbursement_batch_control_id == disbursement_batch_control_id)
             .all()
         )
 
@@ -109,10 +79,10 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
             .first()
         )
 
-        payment_payloads = []
+        disbursement_payment_payloads = []
 
         for disbursement in disbursements:
-            mapper_details = (
+            disbursement_resolution_financial_address = (
                 session.query(DisbursementResolutionFinancialAddress)
                 .filter(
                     DisbursementResolutionFinancialAddress.disbursement_id
@@ -121,38 +91,38 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                 .first()
             )
 
-            payment_payloads.append(
+            disbursement_payment_payloads.append(
                 DisbursementPaymentPayload(
                     disbursement_id=disbursement.disbursement_id,
                     remitting_account=benefit_program_configuration.sponsor_bank_account_number,
                     remitting_account_currency=benefit_program_configuration.sponsor_bank_account_currency,
                     payment_amount=disbursement.disbursement_quantity,
                     funds_blocked_reference_number=envelope_batch_status.funds_blocked_reference_number,
-                    beneficiary_account=mapper_details.bank_account_number
-                    if mapper_details
+                    beneficiary_account=disbursement_resolution_financial_address.bank_account_number
+                    if disbursement_resolution_financial_address
                     else None,
                     beneficiary_account_currency=benefit_program_configuration.sponsor_bank_account_currency,
-                    beneficiary_bank_code=mapper_details.bank_code
-                    if mapper_details
+                    beneficiary_bank_code=disbursement_resolution_financial_address.bank_code
+                    if disbursement_resolution_financial_address
                     else None,
-                    beneficiary_branch_code=mapper_details.branch_code
-                    if mapper_details
+                    beneficiary_branch_code=disbursement_resolution_financial_address.branch_code
+                    if disbursement_resolution_financial_address
                     else None,
                     payment_date=str(datetime.date(datetime.now())),
                     beneficiary_id=disbursement.beneficiary_id,
                     beneficiary_name=disbursement.beneficiary_name,
-                    beneficiary_account_type=mapper_details.mapper_resolved_fa_type,
-                    beneficiary_phone_no=mapper_details.mobile_number
-                    if mapper_details
+                    beneficiary_account_type=disbursement_resolution_financial_address.mapper_resolved_fa_type,
+                    beneficiary_phone_no=disbursement_resolution_financial_address.mobile_number
+                    if disbursement_resolution_financial_address
                     else None,
-                    beneficiary_mobile_wallet_provider=mapper_details.mobile_wallet_provider
-                    if mapper_details
+                    beneficiary_mobile_wallet_provider=disbursement_resolution_financial_address.mobile_wallet_provider
+                    if disbursement_resolution_financial_address
                     else None,
-                    beneficiary_email_wallet_provider=mapper_details.email_wallet_provider
-                    if mapper_details
+                    beneficiary_email_wallet_provider=disbursement_resolution_financial_address.email_wallet_provider
+                    if disbursement_resolution_financial_address
                     else None,
-                    beneficiary_email=mapper_details.email_address
-                    if mapper_details
+                    beneficiary_email=disbursement_resolution_financial_address.email_address
+                    if disbursement_resolution_financial_address
                     else None,
                     disbursement_narrative=disbursement.narrative,
                     benefit_program_mnemonic=envelope.benefit_program_mnemonic,
@@ -167,62 +137,59 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
             )
         )
 
-        envelope_id = disbursement_batch_status.disbursement_envelope_id
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter(DisbursementEnvelope.disbursement_envelope_id == envelope_id)
+            .filter(DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
         if not envelope:
-            _logger.error(f"No DisbursementEnvelope {envelope_id}")
+            _logger.error(f"No DisbursementEnvelope {disbursement_envelope_id}")
             return
 
         max_retries = 5
         for attempt in range(1, max_retries + 1):
             try:
                 _logger.info(
-                    f"Locking envelope {envelope_id}, attempt {attempt} / {max_retries}"
+                    f"Locking envelope {disbursement_envelope_id}, attempt {attempt} / {max_retries}"
                 )
                 disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
                     .filter(
                         DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                        == envelope_id
+                        == disbursement_envelope_id
                     )
                     .with_for_update(nowait=True)
                     .populate_existing()
                     .one()
                 )
-                _logger.info(f"Lock acquired for envelope {envelope_id}")
-                _logger.info(f"Total number of disbursements: {len(payment_payloads)}")
+                _logger.info(f"Lock acquired for envelope {disbursement_envelope_id}")
+                _logger.info(f"Total number of disbursements: {len(disbursement_payment_payloads)}")
                 # fire the payment
-                payment_response = bank_connector.initiate_payment(payment_payloads)
+                payment_response = bank_connector.initiate_payment(disbursement_payment_payloads)
                 _logger.info(
-                    f"Payment response for envelope {envelope_id} on attempt {attempt}: {payment_response.status}"
+                    f"Payment response for envelope {disbursement_envelope_id} on attempt {attempt}: {payment_response.status}"
                 )
 
                 # update envelope status
                 if payment_response.status == PaymentStatus.SUCCESS:
-                    for control in disbursement_batch_controls:
-                        control.sponsor_bank_dispatch_status = (
-                            ProcessStatus.PROCESSED.value
-                        )
-                        control.sponsor_bank_dispatch_latest_error_code = None
-                        control.sponsor_bank_dispatch_timestamp = datetime.now()
-                        control.sponsor_bank_dispatch_attempts += 1
+                    disbursement_batch_control.sponsor_bank_dispatch_status = (
+                        ProcessStatus.PROCESSED.value
+                    )
+                    disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = None
+                    disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
+                    disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
                     disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
-                        payment_payloads
+                        disbursement_payment_payloads
                     )
                 else:
-                    for control in disbursement_batch_controls:
-                        control.sponsor_bank_dispatch_status = (
-                            ProcessStatus.PENDING.value
-                        )
-                        control.sponsor_bank_dispatch_latest_error_code = (
-                            payment_response.error_code
-                        )
-                        control.sponsor_bank_dispatch_timestamp = datetime.now()
-                        control.sponsor_bank_dispatch_attempts += 1
+                    disbursement_batch_control.sponsor_bank_dispatch_status = (
+                        ProcessStatus.PENDING.value
+                    )
+                    disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = (
+                        payment_response.error_code
+                    )
+                    disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
+                    disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
 
                 session.commit()
                 break
@@ -230,7 +197,7 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
             except OperationalError as oe:
                 session.rollback()
                 _logger.warning(
-                    f"Attempt {attempt} to lock envelope {envelope_id} failed: {oe}"
+                    f"Attempt {attempt} to lock envelope {disbursement_envelope_id} failed: {oe}"
                 )
                 if attempt < max_retries:
                     time.sleep(random.uniform(8, 15))
@@ -238,30 +205,28 @@ def disburse_funds_from_bank_worker(bank_disbursement_batch_id: str):
                     _logger.error(
                         f"Could not lock after {max_retries} tries, marking pending"
                     )
-                    for control in disbursement_batch_controls:
-                        control.sponsor_bank_dispatch_status = (
-                            ProcessStatus.PENDING.value
-                        )
-                        control.sponsor_bank_dispatch_latest_error_code = "LockTimeout"
-                        control.sponsor_bank_dispatch_timestamp = datetime.now()
-                        control.sponsor_bank_dispatch_attempts += 1
+                    disbursement_batch_control.sponsor_bank_dispatch_status = (
+                        ProcessStatus.PENDING.value
+                    )
+                    disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = "LockTimeout"
+                    disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
+                    disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
                     session.commit()
 
             except Exception as e:
                 session.rollback()
                 _logger.error(
-                    f"Unexpected error during disbursement for envelope {envelope_id}: {e}"
+                    f"Unexpected error during disbursement for envelope {disbursement_envelope_id}: {e}"
                 )
-                for control in disbursement_batch_controls:
-                    control.sponsor_bank_dispatch_status = (
-                        ProcessStatus.PENDING.value
-                    )
-                    control.sponsor_bank_dispatch_latest_error_code = str(e)
-                    control.sponsor_bank_dispatch_timestamp = datetime.now()
-                    control.sponsor_bank_dispatch_attempts += 1
+                disbursement_batch_control.sponsor_bank_dispatch_status = (
+                    ProcessStatus.PENDING.value
+                )
+                disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = str(e)
+                disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
+                disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
                 session.commit()
                 break
 
         _logger.info(
-            f"Disbursement task for batch {bank_disbursement_batch_id} completed"
+            f"Disbursement task for batch {disbursement_batch_control_id} completed"
         )

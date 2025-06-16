@@ -53,11 +53,10 @@ class DisbursementEnvelopeController(BaseController):
     async def create_disbursement_envelopes(
         self,
         disbursement_envelope_request: DisbursementEnvelopeRequest,
-        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Bulk creating disbursement envelopes")
         try:
-            is_signature_valid = True
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 disbursement_envelope_request
