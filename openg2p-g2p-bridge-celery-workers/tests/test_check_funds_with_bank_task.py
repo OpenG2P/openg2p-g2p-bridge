@@ -11,7 +11,7 @@ from openg2p_g2p_bridge_models.models import (
     BenefitType,
     CashDistributionMode,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
@@ -36,14 +36,11 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            number_of_disbursements_received=10,
-            total_disbursement_quantity_received=1000,
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_available_attempts=0,
-            id_mapper_resolution_required=True,
         )
         self.benefit_program_configuration = BenefitProgramConfiguration(
             benefit_program_mnemonic="test_program",
@@ -70,7 +67,7 @@ class MockSession:
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
 
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
             return self.disbursement_envelope_batch_status
 
         elif self.query_args[0] is BenefitProgramConfiguration:

@@ -22,7 +22,7 @@ from openg2p_g2p_bridge_models.models import (
     Disbursement,
     DisbursementBatchControl,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
     DisbursementRecon,
     FundsAvailableWithBankEnum,
@@ -85,13 +85,10 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            number_of_disbursements_received=1,
-            total_disbursement_quantity_received=100,
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
-            id_mapper_resolution_required=False,
             number_of_disbursements_reconciled=0,
             number_of_disbursements_reversed=0,
         )
@@ -129,7 +126,7 @@ class MockSession:
             return self.benefit_program_configuration
         elif self.query_args[0] is Disbursement:
             return self.disbursement
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
             return self.disbursement_envelope_batch_status
         elif self.query_args[0] is DisbursementRecon:
             return self.disbursement_recon

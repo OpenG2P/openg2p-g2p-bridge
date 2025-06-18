@@ -13,7 +13,6 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopeBatchStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
-    DisbursementStatusRequest,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
@@ -92,18 +91,35 @@ class DisbursementEnvelopeStatusService(BaseService):
                     "number_of_disbursements_reversed": digital_cash_status.number_of_disbursements_reversed,
                 }
             )
+        else:
+            payload.update(
+                {
+                    "funds_available_with_bank": "NOT_APPLICABLE",
+                    "funds_available_latest_timestamp": None,
+                    "funds_available_latest_error_code": None,
+                    "funds_available_attempts": 0,
+                    "funds_blocked_with_bank": "NOT_APPLICABLE",
+                    "funds_blocked_latest_timestamp": None,
+                    "funds_blocked_latest_error_code": None,
+                    "funds_blocked_attempts": 0,
+                    "funds_blocked_reference_number": None,
+                    "number_of_disbursements_shipped": 0,
+                    "number_of_disbursements_reconciled": 0,
+                    "number_of_disbursements_reversed": 0,
+                }
+            )
         return DisbursementEnvelopeBatchStatusPayload(**payload)
 
     async def construct_disbursement_envelope_status_error_response(
         self,
-        disbursement_status_request: DisbursementStatusRequest,
+        disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
         code: str,
     ) -> DisbursementEnvelopeStatusResponse:
         response = DisbursementEnvelopeStatusResponse(
             header=SyncResponseHeader(
-                message_id=disbursement_status_request.header.message_id,
+                message_id=disbursement_envelope_status_request.header.message_id,
                 message_ts=datetime.now().isoformat(),
-                action=disbursement_status_request.header.action,
+                action=disbursement_envelope_status_request.header.action,
                 status=StatusEnum.rjct,
                 status_reason_message=code,
             ),
@@ -114,14 +130,14 @@ class DisbursementEnvelopeStatusService(BaseService):
 
     async def construct_disbursement_envelope_status_success_response(
         self,
-        disbursement_status_request: DisbursementStatusRequest,
+        disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
         disbursement_envelope_batch_status_payload: DisbursementEnvelopeBatchStatusPayload,
     ) -> DisbursementEnvelopeStatusResponse:
         response = DisbursementEnvelopeStatusResponse(
             header=SyncResponseHeader(
-                message_id=disbursement_status_request.header.message_id,
+                message_id=disbursement_envelope_status_request.header.message_id,
                 message_ts=datetime.now().isoformat(),
-                action=disbursement_status_request.header.action,
+                action=disbursement_envelope_status_request.header.action,
                 status=StatusEnum.succ,
             ),
             message=disbursement_envelope_batch_status_payload,

@@ -2,15 +2,13 @@ import logging
 from datetime import datetime, timedelta
 
 from openg2p_g2p_bridge_models.models import (
-    DisbursementEnvelopeBatchStatus,
     CancellationStatus,
     DisbursementBatchControl,
     DisbursementEnvelope,
+    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeControl,
     FundsBlockedWithBankEnum,
     ProcessStatus,
-    DisbursementBatchControlGeo,
-    DisbursementResolutionFinancialAddress,
-    DisbursementResolutionGeoAddress,
 )
 from sqlalchemy import and_, literal, select, update
 from sqlalchemy.orm import sessionmaker
@@ -33,13 +31,13 @@ def disburse_funds_from_bank_beat_producer():
             minutes=_config.disbursement_retry_threshold_minutes
         )
         reset_stmt = (
-            update(DisbursementEnvelopeBatchStatus)
+            update(DisbursementBatchControl)
             .where(
-                DisbursementEnvelopeBatchStatus.disbursement_status
+                DisbursementBatchControl.sponsor_bank_dispatch_status
                 == ProcessStatus.PROCESSING.value,
-                DisbursementEnvelopeBatchStatus.updated_at < stale_at,
+                DisbursementBatchControl.updated_at < stale_at,
             )
-            .values(disbursement_status=ProcessStatus.PENDING.value)
+            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING.value)
         )
         session.execute(reset_stmt)
         session.commit()
@@ -54,17 +52,22 @@ def disburse_funds_from_bank_beat_producer():
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    DisbursementEnvelopeBatchStatus,
+                    EnvelopeControl,
                     DisbursementEnvelope.disbursement_envelope_id
-                    == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
+                    == EnvelopeControl.disbursement_envelope_id,
+                )
+                .join(
+                    EnvelopeBatchStatusForDigitalCash,
+                    DisbursementEnvelope.disbursement_envelope_id
+                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
                     == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
-                    == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
-                    DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
+                    == EnvelopeControl.number_of_disbursements_received,
+                    EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
                     == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
                 )
                 .limit(_config.no_of_tasks_to_process)

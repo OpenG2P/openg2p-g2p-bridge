@@ -16,7 +16,7 @@ from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     Disbursement,
     DisbursementBatchControl,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementErrorRecon,
     DisbursementRecon,
     ProcessStatus,
@@ -479,10 +479,10 @@ def update_envelope_batch_status_reconciled(
 
         while max_retries:
             try:
-                status = (
-                    session.query(DisbursementEnvelopeBatchStatus)
+                envelope_batch_status_for_digital_cash = (
+                    session.query(EnvelopeBatchStatusForDigitalCash)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                         == envelope_id
                     )
                     .with_for_update(nowait=True)
@@ -508,8 +508,8 @@ def update_envelope_batch_status_reconciled(
             )
             raise last_exc
 
-        status.number_of_disbursements_reconciled += count
-        session.add(status)
+        envelope_batch_status_for_digital_cash.number_of_disbursements_reconciled += count
+        session.add(envelope_batch_status_for_digital_cash)
         session.commit()
 
 
@@ -542,10 +542,10 @@ def update_envelope_batch_status_reversed(
 
         while max_retries:
             try:
-                disbursement_envelope_batch_status = (
-                    session.query(DisbursementEnvelopeBatchStatus)
+                envelope_batch_status_for_digital_cash = (
+                    session.query(EnvelopeBatchStatusForDigitalCash)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                         == disbursement_envelope_id
                     )
                     .with_for_update(nowait=True)
@@ -571,6 +571,6 @@ def update_envelope_batch_status_reversed(
             )
             raise last_exc
 
-        disbursement_envelope_batch_status.number_of_disbursements_reversed += count
-        session.add(disbursement_envelope_batch_status)
+        envelope_batch_status_for_digital_cash.number_of_disbursements_reversed += count
+        session.add(envelope_batch_status_for_digital_cash)
         session.commit()

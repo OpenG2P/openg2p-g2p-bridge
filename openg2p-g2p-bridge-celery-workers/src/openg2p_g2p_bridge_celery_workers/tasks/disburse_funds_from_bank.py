@@ -11,7 +11,7 @@ from openg2p_g2p_bridge_bank_connectors.bank_interface.bank_connector_interface 
 )
 from openg2p_g2p_bridge_models.models import (
     Disbursement,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementBatchControl,
     DisbursementResolutionFinancialAddress,
     BenefitProgramConfiguration,
@@ -52,16 +52,16 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
             _logger.error(f"No DisbursementEnvelope {disbursement_envelope_id}")
             return
         
-        envelope_batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
+        envelope_batch_status_for_digital_cash = (
+            session.query(EnvelopeBatchStatusForDigitalCash)
             .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                 == disbursement_envelope_id
             )
             .first()
         )
-        if not envelope_batch_status:
-            _logger.error(f"No DisbursementEnvelopeBatchStatus for {disbursement_envelope_id}")
+        if not envelope_batch_status_for_digital_cash:
+            _logger.error(f"No EnvelopeBatchStatusForDigitalCash for {disbursement_envelope_id}")
             return
 
         disbursements = (
@@ -97,7 +97,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                     remitting_account=benefit_program_configuration.sponsor_bank_account_number,
                     remitting_account_currency=benefit_program_configuration.sponsor_bank_account_currency,
                     payment_amount=disbursement.disbursement_quantity,
-                    funds_blocked_reference_number=envelope_batch_status.funds_blocked_reference_number,
+                    funds_blocked_reference_number=envelope_batch_status_for_digital_cash.funds_blocked_reference_number,
                     beneficiary_account=disbursement_resolution_financial_address.bank_account_number
                     if disbursement_resolution_financial_address
                     else None,
@@ -152,10 +152,10 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                 _logger.info(
                     f"Locking envelope {disbursement_envelope_id}, attempt {attempt} / {max_retries}"
                 )
-                disbursement_envelope_batch_status = (
-                    session.query(DisbursementEnvelopeBatchStatus)
+                envelope_batch_status_for_digital_cash = (
+                    session.query(EnvelopeBatchStatusForDigitalCash)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                         == disbursement_envelope_id
                     )
                     .with_for_update(nowait=True)
@@ -178,7 +178,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = None
                     disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
                     disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
-                    disbursement_envelope_batch_status.number_of_disbursements_shipped += len(
+                    envelope_batch_status_for_digital_cash.number_of_disbursements_shipped += len(
                         disbursement_payment_payloads
                     )
                 else:

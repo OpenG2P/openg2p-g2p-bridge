@@ -18,7 +18,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
     DisbursementResolutionFinancialAddress,
     DisbursementResolutionGeoAddress,
@@ -47,25 +47,19 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            number_of_disbursements_received=1,
-            total_disbursement_quantity_received=100,
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_reference_number="test_block_ref",
             number_of_disbursements_shipped=0,
-            id_mapper_resolution_required=False,
         )
-        self.bank_disbursement_batch_status = DisbursementEnvelopeBatchStatus(
+        self.bank_disbursement_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            number_of_disbursements_received=1,
-            total_disbursement_quantity_received=100,
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_reference_number="test_block_ref",
             number_of_disbursements_shipped=0,
-            id_mapper_resolution_required=False,
         )
         self.benefit_program_configuration = BenefitProgramConfiguration(
             benefit_program_mnemonic="test_program",
@@ -124,7 +118,7 @@ class MockSession:
     def first(self):
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
             if (
                 hasattr(self.filter_args[0], "right")
                 and self.filter_args[0].right.value == "test_batch_id"

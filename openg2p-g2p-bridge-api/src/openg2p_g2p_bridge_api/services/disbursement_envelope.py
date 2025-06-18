@@ -263,6 +263,7 @@ class DisbursementEnvelopeService(BaseService):
         _logger.info("Constructing envelope control")
         return EnvelopeControl(
             disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
+            active=True,
         )
 
     # noinspection PyMethodMayBeStatic
@@ -292,6 +293,7 @@ class DisbursementEnvelopeService(BaseService):
             disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
+            active=True
         )
 
     async def validate_envelope_amend_request(
