@@ -68,7 +68,7 @@ class DisbursementService(BaseService):
                 await session.execute(
                     select(DisbursementEnvelope).where(
                         DisbursementEnvelope.disbursement_envelope_id
-                        == str(disbursement_request.message.disbursement_envelope_id)
+                        == str(disbursement_request.message[0].disbursement_envelope_id)
                     )
                 )
             ).scalars().first()
@@ -78,15 +78,15 @@ class DisbursementService(BaseService):
             )
 
             disbursements: List[Disbursement] = await self.construct_disbursements(
-                disbursement_payloads=disbursement_request.message, disbursement_batch_control_id=disbursement_batch_control.id
+                disbursement_payloads=disbursement_request.message, disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id
             )
 
             # Lock the envelope batch status row for update (nowait)
             envelope_control = await self.update_envelope_control(
                 disbursements, session
             )
+            session.add(disbursement_batch_control)
             session.add_all(disbursements)
-            session.add_all(disbursement_batch_control)
             session.add(envelope_control)
 
             # No need to create a separate bank disbursement status; this is now handled by DisbursementBatchControl
@@ -200,7 +200,7 @@ class DisbursementService(BaseService):
             disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
             fa_resolution_status=fa_resolution_status,
             sponsor_bank_dispatch_status=sponsor_bank_dispatch_status,
-            geo_resolutuon_status=geo_resolutuon_status,
+            geo_resolution_status=geo_resolutuon_status,
             warehouse_allocation_status=warehouse_allocation_status,
             agency_allocation_status=agency_allocation_status,
             # The following fields are set to None or 0 by default
