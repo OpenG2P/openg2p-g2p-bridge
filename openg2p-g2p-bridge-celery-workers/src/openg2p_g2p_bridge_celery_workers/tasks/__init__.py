@@ -11,3 +11,4 @@ from .mapper_resolution_task import (
     mapper_resolution_worker,
 )
 from .mt940_processor import mt940_processor_worker
+from .geo_resolution import geo_resolution_worker

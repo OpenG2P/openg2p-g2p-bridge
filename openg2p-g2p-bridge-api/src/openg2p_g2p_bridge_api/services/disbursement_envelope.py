@@ -10,7 +10,8 @@ from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     CancellationStatus,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeControl,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
@@ -42,7 +43,8 @@ class DisbursementEnvelopeService(BaseService):
         _logger.info("Bulk creating disbursement envelopes")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         disbursement_envelopes: list[DisbursementEnvelope] = []
-        disbursement_envelope_batch_statuses: list[DisbursementEnvelopeBatchStatus] = []
+        envelope_controls: list[EnvelopeControl] = []
+        envelope_batch_statuses: list[EnvelopeBatchStatusForDigitalCash] = []
         disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = disbursement_envelope_request.message
         async with session_maker() as session:
             for disbursement_envelope_payload in disbursement_envelope_payloads:
@@ -55,12 +57,18 @@ class DisbursementEnvelopeService(BaseService):
                 )
                 disbursement_envelope_payload.disbursement_envelope_id = disbursement_envelope.disbursement_envelope_id
                 disbursement_envelopes.append(disbursement_envelope)
-                batch_status = await self.construct_disbursement_envelope_batch_status(
-                    disbursement_envelope, session
-                )
-                disbursement_envelope_batch_statuses.append(batch_status)
+
+                envelope_control = await self.construct_envelope_control(disbursement_envelope)
+                envelope_controls.append(envelope_control)
+
+                if disbursement_envelope.benefit_type == BenefitType.CASH and disbursement_envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+                    batch_status = await self.construct_envelope_batch_status_for_digital_cash(
+                        disbursement_envelope, session
+                    )
+                    envelope_batch_statuses.append(batch_status)
             session.add_all(disbursement_envelopes)
-            session.add_all(disbursement_envelope_batch_statuses)
+            session.add_all(envelope_controls)
+            session.add_all(envelope_batch_statuses)
             await session.commit()
         _logger.info("Bulk disbursement envelopes created successfully")
         return disbursement_envelope_payloads
@@ -249,10 +257,19 @@ class DisbursementEnvelopeService(BaseService):
         return disbursement_envelope
 
     # noinspection PyMethodMayBeStatic
-    async def construct_disbursement_envelope_batch_status(
+    async def construct_envelope_control(
+        self, disbursement_envelope: DisbursementEnvelope
+    ) -> EnvelopeControl:
+        _logger.info("Constructing envelope control")
+        return EnvelopeControl(
+            disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
+        )
+
+    # noinspection PyMethodMayBeStatic
+    async def construct_envelope_batch_status_for_digital_cash(
         self, disbursement_envelope: DisbursementEnvelope, session
-    ) -> DisbursementEnvelopeBatchStatus:
-        _logger.info("Constructing disbursement envelope batch status")
+    ) -> EnvelopeBatchStatusForDigitalCash:
+        _logger.info("Constructing envelope batch status for digital cash")
         benefit_program_configuration: BenefitProgramConfiguration = (
             (
                 await session.execute(
@@ -270,34 +287,12 @@ class DisbursementEnvelopeService(BaseService):
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
             )
-        
-        if disbursement_envelope.benefit_type == BenefitType.CASH and disbursement_envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+
+        return EnvelopeBatchStatusForDigitalCash(
+            disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
-        else:
-            funds_available_with_bank=FundsAvailableWithBankEnum.NOT_APPLICABLE.value
-            funds_blocked_with_bank=FundsBlockedWithBankEnum.NOT_APPLICABLE.value
-            
-        funds_available_latest_timestamp=None
-        funds_blocked_latest_timestamp=None
-        
-        disbursement_envelope_batch_status: DisbursementEnvelopeBatchStatus = DisbursementEnvelopeBatchStatus(
-            disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
-            number_of_disbursements_received=0,
-            total_disbursement_quantity_received=0,
-            funds_available_with_bank=funds_available_with_bank,
-            funds_available_latest_timestamp=funds_available_latest_timestamp,
-            funds_available_latest_error_code="",
-            funds_available_attempts=0,
-            funds_blocked_with_bank=funds_blocked_with_bank,
-            funds_blocked_latest_timestamp=funds_blocked_latest_timestamp,
-            funds_blocked_attempts=0,
-            funds_blocked_latest_error_code="",
-            active=True,
-            id_mapper_resolution_required=benefit_program_configuration.id_mapper_resolution_required,
         )
-        _logger.info("Disbursement envelope batch status constructed successfully")
-        return disbursement_envelope_batch_status
 
     async def validate_envelope_amend_request(
         self, disbursement_envelope_request: DisbursementEnvelopeRequest

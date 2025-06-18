@@ -84,12 +84,17 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
         DateTime(), nullable=True, default=None
     )
 
-# TODO: EnvelopeControl & EnvelopeBatchStatusForDigitalCash
-class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
-    __tablename__ = "disbursement_envelope_batch_statuses"
+
+class EnvelopeControl(BaseORMModelWithTimes):
+    __tablename__ = "envelope_control"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
-    number_of_disbursements_received: Mapped[int] = mapped_column(Integer)
-    total_disbursement_quantity_received: Mapped[int] = mapped_column(Integer)
+    number_of_disbursements_received: Mapped[int] = mapped_column(Integer, default=0)
+    total_disbursement_quantity_received: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class EnvelopeBatchStatusForDigitalCash(BaseORMModelWithTimes):
+    __tablename__ = "envelope_batch_status_for_digital_cash"
+    disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     funds_available_with_bank: Mapped[FundsAvailableWithBankEnum] = mapped_column(
         String
     )
@@ -107,7 +112,6 @@ class DisbursementEnvelopeBatchStatus(BaseORMModelWithTimes):
     funds_blocked_latest_error_code: Mapped[str] = mapped_column(String, nullable=True)
     funds_blocked_attempts: Mapped[int] = mapped_column(Integer, default=0)
     funds_blocked_reference_number: Mapped[str] = mapped_column(String, nullable=True)
-    # id_mapper_resolution_required: Mapped[bool] = mapped_column(Boolean, default=True)
     number_of_disbursements_shipped: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reconciled: Mapped[int] = mapped_column(Integer, default=0)
     number_of_disbursements_reversed: Mapped[int] = mapped_column(Integer, default=0)

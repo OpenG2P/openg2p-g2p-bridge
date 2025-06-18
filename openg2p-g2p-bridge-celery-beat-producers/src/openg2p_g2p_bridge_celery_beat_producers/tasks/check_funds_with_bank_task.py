@@ -4,7 +4,7 @@ from datetime import datetime
 from openg2p_g2p_bridge_models.models import (
     CancellationStatus,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     FundsAvailableWithBankEnum,
 )
 from sqlalchemy import and_, literal, or_, select
@@ -34,29 +34,29 @@ def check_funds_with_bank_beat_producer():
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    DisbursementEnvelopeBatchStatus,
+                    EnvelopeBatchStatusForDigitalCash,
                     DisbursementEnvelope.disbursement_envelope_id
-                    == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
+                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
                     == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
-                    == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
+                    == EnvelopeBatchStatusForDigitalCash.number_of_disbursements_received,
                     DisbursementEnvelope.total_disbursement_quantity
-                    == DisbursementEnvelopeBatchStatus.total_disbursement_quantity_received,
+                    == EnvelopeBatchStatusForDigitalCash.total_disbursement_quantity_received,
                     or_(
                         and_(
-                            DisbursementEnvelopeBatchStatus.funds_available_with_bank
+                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.PENDING_CHECK.value,
-                            DisbursementEnvelopeBatchStatus.funds_available_attempts
+                            EnvelopeBatchStatusForDigitalCash.funds_available_attempts
                             < _config.funds_available_check_attempts,
                         ),
                         and_(
-                            DisbursementEnvelopeBatchStatus.funds_available_with_bank
+                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value,
-                            DisbursementEnvelopeBatchStatus.funds_available_attempts
+                            EnvelopeBatchStatusForDigitalCash.funds_available_attempts
                             < _config.funds_available_check_attempts,
                         ),
                     ),
@@ -72,9 +72,9 @@ def check_funds_with_bank_beat_producer():
                 f"Sending task to check funds with bank for envelope {envelope.disbursement_envelope_id}"
             )
             envelope_batch_status = (
-                session.query(DisbursementEnvelopeBatchStatus)
+                session.query(EnvelopeBatchStatusForDigitalCash)
                 .filter(
-                    DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                     == envelope.disbursement_envelope_id
                 )
                 .first()

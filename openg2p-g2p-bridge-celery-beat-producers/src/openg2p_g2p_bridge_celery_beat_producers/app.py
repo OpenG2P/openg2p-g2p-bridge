@@ -58,5 +58,9 @@ celery_app.conf.beat_schedule = {
         "task": "mt940_processor_beat_producer",
         "schedule": _config.mt940_processor_frequency,
     },
+    "geo_resolution_beat_producer": {
+        "task": "geo_resolution_beat_producer",
+        "schedule": _config.geo_resolution_frequency,
+    },
 }
 celery_app.conf.timezone = "UTC"

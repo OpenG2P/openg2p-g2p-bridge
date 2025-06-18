@@ -17,10 +17,7 @@ async def agency_allocation_beat_producer():
     async with session_maker() as session:
         result = await session.execute(
             select(DisbursementBatchControl).where(
-                and_(
-                    DisbursementBatchControl.agency_allocation_status == ProcessStatus.PENDING,
-                    DisbursementBatchControl.agency_allocation_attempts < _config.agency_allocation_max_attempts,
-                )
+                DisbursementBatchControl.agency_allocation_status == ProcessStatus.PENDING, 
             )
         )
         disbursement_batch_controls = result.scalars().all()

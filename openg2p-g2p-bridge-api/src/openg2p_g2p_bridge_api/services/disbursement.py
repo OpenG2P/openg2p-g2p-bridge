@@ -15,7 +15,8 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementCancellationStatus,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeControl,
+    EnvelopeBatchStatusForDigitalCash,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
@@ -81,42 +82,41 @@ class DisbursementService(BaseService):
             )
 
             # Lock the envelope batch status row for update (nowait)
-            disbursement_envelope_batch_status = (
-                await self.update_disbursement_envelope_batch_status(
-                    disbursements, session
-                )
+            envelope_control = await self.update_envelope_control(
+                disbursements, session
             )
-            session.add(disbursement_batch_control)
             session.add_all(disbursements)
-            session.add(disbursement_envelope_batch_status)
+            session.add_all(disbursement_batch_control)
+            session.add(envelope_control)
 
+            # No need to create a separate bank disbursement status; this is now handled by DisbursementBatchControl
             await session.commit()
             _logger.info("Disbursements Created Successfully!")
             return disbursement_request.message
 
-    async def update_disbursement_envelope_batch_status(self, disbursements, session):
-        _logger.info("Updating Disbursement Envelope Batch Status")
+    async def update_envelope_control(self, disbursements, session):
+        _logger.info("Updating Envelope Control")
         max_retries = 5
         last_exc = None
 
         while max_retries:
             try:
                 result = await session.execute(
-                    select(DisbursementEnvelopeBatchStatus)
+                    select(EnvelopeControl)
                     .where(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeControl.disbursement_envelope_id
                         == str(disbursements[0].disbursement_envelope_id)
                     )
                     .with_for_update(nowait=True)
                 )
-                disbursement_envelope_batch_status = result.scalars().first()
+                envelope_control = result.scalars().first()
                 break
 
             except OperationalError as e:
                 last_exc = e
                 wait = random.randint(8, 15)
                 _logger.warning(
-                    f"Lock attempt failed updating envelope batch status: {e}. "
+                    f"Lock attempt failed updating envelope control: {e}. "
                     f"{max_retries} retries left, sleeping {wait}s…"
                 )
                 await asyncio.sleep(wait)
@@ -124,18 +124,18 @@ class DisbursementService(BaseService):
 
         else:
             _logger.error(
-                "Unable to acquire lock on DisbursementEnvelopeBatchStatus after retries"
+                "Unable to acquire lock on EnvelopeControl after retries"
             )
             raise last_exc
 
-        disbursement_envelope_batch_status.number_of_disbursements_received += len(
+        envelope_control.number_of_disbursements_received += len(
             disbursements
         )
-        disbursement_envelope_batch_status.total_disbursement_quantity_received += sum(
+        envelope_control.total_disbursement_quantity_received += sum(
             d.disbursement_quantity for d in disbursements
         )
-        _logger.info("Disbursement Envelope Batch Status Updated!")
-        return disbursement_envelope_batch_status
+        _logger.info("Envelope Control Updated!")
+        return envelope_control
 
     async def construct_disbursements(
         self, disbursement_payloads: List[DisbursementPayload], disbursement_batch_control_id: str = None
@@ -186,6 +186,7 @@ class DisbursementService(BaseService):
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
             geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
         else:
             fa_resolution_status = ProcessStatus.NOT_APPLICABLE
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
@@ -304,11 +305,11 @@ class DisbursementService(BaseService):
                 disbursement_payloads,
             )
 
-        disbursement_envelope_batch_status = (
+        envelope_control = (
             (
                 await session.execute(
-                    select(DisbursementEnvelopeBatchStatus).where(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    select(EnvelopeControl).where(
+                        EnvelopeControl.disbursement_envelope_id
                         == str(disbursement_envelope_id)
                     )
                 )
@@ -319,7 +320,7 @@ class DisbursementService(BaseService):
 
         no_of_disbursements_after_this_request = (
             len(disbursement_payloads)
-            + disbursement_envelope_batch_status.number_of_disbursements_received
+            + envelope_control.number_of_disbursements_received
         )
         total_disbursement_quantity_after_this_request = (
             sum(
@@ -328,7 +329,7 @@ class DisbursementService(BaseService):
                     for disbursement_payload in disbursement_payloads
                 ]
             )
-            + disbursement_envelope_batch_status.total_disbursement_quantity_received
+            + envelope_control.total_disbursement_quantity_received
         )
 
         if (
@@ -454,12 +455,12 @@ class DisbursementService(BaseService):
                 disbursement.cancellation_time_stamp = datetime.now()
 
             # Lock the envelope batch status row for update (nowait)
-            disbursement_envelope_batch_status = (
+            envelope_control = (
                 (
                     await session.execute(
-                        select(DisbursementEnvelopeBatchStatus)
+                        select(EnvelopeControl)
                         .where(
-                            DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                            EnvelopeControl.disbursement_envelope_id
                             == str(disbursements_in_db[0].disbursement_envelope_id)
                         )
                         .with_for_update(nowait=True)
@@ -468,10 +469,10 @@ class DisbursementService(BaseService):
                 .scalars()
                 .first()
             )
-            disbursement_envelope_batch_status.number_of_disbursements_received -= len(
+            envelope_control.number_of_disbursements_received -= len(
                 disbursements_in_db
             )
-            disbursement_envelope_batch_status.total_disbursement_quantity_received -= (
+            envelope_control.total_disbursement_quantity_received -= (
                 sum(
                     [
                         disbursement.disbursement_quantity
@@ -481,7 +482,7 @@ class DisbursementService(BaseService):
             )
 
             session.add_all(disbursements_in_db)
-            session.add(disbursement_envelope_batch_status)
+            session.add(envelope_control)
             await session.commit()
             _logger.info("Disbursements Cancelled Successfully!")
             return disbursement_request.message
@@ -629,11 +630,11 @@ class DisbursementService(BaseService):
             )
 
         # we don't need a lock for this read
-        batch_status = (
+        envelope_control = (
             (
                 await session.execute(
-                    select(DisbursementEnvelopeBatchStatus).where(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    select(EnvelopeControl).where(
+                        EnvelopeControl.disbursement_envelope_id
                         == str(disbursements_in_db[0].disbursement_envelope_id)
                     )
                 )
@@ -642,10 +643,10 @@ class DisbursementService(BaseService):
             .first()
         )
 
-        no_of_after = batch_status.number_of_disbursements_received - len(
+        no_of_after = envelope_control.number_of_disbursements_received - len(
             disbursements_in_db
         )
-        total_amt_after = batch_status.total_disbursement_quantity_received - sum(
+        total_amt_after = envelope_control.total_disbursement_quantity_received - sum(
             d.disbursement_quantity for d in disbursements_in_db
         )
 

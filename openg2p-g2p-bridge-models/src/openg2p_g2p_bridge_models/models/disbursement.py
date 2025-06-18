@@ -70,7 +70,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     sponsor_bank_dispatch_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    geo_resolutuon_status: Mapped[ProcessStatus] = mapped_column(SqlEnum(ProcessStatus))
+    geo_resolution_status: Mapped[ProcessStatus] = mapped_column(SqlEnum(ProcessStatus))
     geo_resolution_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )

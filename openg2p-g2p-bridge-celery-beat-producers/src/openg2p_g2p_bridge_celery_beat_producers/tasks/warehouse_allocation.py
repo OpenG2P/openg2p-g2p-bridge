@@ -17,11 +17,8 @@ async def warehouse_allocation_beat_producer():
     async with session_maker() as session:
         result = await session.execute(
             select(DisbursementBatchControl).where(
-                and_(
                     DisbursementBatchControl.warehouse_allocation_status == ProcessStatus.PENDING,
-                    DisbursementBatchControl.warehouse_allocation_attempts < _config.warehouse_allocation_max_attempts,
                 )
-            )
         )
         disbursement_batch_controls = result.scalars().all()
         for disbursement_batch_control in disbursement_batch_controls:

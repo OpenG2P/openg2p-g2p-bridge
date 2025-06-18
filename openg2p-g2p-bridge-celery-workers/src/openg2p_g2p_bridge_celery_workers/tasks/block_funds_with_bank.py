@@ -9,7 +9,7 @@ from openg2p_g2p_bridge_bank_connectors.bank_interface import (
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     FundsBlockedWithBankEnum,
 )
 from sqlalchemy.orm import sessionmaker
@@ -44,9 +44,9 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             return
 
         batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
+            session.query(EnvelopeBatchStatusForDigitalCash)
             .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                 == disbursement_envelope_id
             )
             .first()

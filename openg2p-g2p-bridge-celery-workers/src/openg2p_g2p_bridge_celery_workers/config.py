@@ -34,3 +34,6 @@ class Settings(BaseSettings):
     audience: str = ""
 
     sender_id: str = ""
+
+    agency_allocation_max_attempts: int = 3
+    warehouse_allocation_max_attempts: int = 3
