@@ -16,7 +16,7 @@ class DisbursementEnvelopePayload(BaseModel):
     id: Optional[str] = None
     disbursement_envelope_id: Optional[str] = None
     benefit_program_mnemonic: Optional[str] = None
-    benefit_code: Optional[str] = None
+    benefit_code_id: Optional[str] = None
     benefit_type: Optional[BenefitType] = None
     cash_distribution_mode: Optional[CashDistributionMode] = None
     disbursement_cycle_id: Optional[str] = None

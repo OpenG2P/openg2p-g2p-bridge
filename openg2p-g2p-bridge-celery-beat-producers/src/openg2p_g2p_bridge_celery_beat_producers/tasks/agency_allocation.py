@@ -4,18 +4,20 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from openg2p_g2p_bridge_celery_beat_producers.app import celery_app
+from sqlalchemy.orm import sessionmaker
+
+from ..app import celery_app, get_engine
 from ..config import Settings
 
 _config = Settings.get_config()
+_engine = get_engine()
 _logger = logging.getLogger("agency_allocation_beat_producer")
 
 @celery_app.task(name="agency_allocation_beat_producer")
-async def agency_allocation_beat_producer():
-    session_maker = async_sessionmaker(_config.get_engine(), expire_on_commit=False)
-    async with session_maker() as session:
-        result = await session.execute(
+def agency_allocation_beat_producer():
+    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    with session_maker() as session:
+        result = session.execute(
             select(DisbursementBatchControl).where(
                 DisbursementBatchControl.agency_allocation_status == ProcessStatus.PENDING, 
             )
@@ -30,5 +32,5 @@ async def agency_allocation_beat_producer():
                 args=[disbursement_batch_control.disbursement_batch_control_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            await session.commit()
+            session.commit()
         _logger.info("Finished agency_allocation_beat_producer") 

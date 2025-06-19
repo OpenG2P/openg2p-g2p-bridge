@@ -9,9 +9,9 @@ class GeoResolverImpl(GeoResolver):
             results.append({
                 "disbursement_id": item["disbursement_id"],
                 "beneficiary_id": item["beneficiary_id"],
-                "administrative_area_id_large": "LARGE123",
-                "administrative_area_mnemonic_large": "LARGE_MNEMONIC",
-                "administrative_area_id_small": "SMALL456",
-                "administrative_area_mnemonic_small": "SMALL_MNEMONIC",
+                "administrative_zone_id_large": "LARGE123",
+                "administrative_zone_mnemonic_large": "LARGE_MNEMONIC",
+                "administrative_zone_id_small": "SMALL456",
+                "administrative_zone_mnemonic_small": "SMALL_MNEMONIC",
             })
         return results 

@@ -79,10 +79,11 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
                     disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
                     beneficiary_id=geo_resolution_item["beneficiary_id"],
-                    administrative_zone_id_large=geo_resolution_item["administrative_area_id_large"],
-                    administrative_zone_mnemonic_large=geo_resolution_item["administrative_area_mnemonic_large"],
-                    administrative_zone_id_small=geo_resolution_item["administrative_area_id_small"],
+                    administrative_zone_id_large=geo_resolution_item["administrative_zone_id_large"],
+                    administrative_zone_mnemonic_large=geo_resolution_item["administrative_zone_mnemonic_large"],
+                    administrative_zone_id_small=geo_resolution_item["administrative_zone_id_small"],
                     administrative_zone_mnemonic_small=geo_resolution_item["administrative_zone_mnemonic_small"],
+                    active=True,
                 )
                 disbursement_resolution_geo_addresses.append(disbursement_resolution_geo_address)
 
@@ -121,6 +122,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     total_quantity=data["total_quantity"],
                     warehouse_notification_status=ProcessStatus.PENDING,
                     agency_notification_status=ProcessStatus.PENDING,
+                    active=True,
                 )
                 disbursement_batch_control_geos.append(disbursement_batch_control_geo)
 
@@ -148,4 +150,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control_to_update.geo_resolution_status = ProcessStatus.PENDING
                     disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(e)
                     disbursement_batch_control_to_update.geo_resolution_attempts = (disbursement_batch_control_to_update.geo_resolution_attempts or 0) + 1
+                    if disbursement_batch_control_to_update.geo_resolution_attempts >= _config.geo_resolution_max_attempts:
+                        disbursement_batch_control_to_update.geo_resolution_status = ProcessStatus.FAILED
+                        disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(e)
                     error_session.commit() 

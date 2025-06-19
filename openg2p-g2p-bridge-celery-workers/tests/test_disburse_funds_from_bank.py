@@ -35,7 +35,7 @@ class MockSession:
         self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            benefit_code="test_benefit",
+            benefit_code_id="test_benefit",
             benefit_type=BenefitType.CASH,
             cash_distribution_mode=CashDistributionMode.DIGITAL,
             disbursement_cycle_id="test_cycle",

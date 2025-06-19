@@ -45,10 +45,10 @@ class DisbursementResolutionGeoAddress(BaseORMModelWithTimes):
     administrative_zone_mnemonic_large: Mapped[str] = mapped_column(String)
     administrative_zone_id_small: Mapped[str] = mapped_column(String)
     administrative_zone_mnemonic_small: Mapped[str] = mapped_column(String)
-    warehouse_id: Mapped[str] = mapped_column(String, index=True)
-    warehouse_mnemonic: Mapped[str] = mapped_column(String)
-    agency_id: Mapped[str] = mapped_column(String, index=True)
-    agency_mnemonic: Mapped[str] = mapped_column(String)
+    warehouse_id: Mapped[str] = mapped_column(String, index=True, nullable=True)
+    warehouse_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
+    agency_id: Mapped[str] = mapped_column(String, index=True, nullable=True)
+    agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_notification_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
+        SqlEnum(ProcessStatus), default=ProcessStatus.NOT_APPLICABLE
     )

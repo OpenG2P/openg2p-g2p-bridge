@@ -1,8 +1,9 @@
 import logging
 from typing import List, Dict, Any, Optional
-from openg2p_fastapi_common.context import dbengine
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy.future import select
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
@@ -10,21 +11,22 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionGeoAddress,
     ProcessStatus,
 )
-from openg2p_g2p_bridge_celery_workers.app import celery_app
 from openg2p_g2p_bridge_agency_allocator.agency_allocator.agency_allocator_factory import AgencyAllocatorFactory
 from ..config import Settings
+from ..app import get_engine, celery_app
 
 _logger = logging.getLogger("agency_allocation_worker")
+_engine = get_engine()
 _config = Settings.get_config()
 
 @celery_app.task(name="agency_allocation_worker")
-async def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
-    session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
-    async with session_maker() as session:
+def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
+    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    with session_maker() as session:
         try:
             # Fetch the batch control record
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementBatchControl).where(
                         DisbursementBatchControl.disbursement_batch_control_id == disbursement_batch_control_id
                     )
@@ -35,7 +37,7 @@ async def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 return
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementBatchControlGeo).where(
                         DisbursementBatchControlGeo.disbursement_batch_control_id == disbursement_batch_control_id
                     )
@@ -52,7 +54,7 @@ async def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PENDING
 
                 # Bulk Update DisbursementResolutionGeoAddress
-                await session.execute(
+                session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
                         DisbursementResolutionGeoAddress.disbursement_batch_control_id == disbursement_batch_control_geo.disbursement_batch_control_id,
@@ -67,12 +69,12 @@ async def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             # Update batch control status
             disbursement_batch_control.agency_allocation_status = ProcessStatus.PROCESSED
-            await session.commit()
+            session.commit()
         except Exception as e:
             _logger.error(f"Agency allocation failed: {e}")
             # Update error code and attempts
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementBatchControl).where(
                         DisbursementBatchControl.disbursement_batch_control_id == disbursement_batch_control_id
                     )
@@ -84,4 +86,4 @@ async def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 if disbursement_batch_control.agency_allocation_attempts >= _config.agency_allocation_max_attempts:
                     disbursement_batch_control.agency_allocation_status = ProcessStatus.FAILED
                     # TODO: Do this ProcessStatus.FAILED status updation in all workers
-                await session.commit() 
+                session.commit() 

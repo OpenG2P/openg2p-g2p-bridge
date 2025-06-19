@@ -32,7 +32,7 @@ def block_funds_with_bank_beat_producer():
             if not _config.process_future_disbursement_schedules
             else literal(True)
         )
-        print("date_cond:", date_condition)
+
         envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
@@ -67,8 +67,6 @@ def block_funds_with_bank_beat_producer():
             .scalars()
             .all()
         )
-
-        print("Found ", len(envelopes), " envelopes to block funds with bank")
 
         for envelope in envelopes:
             _logger.info(

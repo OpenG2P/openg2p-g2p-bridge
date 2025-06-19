@@ -1,26 +1,26 @@
 import logging
 from typing import Optional, Dict, Any
-from openg2p_fastapi_common.context import dbengine
-from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.future import select
+from sqlalchemy.orm import sessionmaker
 from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionGeoAddress,
     ProcessStatus,
     DisbursementEnvelope,
 )
-from openg2p_g2p_bridge_celery_workers.app import celery_app
 import httpx
 from ..config import Settings
+from ..app import get_engine, celery_app
 
 _logger = logging.getLogger("beneficiary_notification_worker")
 _config = Settings.get_config()
+_engine = get_engine()
 
 NOTIFICATION_SERVICE_URL = _config.notification_service_url
 
 
 @celery_app.task(name="beneficiary_notification_worker")
 async def beneficiary_notification_worker(disbursement_id: str) -> None:
-    session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
     async with session_maker() as session:
         try:
             # Fetch the geo address record
@@ -49,7 +49,7 @@ async def beneficiary_notification_worker(disbursement_id: str) -> None:
             notification_payload: Dict[str, Any] = {
                 "disbursement_id": geo_address.disbursement_id,
                 "program_mnemonic": envelope.benefit_program_mnemonic,
-                "benefit_code": envelope.benefit_code,
+                "benefit_code_id": envelope.benefit_code_id,
                 "benefit_type": envelope.benefit_type.value if hasattr(envelope.benefit_type, 'value') else str(envelope.benefit_type),
                 "disbursement_cycle_mnemonic": envelope.cycle_code_mnemonic,
                 "disbursement_quantity": envelope.total_disbursement_quantity,

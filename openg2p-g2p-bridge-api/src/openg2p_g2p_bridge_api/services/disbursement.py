@@ -192,7 +192,7 @@ class DisbursementService(BaseService):
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
             geo_resolutuon_status = ProcessStatus.PENDING
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
-            agency_allocation_status = ProcessStatus.PENDING
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
             
         disbursement_batch_control = DisbursementBatchControl(
             disbursement_batch_control_id=disbursement_batch_control_id,

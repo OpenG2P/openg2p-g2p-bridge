@@ -37,3 +37,6 @@ class Settings(BaseSettings):
 
     agency_allocation_max_attempts: int = 3
     warehouse_allocation_max_attempts: int = 3
+    geo_resolution_max_attempts: int = 3
+
+    notification_service_url: str = ""

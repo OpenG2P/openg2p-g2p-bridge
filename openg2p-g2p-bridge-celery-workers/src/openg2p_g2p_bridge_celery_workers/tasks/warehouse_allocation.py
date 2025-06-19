@@ -1,31 +1,32 @@
 import logging
+from datetime import datetime
 from typing import List, Dict, Any, Optional
-from openg2p_fastapi_common.context import dbengine
-from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.future import select
 from sqlalchemy import update
+from sqlalchemy.orm import sessionmaker
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
     ProcessStatus,
 )
-from openg2p_g2p_bridge_celery_workers.app import celery_app
 from openg2p_g2p_bridge_warehouse_allocator.warehouse_allocator.warehouse_allocator_factory import WarehouseAllocatorFactory
+from ..app import celery_app, get_engine
 from ..config import Settings
 
 _logger = logging.getLogger("warehouse_allocation_worker")
+_engine = get_engine()
 _config = Settings.get_config()
 
 
 @celery_app.task(name="warehouse_allocation_worker")
-async def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
-    session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
-    async with session_maker() as session:
+def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
+    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    with session_maker() as session:
         try:
             # Fetch the batch control record
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementBatchControl).where(
                         DisbursementBatchControl.disbursement_batch_control_id == disbursement_batch_control_id
                     )
@@ -36,7 +37,7 @@ async def warehouse_allocation_worker(disbursement_batch_control_id: str) -> Non
                 return
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementBatchControlGeo).where(
                         DisbursementBatchControlGeo.disbursement_batch_control_id == disbursement_batch_control_id
                     )
@@ -55,7 +56,7 @@ async def warehouse_allocation_worker(disbursement_batch_control_id: str) -> Non
                 disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PENDING
 
                 # Bulk Update DisbursementResolutionGeoAddress
-                await session.execute(
+                session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
                         DisbursementResolutionGeoAddress.disbursement_batch_control_id == disbursement_batch_control_geo.disbursement_batch_control_id,
@@ -70,8 +71,9 @@ async def warehouse_allocation_worker(disbursement_batch_control_id: str) -> Non
 
             # Update batch control status
             disbursement_batch_control.warehouse_allocation_status = ProcessStatus.PROCESSED
+            disbursement_batch_control.warehouse_allocation_timestamp = datetime.now()
             disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING
-            await session.commit()
+            session.commit()
         except Exception as e:
             _logger.error(f"Warehouse allocation failed: {e}")
             # Update error code and attempts
@@ -80,5 +82,4 @@ async def warehouse_allocation_worker(disbursement_batch_control_id: str) -> Non
                 disbursement_batch_control.warehouse_allocation_attempts += 1
                 if disbursement_batch_control.warehouse_allocation_attempts >= _config.warehouse_allocation_max_attempts:
                     disbursement_batch_control.warehouse_allocation_status = ProcessStatus.FAILED
-            
-                await session.commit() 
+                session.commit() 

@@ -237,7 +237,7 @@ class DisbursementEnvelopeService(BaseService):
         disbursement_envelope: DisbursementEnvelope = DisbursementEnvelope(
             disbursement_envelope_id=str(uuid.uuid4()),
             benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
-            benefit_code=disbursement_envelope_payload.benefit_code,
+            benefit_code_id=disbursement_envelope_payload.benefit_code_id,
             benefit_type=disbursement_envelope_payload.benefit_type,
             cash_distribution_mode=disbursement_envelope_payload.cash_distribution_mode,
             disbursement_cycle_id=disbursement_envelope_payload.disbursement_cycle_id,
