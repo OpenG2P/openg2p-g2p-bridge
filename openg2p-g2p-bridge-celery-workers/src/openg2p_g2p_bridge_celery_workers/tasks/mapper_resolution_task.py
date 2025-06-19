@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 import asyncio
 
 from openg2p_g2p_bridge_models.models import (
@@ -140,6 +140,7 @@ def process_and_store_resolution(
                 if single_response.account_provider_info
                 else None,
                 **deconstructed_fa,
+                active=True,
             )
             details_list.append(disbursement_resolution_financial_address)
         else:

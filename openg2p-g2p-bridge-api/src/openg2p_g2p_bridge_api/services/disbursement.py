@@ -298,7 +298,7 @@ class DisbursementService(BaseService):
                 disbursement_payloads,
             )
 
-        if disbursement_envelope.cancellation_status == CancellationStatus.Cancelled:
+        if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED:
             _logger.error("Disbursement Envelope Already Canceled!")
             raise DisbursementException(
                 G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_ALREADY_CANCELED,
@@ -615,7 +615,7 @@ class DisbursementService(BaseService):
                 disbursement_payloads,
             )
 
-        if disbursement_envelope.cancellation_status == CancellationStatus.Cancelled:
+        if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED:
             _logger.error("Disbursement Envelope Already Canceled!")
             raise DisbursementException(
                 G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_ALREADY_CANCELED,

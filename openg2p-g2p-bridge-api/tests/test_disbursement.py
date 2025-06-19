@@ -153,7 +153,7 @@ def mock_cancel_disbursements(is_valid, disbursement_request):
             disbursement_payloads=disbursement_request.message,
         )
     for payload in disbursement_request.message:
-        payload.cancellation_status = CancellationStatus.Cancelled
+        payload.cancellation_status = CancellationStatus.CANCELLED
         payload.cancellation_time_stamp = datetime.now()
     return disbursement_request
 
@@ -216,7 +216,7 @@ async def test_cancel_disbursements_success(
 
     assert response.header.status == StatusEnum.succ
     assert all(
-        payload.cancellation_status == CancellationStatus.Cancelled
+        payload.cancellation_status == CancellationStatus.CANCELLED
         for payload in response.message
     )
 

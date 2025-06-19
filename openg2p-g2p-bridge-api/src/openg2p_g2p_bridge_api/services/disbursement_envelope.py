@@ -105,7 +105,7 @@ class DisbursementEnvelopeService(BaseService):
 
             if (
                 disbursement_envelope.cancellation_status
-                == CancellationStatus.Cancelled.value
+                == CancellationStatus.CANCELLED.value
             ):
                 _logger.error(
                     f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled"
@@ -115,7 +115,7 @@ class DisbursementEnvelopeService(BaseService):
                 )
 
             disbursement_envelope.cancellation_status = (
-                CancellationStatus.Cancelled.value
+                CancellationStatus.CANCELLED.value
             )
             disbursement_envelope.cancellation_timestamp = datetime.now()
 
@@ -249,7 +249,7 @@ class DisbursementEnvelopeService(BaseService):
             measurement_unit=disbursement_envelope_payload.measurement_unit,
             disbursement_schedule_date=disbursement_envelope_payload.disbursement_schedule_date,
             receipt_time_stamp=datetime.now(),
-            cancellation_status=CancellationStatus.Not_Cancelled.value,
+            cancellation_status=CancellationStatus.NOT_CANCELLED.value,
             cancellation_timestamp=None,
             active=True,
         )
@@ -415,7 +415,7 @@ class DisbursementEnvelopeService(BaseService):
 
             if (
                 disbursement_envelope.cancellation_status
-                == CancellationStatus.Cancelled.value
+                == CancellationStatus.CANCELLED.value
             ):
                 _logger.error(
                     f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled"

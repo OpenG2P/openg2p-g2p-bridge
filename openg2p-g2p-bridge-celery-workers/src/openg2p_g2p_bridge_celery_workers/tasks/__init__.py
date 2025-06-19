@@ -1,7 +1,7 @@
 from .block_funds_with_bank import (
     block_funds_with_bank_worker,
 )
-from .check_funds_with_bank_task import (
+from .check_funds_with_bank import (
     check_funds_with_bank_worker,
 )
 from .disburse_funds_from_bank import (

@@ -38,7 +38,7 @@ def geo_resolution_beat_producer():
                 f"Sending geo resolution task for batch: {batch.disbursement_batch_control_id}"
             )
 
-            batch.geo_resolution_status = ProcessStatus.IN_PROGRESS
+            batch.geo_resolution_status = ProcessStatus.PROCESSING
 
             celery_app.send_task(
                 "geo_resolution_worker",

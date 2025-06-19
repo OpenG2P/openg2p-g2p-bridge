@@ -32,7 +32,7 @@ def block_funds_with_bank_beat_producer():
             if not _config.process_future_disbursement_schedules
             else literal(True)
         )
-
+        print("date_cond:", date_condition)
         envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
@@ -44,7 +44,7 @@ def block_funds_with_bank_beat_producer():
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    == CancellationStatus.NOT_CANCELLED.value,
                     EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
                     == FundsAvailableWithBankEnum.FUNDS_AVAILABLE.value,
                     or_(
@@ -68,6 +68,8 @@ def block_funds_with_bank_beat_producer():
             .all()
         )
 
+        print("Found ", len(envelopes), " envelopes to block funds with bank")
+
         for envelope in envelopes:
             _logger.info(
                 f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
@@ -82,7 +84,7 @@ def block_funds_with_bank_beat_producer():
             )
 
             envelope_batch_status.funds_blocked_with_bank = (
-                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
+                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS
             )
 
             celery_app.send_task(

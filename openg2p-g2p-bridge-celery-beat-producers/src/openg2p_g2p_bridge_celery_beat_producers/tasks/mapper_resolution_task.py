@@ -24,24 +24,21 @@ def mapper_resolution_beat_producer():
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
     with session_maker() as session:
         # Get the setting for stale tasks
-        stale_at_setting = session.get(Settings, "stale_at")
-        stale_at = (
-            int(stale_at_setting.value) if stale_at_setting else (24 * 60 * 60)
-        )  # Default to 24 hours
-        stale_at_datetime = datetime.now() - timedelta(seconds=stale_at)
-
+        stale_at = datetime.now() - timedelta(
+            minutes=_config.task_stale_threshold_minutes
+        )
         # 1. Reset tasks that are in progress for too long (stale)
         session.execute(
             update(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.fa_resolution_status == ProcessStatus.IN_PROGRESS,
-                DisbursementBatchControl.updated_at < stale_at_datetime,
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PROCESSING,
+                DisbursementBatchControl.updated_at > stale_at,
             )
             .values(fa_resolution_status=ProcessStatus.PENDING)
         )
 
         # 2. Select pending tasks
-        pending_batches = session.scalars(
+        disbursement_batch_controls = session.scalars(
             select(DisbursementBatchControl).where(
                 DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING,
                 DisbursementBatchControl.fa_resolution_attempts
@@ -49,25 +46,26 @@ def mapper_resolution_beat_producer():
             )
         ).all()
 
-        if not pending_batches:
+        if not disbursement_batch_controls:
             _logger.info("No pending disbursement batches for mapper resolution.")
             return
 
-        for batch in pending_batches:
+        for disbursement_batch_control in disbursement_batch_controls:
             # 3. Mark as in progress
-            batch.fa_resolution_status = ProcessStatus.IN_PROGRESS
-            session.add(batch)
+            disbursement_batch_control.fa_resolution_status = ProcessStatus.PROCESSING
+            session.add(disbursement_batch_control)
             session.commit()
 
             # 4. Publish to Celery queue
             celery_app.send_task(
-                "mapper-resolution-worker",
-                args=[batch.disbursement_batch_control_id],
+                "mapper_resolution_worker",
+                queue="g2p_bridge_celery_worker_tasks",
+                args=[disbursement_batch_control.disbursement_batch_control_id],
             )
             _logger.info(
-                f"Published disbursement batch {batch.disbursement_batch_control_id} to mapper-resolution-worker."
+                f"Published disbursement batch {disbursement_batch_control.disbursement_batch_control_id} to mapper-resolution-worker."
             )
 
         _logger.info(
-            f"Published {len(pending_batches)} disbursement batches for mapper resolution."
+            f"Published {len(disbursement_batch_controls)} disbursement batches for mapper resolution."
         )

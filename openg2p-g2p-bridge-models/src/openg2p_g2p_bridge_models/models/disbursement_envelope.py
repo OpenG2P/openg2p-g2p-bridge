@@ -39,8 +39,8 @@ class DisbursementFrequency(Enum):
 
 
 class CancellationStatus(Enum):
-    Not_Cancelled = "Not_Cancelled"
-    Cancelled = "Cancelled"
+    NOT_CANCELLED = "Not_Cancelled"
+    CANCELLED = "Cancelled"
 
 
 class BenefitType(Enum):
@@ -78,7 +78,7 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
         DateTime(), default=datetime.now()
     )
     cancellation_status: Mapped[CancellationStatus] = mapped_column(
-        String, default=CancellationStatus.Not_Cancelled
+        String, default=CancellationStatus.NOT_CANCELLED
     )
     cancellation_timestamp: Mapped[datetime] = mapped_column(
         DateTime(), nullable=True, default=None

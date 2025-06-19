@@ -8,9 +8,11 @@ from openg2p_g2p_bridge_bank_connectors.bank_interface import (
 )
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
+    DisbursementBatchControl,
     DisbursementEnvelope,
     EnvelopeBatchStatusForDigitalCash,
     FundsBlockedWithBankEnum,
+    ProcessStatus
 )
 from sqlalchemy.orm import sessionmaker
 
@@ -43,7 +45,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
             return
 
-        batch_status = (
+        envelope_batch_status_for_digital_cash = (
             session.query(EnvelopeBatchStatusForDigitalCash)
             .filter(
                 EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
@@ -52,7 +54,12 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             .first()
         )
 
-        if not batch_status:
+        disbursement_batch_control = session.query(DisbursementBatchControl).filter(
+            DisbursementBatchControl.disbursement_envelope_id
+            == disbursement_envelope_id
+        ).first()
+
+        if not envelope_batch_status_for_digital_cash:
             _logger.error(
                 f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
             )
@@ -82,35 +89,36 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
 
             if funds_blocked.status == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS:
-                batch_status.funds_blocked_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
                 )
-                batch_status.funds_blocked_reference_number = (
+                envelope_batch_status_for_digital_cash.funds_blocked_reference_number = (
                     funds_blocked.block_reference_no
                 )
-                batch_status.funds_blocked_latest_error_code = None
+                envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = None
+                disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.PENDING
             else:
-                batch_status.funds_blocked_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 )
-                batch_status.funds_blocked_reference_number = ""
-                batch_status.funds_blocked_latest_error_code = funds_blocked.error_code
+                envelope_batch_status_for_digital_cash.funds_blocked_reference_number = ""
+                envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = funds_blocked.error_code
 
-            batch_status.funds_blocked_latest_timestamp = datetime.now()
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_timestamp = datetime.now()
 
-            batch_status.funds_blocked_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_blocked_attempts += 1
 
         except Exception as e:
             _logger.error(
                 f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
             )
-            batch_status.funds_blocked_with_bank = (
+            envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.PENDING_CHECK.value
             )
-            batch_status.funds_blocked_latest_timestamp = datetime.now()
-            batch_status.funds_blocked_latest_error_code = str(e)
-            batch_status.funds_blocked_attempts += 1
-            batch_status.funds_blocked_reference_number = ""
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_timestamp = datetime.now()
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = str(e)
+            envelope_batch_status_for_digital_cash.funds_blocked_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_blocked_reference_number = ""
             session.commit()
 
         session.commit()

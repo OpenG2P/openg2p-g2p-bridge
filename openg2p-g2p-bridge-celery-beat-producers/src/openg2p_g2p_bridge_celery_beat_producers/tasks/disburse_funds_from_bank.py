@@ -28,16 +28,16 @@ def disburse_funds_from_bank_beat_producer():
     with session_maker() as session:
         # 1. Reset stale 'PROCESSING' batches back to 'PENDING'
         stale_at = datetime.now() - timedelta(
-            minutes=_config.disbursement_retry_threshold_minutes
+            minutes=_config.task_stale_threshold_minutes
         )
         reset_stmt = (
             update(DisbursementBatchControl)
             .where(
                 DisbursementBatchControl.sponsor_bank_dispatch_status
-                == ProcessStatus.PROCESSING.value,
+                == ProcessStatus.PROCESSING,
                 DisbursementBatchControl.updated_at < stale_at,
             )
-            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING.value)
+            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING)
         )
         session.execute(reset_stmt)
         session.commit()
@@ -64,7 +64,7 @@ def disburse_funds_from_bank_beat_producer():
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    == CancellationStatus.NOT_CANCELLED.value,
                     DisbursementEnvelope.number_of_disbursements
                     == EnvelopeControl.number_of_disbursements_received,
                     EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
@@ -83,7 +83,7 @@ def disburse_funds_from_bank_beat_producer():
                     DisbursementBatchControl.disbursement_envelope_id
                     == envelope.disbursement_envelope_id,
                     DisbursementBatchControl.sponsor_bank_dispatch_status
-                    == ProcessStatus.PENDING.value,
+                    == ProcessStatus.PENDING,
                 ).limit(_config.no_of_tasks_to_process)
             )
             .scalars()
