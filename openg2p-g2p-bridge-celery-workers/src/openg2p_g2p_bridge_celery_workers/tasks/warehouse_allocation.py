@@ -35,6 +35,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             if not disbursement_batch_control:
                 _logger.error(f"No batch control found for id {disbursement_batch_control_id}")
                 return
+
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
                 session.execute(
@@ -45,17 +46,24 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             ).scalars().all()
 
             warehouse_allocator = WarehouseAllocatorFactory.get_warehouse_allocator()
-            allocation_results: List[Dict[str, Any]] = warehouse_allocator.allocate_warehouse([geo.__dict__ for geo in disbursement_batch_control_geos])
-            
-            # Persist results
-            for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
-                disbursement_batch_control_geo.warehouse_id = allocation["warehouse_id"]
-                disbursement_batch_control_geo.warehouse_mnemonic = allocation["warehouse_mnemonic"]
-                # Initial notification_status values
-                disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PENDING
-                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PENDING
+            allocation_results: List[Dict[str, Any]] = warehouse_allocator.allocate_warehouse(
+                [geo.__dict__ for geo in disbursement_batch_control_geos]
+            )
 
-                # Bulk Update DisbursementResolutionGeoAddress
+            for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
+                # Bulk update DisbursementBatchControlGeo
+                session.execute(
+                    update(DisbursementBatchControlGeo)
+                    .where(
+                        DisbursementBatchControlGeo.disbursement_control_geo_id == disbursement_batch_control_geo.disbursement_control_geo_id
+                    )
+                    .values(
+                        warehouse_id=allocation["warehouse_id"],
+                        warehouse_mnemonic=allocation["warehouse_mnemonic"],
+                    )
+                )
+
+                # Bulk update DisbursementResolutionGeoAddress
                 session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
@@ -71,6 +79,8 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             # Update batch control status
             disbursement_batch_control.warehouse_allocation_status = ProcessStatus.PROCESSED
+            disbursement_batch_control.warehouse_allocation_latest_error_code = None
+            disbursement_batch_control.warehouse_allocation_attempts += 1
             disbursement_batch_control.warehouse_allocation_timestamp = datetime.now()
             disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING
             session.commit()
@@ -81,5 +91,5 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 disbursement_batch_control.warehouse_allocation_latest_error_code = str(e)
                 disbursement_batch_control.warehouse_allocation_attempts += 1
                 if disbursement_batch_control.warehouse_allocation_attempts >= _config.warehouse_allocation_max_attempts:
-                    disbursement_batch_control.warehouse_allocation_status = ProcessStatus.FAILED
+                    disbursement_batch_control.warehouse_allocation_status = ProcessStatus.ERROR
                 session.commit() 

@@ -24,7 +24,6 @@ def warehouse_allocation_beat_producer():
         )
         disbursement_batch_controls = result.scalars().all()
 
-        print(f"Found {len(disbursement_batch_controls)} disbursement batch controls to perform warehouse allocation")
         for disbursement_batch_control in disbursement_batch_controls:
             _logger.info(f"{disbursement_batch_control.warehouse_allocation_attempts} / {_config.warehouse_allocation_max_attempts} attempts done")
             _logger.info(f"Sending warehouse_allocation_worker task for batch_control_id: {disbursement_batch_control.disbursement_batch_control_id}")

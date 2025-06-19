@@ -14,3 +14,5 @@ from .mt940_processor import mt940_processor_worker
 from .geo_resolution import geo_resolution_worker
 from .warehouse_allocation import warehouse_allocation_worker
 from .agency_allocation import agency_allocation_worker
+from .warehouse_notification import warehouse_notification_worker
+from .agency_notification import agency_notification_worker

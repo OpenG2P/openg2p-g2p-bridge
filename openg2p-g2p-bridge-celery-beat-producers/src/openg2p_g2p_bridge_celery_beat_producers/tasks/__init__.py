@@ -14,3 +14,5 @@ from .mt940_processor import mt940_processor_beat_producer
 from .geo_resolution import geo_resolution_beat_producer
 from .warehouse_allocation import warehouse_allocation_beat_producer
 from .agency_allocation import agency_allocation_beat_producer
+from .warehouse_notification import warehouse_notification_beat_producer
+from .agency_notification import agency_notification_beat_producer

@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     geo_resolution_max_attempts: int = 3
     warehouse_allocation_max_attempts: int = 3
     agency_allocation_max_attempts: int = 3
+    warehouse_notification_max_attempts: int = 3
+    agency_notification_max_attempts: int = 3
     
     mapper_resolve_frequency: int = 5
     funds_available_check_frequency: int = 10
@@ -40,6 +42,8 @@ class Settings(BaseSettings):
     geo_resolution_frequency: int = 3600
     warehouse_allocation_frequency: int = 3600
     agency_allocation_frequency: int = 3600
+    warehouse_notification_frequency: int = 3600
+    agency_notification_frequency: int = 3600
 
     no_of_tasks_to_process: int = 4
     disbursement_retry_threshold_minutes: int = (

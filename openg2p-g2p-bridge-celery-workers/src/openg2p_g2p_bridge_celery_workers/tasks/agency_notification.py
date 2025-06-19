@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Dict, Any
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
+import asyncio
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
@@ -9,7 +10,7 @@ from openg2p_g2p_bridge_models.models import (
 )
 from ..config import Settings
 from ..app import get_engine, celery_app
-import httpx
+from ..helpers.notification_helper import NotificationHelper
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -47,6 +48,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 "disbursement_quantity": getattr(disbursement_batch_control_geo, "total_quantity", None),
                 "disbursement_date": str(getattr(disbursement_batch_control_geo, "disbursement_date", None)),
                 "agency_mnemonic": getattr(disbursement_batch_control_geo, "agency_mnemonic", None),
+                "warehouse_mnemonic": getattr(disbursement_batch_control_geo, "warehouse_mnemonic", None),
             }
             # Prepare notification request
             notification_request = {
@@ -57,9 +59,10 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 "notification_payload": notification_payload,
             }
             # Send to notification microservice
-            # with httpx.AsyncClient() as client:
-            #     response = client.post(NOTIFICATION_SERVICE_URL, json=notification_request)
-            #     response.raise_for_status()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            helper = NotificationHelper()
+            loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
             # Update status to PROCESSED
             disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PROCESSED
             session.commit()

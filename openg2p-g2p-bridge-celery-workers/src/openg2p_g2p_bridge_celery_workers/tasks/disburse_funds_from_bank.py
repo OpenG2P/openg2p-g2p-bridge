@@ -224,6 +224,11 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                 disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = str(e)
                 disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
                 disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
+                if disbursement_batch_control.sponsor_bank_dispatch_attempts >= _config.max_sponsor_bank_dispatch_attempts:
+                    disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.ERROR.value
+                    _logger.error(
+                        f"Max attempts reached for disbursement for envelope {disbursement_envelope_id}"
+                    )
                 session.commit()
                 break
 

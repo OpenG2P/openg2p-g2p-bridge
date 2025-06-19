@@ -119,6 +119,11 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = str(e)
             envelope_batch_status_for_digital_cash.funds_blocked_attempts += 1
             envelope_batch_status_for_digital_cash.funds_blocked_reference_number = ""
+            if envelope_batch_status_for_digital_cash.funds_blocked_attempts >= _config.max_funds_blocking_attempts:
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
+                    FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
+                )
+                disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.FAILED
             session.commit()
 
         session.commit()

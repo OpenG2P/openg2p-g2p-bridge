@@ -50,15 +50,13 @@ def block_funds_with_bank_beat_producer():
                     or_(
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
-                            == FundsBlockedWithBankEnum.PENDING_CHECK.value,
-                            EnvelopeBatchStatusForDigitalCash.funds_blocked_attempts
-                            < _config.funds_blocked_attempts,
+                            == FundsBlockedWithBankEnum.PENDING_CHECK.value
+                           
                         ),
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
-                            == FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value,
-                            EnvelopeBatchStatusForDigitalCash.funds_blocked_attempts
-                            < _config.funds_blocked_attempts,
+                            == FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
+                           
                         ),
                     ),
                 )

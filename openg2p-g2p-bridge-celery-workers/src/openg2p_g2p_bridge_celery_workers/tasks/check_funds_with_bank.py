@@ -109,6 +109,13 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 e
             )
             envelope_batch_status_for_digital_cash.funds_available_attempts += 1
+            if envelope_batch_status_for_digital_cash.funds_available_attempts >= _config.max_funds_check_attempts:
+                envelope_batch_status_for_digital_cash.funds_available_with_bank = (
+                    FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
+                )
+                _logger.error(
+                    f"Max attempts reached for checking funds with bank for envelope {disbursement_envelope_id}"
+                )
         _logger.info(
             f"Checked funds with bank for envelope: {disbursement_envelope_id}"
         )

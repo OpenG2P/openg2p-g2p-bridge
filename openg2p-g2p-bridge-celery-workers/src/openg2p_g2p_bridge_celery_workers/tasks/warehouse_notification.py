@@ -10,7 +10,8 @@ from openg2p_g2p_bridge_models.models import (
 
 from ..app import celery_app, get_engine
 from ..config import Settings
-import httpx
+from ..helpers.notification_helper import NotificationHelper
+import asyncio
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -58,12 +59,12 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                 "event": "WAREHOUSE_NOTIFICATION",
                 "notification_payload": notification_payload,
             }
-            # TODO: Persist this into NotificationLog with disbursement_batch_control_geo_id
             # Send to notification microservice
-            # with httpx.AsyncClient() as client:
-            #     response = client.post(NOTIFICATION_SERVICE_URL, json=notification_request)
-            #     response.raise_for_status()
-            # Update status to PROCESSED
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            helper = NotificationHelper()
+            loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
+            # TODO: Persist to NotificationLog and Update status to PROCESSED 
             disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PROCESSED
             session.commit()
         except Exception as e:

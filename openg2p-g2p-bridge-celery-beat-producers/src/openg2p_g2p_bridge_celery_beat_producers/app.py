@@ -70,5 +70,13 @@ celery_app.conf.beat_schedule = {
         "task": "agency_allocation_beat_producer",
         "schedule": _config.agency_allocation_frequency,
     },
+    "warehouse_notification_beat_producer": {
+        "task": "warehouse_notification_beat_producer",
+        "schedule": _config.warehouse_notification_frequency,
+    },
+    "agency_notification_beat_producer": {
+        "task": "agency_notification_beat_producer",
+        "schedule": _config.agency_notification_frequency,
+    },
 }
 celery_app.conf.timezone = "UTC"

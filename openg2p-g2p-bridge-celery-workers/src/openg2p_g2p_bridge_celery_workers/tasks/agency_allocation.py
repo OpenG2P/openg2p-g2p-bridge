@@ -1,7 +1,7 @@
 import logging
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from sqlalchemy import update
-from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.orm import sessionmaker
 
 from sqlalchemy.future import select
@@ -35,6 +35,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             if not disbursement_batch_control:
                 _logger.error(f"No batch control found for id {disbursement_batch_control_id}")
                 return
+
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
                 session.execute(
@@ -45,15 +46,23 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             ).scalars().all()
             agency_allocator = AgencyAllocatorFactory.get_agency_allocator()
             allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency([geo.__dict__ for geo in disbursement_batch_control_geos])
-            # Persist results
-            for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
-                disbursement_batch_control_geo.agency_id = allocation["agency_id"]
-                disbursement_batch_control_geo.agency_mnemonic = allocation["agency_mnemonic"]
-                # Initial notification_status values
-                disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PENDING
-                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PENDING
 
-                # Bulk Update DisbursementResolutionGeoAddress
+            for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
+                # Bulk update DisbursementBatchControlGeo
+                session.execute(
+                    update(DisbursementBatchControlGeo)
+                    .where(
+                        DisbursementBatchControlGeo.disbursement_control_geo_id == disbursement_batch_control_geo.disbursement_control_geo_id
+                    )
+                    .values(
+                        agency_id=allocation["agency_id"],
+                        agency_mnemonic=allocation["agency_mnemonic"],
+                        warehouse_notification_status=ProcessStatus.PENDING,
+                        agency_notification_status=ProcessStatus.PENDING,
+                    )
+                )
+
+                # Bulk update DisbursementResolutionGeoAddress
                 session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
@@ -69,10 +78,13 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             # Update batch control status
             disbursement_batch_control.agency_allocation_status = ProcessStatus.PROCESSED
+            disbursement_batch_control.agency_allocation_attempts += 1
+            disbursement_batch_control.agency_allocation_latest_error_code = None
+            disbursement_batch_control.agency_allocation_timestamp = datetime.now()
+
             session.commit()
         except Exception as e:
             _logger.error(f"Agency allocation failed: {e}")
-            # Update error code and attempts
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
                 session.execute(
                     select(DisbursementBatchControl).where(
@@ -84,6 +96,5 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 disbursement_batch_control.agency_allocation_latest_error_code = str(e)
                 disbursement_batch_control.agency_allocation_attempts += 1
                 if disbursement_batch_control.agency_allocation_attempts >= _config.agency_allocation_max_attempts:
-                    disbursement_batch_control.agency_allocation_status = ProcessStatus.FAILED
-                    # TODO: Do this ProcessStatus.FAILED status updation in all workers
+                    disbursement_batch_control.agency_allocation_status = ProcessStatus.ERROR
                 session.commit() 

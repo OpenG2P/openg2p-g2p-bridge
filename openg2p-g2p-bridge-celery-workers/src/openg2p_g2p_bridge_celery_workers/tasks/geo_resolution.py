@@ -120,8 +120,8 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     administrative_zone_id_small=admin_small_id,
                     administrative_zone_mnemonic_small=data["administrative_zone_mnemonic_small"],
                     total_quantity=data["total_quantity"],
-                    warehouse_notification_status=ProcessStatus.PENDING,
-                    agency_notification_status=ProcessStatus.PENDING,
+                    warehouse_notification_status=ProcessStatus.NOT_APPLICABLE,
+                    agency_notification_status=ProcessStatus.NOT_APPLICABLE,
                     active=True,
                 )
                 disbursement_batch_control_geos.append(disbursement_batch_control_geo)
@@ -151,6 +151,6 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(e)
                     disbursement_batch_control_to_update.geo_resolution_attempts = (disbursement_batch_control_to_update.geo_resolution_attempts or 0) + 1
                     if disbursement_batch_control_to_update.geo_resolution_attempts >= _config.geo_resolution_max_attempts:
-                        disbursement_batch_control_to_update.geo_resolution_status = ProcessStatus.FAILED
+                        disbursement_batch_control_to_update.geo_resolution_status = ProcessStatus.ERROR
                         disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(e)
                     error_session.commit() 
