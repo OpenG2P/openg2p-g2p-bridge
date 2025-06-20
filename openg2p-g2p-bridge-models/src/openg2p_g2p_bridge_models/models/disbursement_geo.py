@@ -40,6 +40,7 @@ class DisbursementResolutionGeoAddress(BaseORMModelWithTimes):
     disbursement_cycle_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_batch_control_id: Mapped[str] = mapped_column(String, index=True)
+    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(String, index=True)
     beneficiary_id: Mapped[str] = mapped_column(String, index=True)
     administrative_zone_id_large: Mapped[str] = mapped_column(String)
     administrative_zone_mnemonic_large: Mapped[str] = mapped_column(String)

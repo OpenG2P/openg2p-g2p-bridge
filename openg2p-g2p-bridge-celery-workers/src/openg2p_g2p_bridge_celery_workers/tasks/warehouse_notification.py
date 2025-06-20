@@ -6,7 +6,10 @@ from sqlalchemy.future import select
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     ProcessStatus,
+    DisbursementEnvelope,
+    
 )
+from openg2p_g2p_bridge_models.schemas import WarehouseNotificationPayload, NotificationType
 
 from ..app import celery_app, get_engine
 from ..config import Settings
@@ -37,27 +40,49 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                 _logger.error(f"No batch control geo found for id {disbursement_control_geo_id}")
                 return
             
+            # Fetch the related DisbursementEnvelope
+            disbursement_envelope = (
+                session.execute(
+                    select(DisbursementEnvelope).where(
+                        DisbursementEnvelope.disbursement_envelope_id == disbursement_batch_control_geo.disbursement_envelope_id
+                    )
+                )
+            ).scalars().first()
+            if not disbursement_envelope:
+                _logger.error(f"No DisbursementEnvelope found for id {disbursement_batch_control_geo.disbursement_envelope_id}")
+                return
+            
             # Build notification payload
-            notification_payload: Dict[str, Any] = {
-                "disbursement_batch_control_geo_id": getattr(disbursement_batch_control_geo, "disbursement_batch_control_geo", None),
-                "program_mnemonic": getattr(disbursement_batch_control_geo, "program_mnemonic", None),
-                "program_description": getattr(disbursement_batch_control_geo, "program_mnemonic", None),
-                "benefit_code_id": getattr(disbursement_batch_control_geo, "benefit_code_id", None),
-                "benefit_type": getattr(disbursement_batch_control_geo, "benefit_type", None),
-                "benefit_description": getattr(disbursement_batch_control_geo, "benefit_code_id", None),
-                "disbursement_cycle_mnemonic": getattr(disbursement_batch_control_geo, "disbursement_cycle_mnemonic", None),
-                "disbursement_quantity": getattr(disbursement_batch_control_geo, "total_quantity", None),
-                "no_of_bebeficiaries": getattr(disbursement_batch_control_geo, "no_of_bebeficiaries", None),
-                "disbursement_date": str(getattr(disbursement_batch_control_geo, "disbursement_date", None)),
-                "agency_mnemonic": getattr(disbursement_batch_control_geo, "agency_mnemonic", None),
-            }
+            notification_payload = WarehouseNotificationPayload(
+                program_mnemonic=getattr(disbursement_envelope, "benefit_program_mnemonic", None),
+                program_description=None,
+                target_registry=getattr(disbursement_envelope, "target_registry", None),
+                disbursement_cycle_mnemonic=getattr(disbursement_batch_control_geo, "disbursement_cycle_id", None),
+                disbursement_date=getattr(disbursement_envelope, "disbursement_schedule_date", None),
+                benefit_code_id=getattr(disbursement_envelope, "benefit_code_id", None),
+                benefit_code_mnemonic=getattr(disbursement_envelope, "benefit_code_mnemonic", None),
+                benefit_type=getattr(disbursement_envelope, "benefit_type", None),
+                measurement_unit=getattr(disbursement_envelope, "measurement_unit", None),
+                benefit_description=None,
+                warehouse_id=getattr(disbursement_batch_control_geo, "warehouse_id", None),
+                warehouse_mnemonic=getattr(disbursement_batch_control_geo, "warehouse_mnemonic", None),
+                agency_id=getattr(disbursement_batch_control_geo, "agency_id", None),
+                agency_mnemonic=getattr(disbursement_batch_control_geo, "agency_mnemonic", None),
+                agency_description=None,
+                total_quantity=getattr(disbursement_batch_control_geo, "total_quantity", None),
+                no_of_bebeficiaries=getattr(disbursement_batch_control_geo, "no_of_beneficiaries", None),
+                administrative_zone_id_large=getattr(disbursement_batch_control_geo, "administrative_zone_id_large", None),
+                administrative_zone_mnemonic_large=getattr(disbursement_batch_control_geo, "administrative_zone_mnemonic_large", None),
+                administrative_zone_id_small=getattr(disbursement_batch_control_geo, "administrative_zone_id_small", None),
+                administrative_zone_mnemonic_small=getattr(disbursement_batch_control_geo, "administrative_zone_mnemonic_small", None),
+            )
             # Prepare notification request
             notification_request = {
                 "notification_request_id": str(uuid.uuid4()),
                 "recipient": disbursement_batch_control_geo.warehouse_mnemonic,
                 "recipient_type": "WAREHOUSE",
-                "event": "WAREHOUSE_NOTIFICATION",
-                "notification_payload": notification_payload,
+                "notification_type": NotificationType.WAREHOUSE_NOTIFICATION.value,
+                "notification_payload": notification_payload.model_dump(),
             }
             # Send to notification microservice
             loop = asyncio.new_event_loop()

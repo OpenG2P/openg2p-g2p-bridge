@@ -71,24 +71,6 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             geo_resolver: GeoResolver = GeoResolutionFactory.get_geo_resolver()
             resolved_data = geo_resolver.resolve_geo(batch_beneficiary_list)
 
-            disbursement_resolution_geo_addresses = []
-            for geo_resolution_item in resolved_data:
-                disbursement_resolution_geo_address = DisbursementResolutionGeoAddress(
-                    disbursement_id=geo_resolution_item["disbursement_id"],
-                    disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
-                    disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
-                    disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
-                    beneficiary_id=geo_resolution_item["beneficiary_id"],
-                    administrative_zone_id_large=geo_resolution_item["administrative_zone_id_large"],
-                    administrative_zone_mnemonic_large=geo_resolution_item["administrative_zone_mnemonic_large"],
-                    administrative_zone_id_small=geo_resolution_item["administrative_zone_id_small"],
-                    administrative_zone_mnemonic_small=geo_resolution_item["administrative_zone_mnemonic_small"],
-                    active=True,
-                )
-                disbursement_resolution_geo_addresses.append(disbursement_resolution_geo_address)
-
-            session.add_all(disbursement_resolution_geo_addresses)
-
             # Create a map of disbursement_id to disbursement_quantity for quick lookup
             disbursement_quantities = {d.disbursement_id: d.disbursement_quantity for d in disbursements}
 
@@ -96,22 +78,24 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             # Key: (administrative_zone_id_large, administrative_zone_id_small)
             batch_control_geo_map = {}
 
-            for geo_address in disbursement_resolution_geo_addresses:
-                key = (geo_address.administrative_zone_id_large, geo_address.administrative_zone_id_small)
+            for geo_resolution_item in resolved_data:
+                key = (geo_resolution_item["administrative_zone_id_large"], geo_resolution_item["administrative_zone_id_small"])
                 if key not in batch_control_geo_map:
                     batch_control_geo_map[key] = {
                         "total_quantity": 0,
-                        "administrative_zone_mnemonic_large": geo_address.administrative_zone_mnemonic_large,
-                        "administrative_zone_mnemonic_small": geo_address.administrative_zone_mnemonic_small,
+                        "administrative_zone_mnemonic_large": geo_resolution_item["administrative_zone_mnemonic_large"],
+                        "administrative_zone_mnemonic_small": geo_resolution_item["administrative_zone_mnemonic_small"],
                     }
 
-                quantity = disbursement_quantities.get(geo_address.disbursement_id, 0)
+                quantity = disbursement_quantities.get(geo_resolution_item["disbursement_id"], 0)
                 batch_control_geo_map[key]["total_quantity"] += quantity
 
             disbursement_batch_control_geos = []
+            batch_control_geo_id_map = {}
             for (admin_large_id, admin_small_id), data in batch_control_geo_map.items():
+                disbursement_control_geo_id = str(uuid.uuid4())
                 disbursement_batch_control_geo = DisbursementBatchControlGeo(
-                    disbursement_control_geo_id=str(uuid.uuid4()),
+                    disbursement_control_geo_id=disbursement_control_geo_id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
                     disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
@@ -125,8 +109,35 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     active=True,
                 )
                 disbursement_batch_control_geos.append(disbursement_batch_control_geo)
+                batch_control_geo_id_map[(admin_large_id, admin_small_id)] = disbursement_control_geo_id
 
             session.add_all(disbursement_batch_control_geos)
+            session.flush()  # Ensure IDs are available
+
+            # Now create DisbursementResolutionGeoAddress with the correct disbursement_batch_control_geo_id
+            disbursement_resolution_geo_addresses = []
+            for geo_resolution_item in resolved_data:
+                key = (
+                    geo_resolution_item["administrative_zone_id_large"],
+                    geo_resolution_item["administrative_zone_id_small"],
+                )
+                disbursement_batch_control_geo_id = batch_control_geo_id_map.get(key)
+                disbursement_resolution_geo_address = DisbursementResolutionGeoAddress(
+                    disbursement_id=geo_resolution_item["disbursement_id"],
+                    disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
+                    disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
+                    disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
+                    disbursement_batch_control_geo_id=disbursement_batch_control_geo_id,
+                    beneficiary_id=geo_resolution_item["beneficiary_id"],
+                    administrative_zone_id_large=geo_resolution_item["administrative_zone_id_large"],
+                    administrative_zone_mnemonic_large=geo_resolution_item["administrative_zone_mnemonic_large"],
+                    administrative_zone_id_small=geo_resolution_item["administrative_zone_id_small"],
+                    administrative_zone_mnemonic_small=geo_resolution_item["administrative_zone_mnemonic_small"],
+                    active=True,
+                )
+                disbursement_resolution_geo_addresses.append(disbursement_resolution_geo_address)
+
+            session.add_all(disbursement_resolution_geo_addresses)
             
             # Update the DisbursementBatchControl status
 

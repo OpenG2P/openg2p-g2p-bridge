@@ -59,7 +59,9 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
     __tablename__ = "disbursement_envelopes"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     benefit_program_mnemonic: Mapped[str] = mapped_column(String)
+    target_registry: Mapped[str] = mapped_column(String, nullable=True)
     benefit_code_id: Mapped[str] = mapped_column(String)
+    benefit_code_mnemonic: Mapped[str] = mapped_column(String)
     benefit_type: Mapped[BenefitType] = mapped_column(SqlEnum(BenefitType))
     cash_distribution_mode: Mapped[CashDistributionMode] = mapped_column(
         SqlEnum(CashDistributionMode)

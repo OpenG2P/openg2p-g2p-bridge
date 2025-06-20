@@ -6,8 +6,10 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionGeoAddress,
     ProcessStatus,
     DisbursementEnvelope,
+    Disbursement,
 )
-import httpx
+from openg2p_g2p_bridge_models.schemas import BeneficiaryNotificationPayload, NotificationType, BeneficiaryEntitlement
+from ..helpers import NotificationHelper
 from ..config import Settings
 from ..app import get_engine, celery_app
 
@@ -19,13 +21,13 @@ NOTIFICATION_SERVICE_URL = _config.notification_service_url
 
 
 @celery_app.task(name="beneficiary_notification_worker")
-async def beneficiary_notification_worker(disbursement_id: str) -> None:
+def beneficiary_notification_worker(disbursement_id: str) -> None:
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
-    async with session_maker() as session:
+    with session_maker() as session:
         try:
             # Fetch the geo address record
             geo_address: Optional[DisbursementResolutionGeoAddress] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementResolutionGeoAddress).where(
                         DisbursementResolutionGeoAddress.disbursement_id == disbursement_id
                     )
@@ -36,7 +38,7 @@ async def beneficiary_notification_worker(disbursement_id: str) -> None:
                 return
             # Fetch the envelope for payload details
             envelope: Optional[DisbursementEnvelope] = (
-                await session.execute(
+                session.execute(
                     select(DisbursementEnvelope).where(
                         DisbursementEnvelope.disbursement_envelope_id == geo_address.disbursement_envelope_id
                     )
@@ -45,33 +47,63 @@ async def beneficiary_notification_worker(disbursement_id: str) -> None:
             if not envelope:
                 _logger.error(f"No envelope found for id {geo_address.disbursement_envelope_id}")
                 return
+            # Fetch the Disbursement for beneficiary_name and disbursement_quantity
+            disbursement: Optional[Disbursement] = (
+                session.execute(
+                    select(Disbursement).where(
+                        Disbursement.disbursement_id == disbursement_id
+                    )
+                )
+            ).scalars().first()
+            # Build BeneficiaryEntitlement
+            beneficiary_entitlement = BeneficiaryEntitlement(
+                beneficiary_id=geo_address.beneficiary_id,
+                beneficiary_name=getattr(disbursement, 'beneficiary_name', None) if disbursement else None,
+                total_quantity=getattr(disbursement, 'disbursement_quantity', None) if disbursement else None,
+            )
             # Build notification payload
-            notification_payload: Dict[str, Any] = {
-                "disbursement_id": geo_address.disbursement_id,
-                "program_mnemonic": envelope.benefit_program_mnemonic,
-                "benefit_code_id": envelope.benefit_code_id,
-                "benefit_type": envelope.benefit_type.value if hasattr(envelope.benefit_type, 'value') else str(envelope.benefit_type),
-                "disbursement_cycle_mnemonic": envelope.cycle_code_mnemonic,
-                "disbursement_quantity": envelope.total_disbursement_quantity,
-                "disbursement_date": str(envelope.disbursement_schedule_date),
-            }
+            notification_payload = BeneficiaryNotificationPayload(
+                program_mnemonic=getattr(envelope, "benefit_program_mnemonic", None),
+                program_description=None,  # Add if available
+                target_registry=getattr(envelope, "target_registry", None),
+                disbursement_cycle_mnemonic=getattr(envelope, "cycle_code_mnemonic", None),
+                disbursement_date=getattr(envelope, "disbursement_schedule_date", None),
+                benefit_code_id=getattr(envelope, "benefit_code_id", None),
+                benefit_code_mnemonic=getattr(envelope, "benefit_code_mnemonic", None),
+                benefit_type=getattr(envelope, "benefit_type", None),
+                measurement_unit=getattr(envelope, "measurement_unit", None),
+                benefit_description=None,  # Add if available
+                warehouse_id=getattr(geo_address, "warehouse_id", None),
+                warehouse_mnemonic=getattr(geo_address, "warehouse_mnemonic", None),
+                agency_id=getattr(geo_address, "agency_id", None),
+                agency_mnemonic=getattr(geo_address, "agency_mnemonic", None),
+                agency_description=None,  # Add if available
+                total_quantity=getattr(disbursement, "disbursement_quantity", None) if disbursement else None,
+                administrative_zone_id_large=getattr(geo_address, "administrative_zone_id_large", None),
+                administrative_zone_mnemonic_large=getattr(geo_address, "administrative_zone_mnemonic_large", None),
+                administrative_zone_id_small=getattr(geo_address, "administrative_zone_id_small", None),
+                administrative_zone_mnemonic_small=getattr(geo_address, "administrative_zone_mnemonic_small", None),
+                beneficiary_entitlement=beneficiary_entitlement,
+            )
             # Prepare notification request
             notification_request = {
                 "disbursement_id": geo_address.disbursement_id,
                 "beneficiary_id": geo_address.beneficiary_id,
                 "recipient_type": "BENEFICIARY",
-                "event": "BENEFICIARY_NOTIFICATION",
-                "notification_payload": notification_payload,
+                "notification_type": NotificationType.BENEFICIARY_NOTIFICATION.value,
+                "notification_payload": notification_payload.model_dump(),
             }
             # Send to notification microservice
-            async with httpx.AsyncClient() as client:
-                response = await client.post(NOTIFICATION_SERVICE_URL, json=notification_request)
-                response.raise_for_status()
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            helper = NotificationHelper()
+            loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
             # Update status to PROCESSED
             geo_address.beneficiary_notification_status = ProcessStatus.PROCESSED
-            await session.commit()
+            session.commit()
         except Exception as e:
             _logger.error(f"Beneficiary notification failed: {e}")
             if geo_address:
                 geo_address.beneficiary_notification_status = ProcessStatus.ERROR
-                await session.commit() 
+                session.commit() 
