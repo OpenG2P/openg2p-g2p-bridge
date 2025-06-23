@@ -16,3 +16,4 @@ from .warehouse_allocation import warehouse_allocation_beat_producer
 from .agency_allocation import agency_allocation_beat_producer
 from .warehouse_notification import warehouse_notification_beat_producer
 from .agency_notification import agency_notification_beat_producer
+from .beneficiary_notification import beneficiary_notification_beat_producer

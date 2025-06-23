@@ -16,3 +16,4 @@ from .warehouse_allocation import warehouse_allocation_worker
 from .agency_allocation import agency_allocation_worker
 from .warehouse_notification import warehouse_notification_worker
 from .agency_notification import agency_notification_worker
+from .beneficiary_notification import beneficiary_notification_worker

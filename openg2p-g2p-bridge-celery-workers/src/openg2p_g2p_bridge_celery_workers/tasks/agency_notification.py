@@ -15,7 +15,7 @@ from openg2p_g2p_bridge_models.models import (
     NotificationLog,
     NotificationStatus,
 )
-from openg2p_g2p_bridge_models.schemas import AgencyNotificationPayload, NotificationType, BeneficiaryEntitlement
+from openg2p_g2p_bridge_models.schemas import AgencyNotificationPayload, NotificationType, BeneficiaryEntitlement, NotificationRequest
 from ..config import Settings
 from ..app import get_engine, celery_app
 from ..helpers.notification_helper import NotificationHelper
@@ -88,7 +88,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 program_description=None,  
                 target_registry=getattr(disbursement_envelope, "target_registry", None),
                 disbursement_cycle_mnemonic=getattr(disbursement_batch_control_geo, "disbursement_cycle_id", None),
-                disbursement_date=getattr(disbursement_envelope, "disbursement_schedule_date", None),
+                disbursement_date=str(getattr(disbursement_envelope, "disbursement_schedule_date", None)),
                 benefit_code_id=getattr(disbursement_envelope, "benefit_code_id", None),
                 benefit_code_mnemonic=getattr(disbursement_envelope, "benefit_code_mnemonic", None),
                 benefit_type=getattr(disbursement_envelope, "benefit_type", None),
@@ -108,14 +108,6 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 beneficiary_entitlements=beneficiary_entitlements,
             )
 
-            # Prepare notification request
-            notification_request = {
-                "disbursement_control_geo_id": disbursement_batch_control_geo.disbursement_control_geo_id,
-                "agency_mnemonic": disbursement_batch_control_geo.agency_mnemonic,
-                "recipient_type": "AGENCY",
-                "notification_type": NotificationType.AGENCY_NOTIFICATION.value,
-                "notification_payload": notification_payload.model_dump(),
-            }
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
                 notification_id=str(uuid.uuid4()),
@@ -128,12 +120,25 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
             )
             session.add(notification_log)
             session.commit()
+            # Build NotificationRequest object
+            notification_request = NotificationRequest(
+                notification_type=NotificationType.AGENCY_NOTIFICATION.value,
+                recipient=disbursement_batch_control_geo.agency_mnemonic,
+                recipient_type="AGENCY",
+                notification_payload=notification_payload,
+                disbursement_control_geo_id=disbursement_batch_control_geo.disbursement_control_geo_id,
+                agency_mnemonic=disbursement_batch_control_geo.agency_mnemonic,
+                notification_request_id=notification_log.notification_id,
+            )
             # Send to notification microservice
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             helper = NotificationHelper()
             try:
-                response = loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
+                response = loop.run_until_complete(helper.send_notification(
+                    NOTIFICATION_SERVICE_URL,
+                    notification_request=notification_request,
+                ))
                 notification_log.status = NotificationStatus.PROCESSED.value
                 notification_log.response = str(response.text)
                 notification_log.processed_at = datetime.datetime.now()

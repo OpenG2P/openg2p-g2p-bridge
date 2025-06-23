@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     agency_allocation_frequency: int = 3600
     warehouse_notification_frequency: int = 3600
     agency_notification_frequency: int = 3600
+    beneficiary_notification_frequency: int = 3600
 
     no_of_tasks_to_process: int = 4
     disbursement_retry_threshold_minutes: int = (

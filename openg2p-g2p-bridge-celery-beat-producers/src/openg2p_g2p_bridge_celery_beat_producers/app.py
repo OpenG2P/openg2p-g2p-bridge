@@ -78,5 +78,9 @@ celery_app.conf.beat_schedule = {
         "task": "agency_notification_beat_producer",
         "schedule": _config.agency_notification_frequency,
     },
+    "beneficiary_notification_beat_producer": {
+        "task": "beneficiary_notification_beat_producer",
+        "schedule": _config.beneficiary_notification_frequency,
+    },
 }
 celery_app.conf.timezone = "UTC"

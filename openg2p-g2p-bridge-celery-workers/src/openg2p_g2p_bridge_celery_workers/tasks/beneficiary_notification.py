@@ -13,7 +13,7 @@ from openg2p_g2p_bridge_models.models import (
     NotificationLog,
     NotificationStatus,
 )
-from openg2p_g2p_bridge_models.schemas import BeneficiaryNotificationPayload, NotificationType, BeneficiaryEntitlement
+from openg2p_g2p_bridge_models.schemas import BeneficiaryNotificationPayload, NotificationType, BeneficiaryEntitlement, NotificationRequest
 from ..helpers import NotificationHelper
 from ..config import Settings
 from ..app import get_engine, celery_app
@@ -72,7 +72,7 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 program_description=None,  # Add if available
                 target_registry=getattr(envelope, "target_registry", None),
                 disbursement_cycle_mnemonic=getattr(envelope, "cycle_code_mnemonic", None),
-                disbursement_date=getattr(envelope, "disbursement_schedule_date", None),
+                disbursement_date=str(getattr(envelope, "disbursement_schedule_date", None)),
                 benefit_code_id=getattr(envelope, "benefit_code_id", None),
                 benefit_code_mnemonic=getattr(envelope, "benefit_code_mnemonic", None),
                 benefit_type=getattr(envelope, "benefit_type", None),
@@ -90,14 +90,6 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 administrative_zone_mnemonic_small=getattr(geo_address, "administrative_zone_mnemonic_small", None),
                 beneficiary_entitlement=beneficiary_entitlement,
             )
-            # Prepare notification request
-            notification_request = {
-                "disbursement_id": geo_address.disbursement_id,
-                "beneficiary_id": geo_address.beneficiary_id,
-                "recipient_type": "BENEFICIARY",
-                "notification_type": NotificationType.BENEFICIARY_NOTIFICATION.value,
-                "notification_payload": notification_payload.model_dump(),
-            }
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
                 notification_id=str(uuid.uuid4()),
@@ -110,13 +102,26 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
             )
             session.add(notification_log)
             session.commit()
+            # Build NotificationRequest object
+            notification_request = NotificationRequest(
+                notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
+                recipient=geo_address.beneficiary_id,
+                recipient_type="BENEFICIARY",
+                notification_payload=notification_payload,
+                beneficiary_id=geo_address.beneficiary_id,
+                disbursement_id=geo_address.disbursement_id,
+                notification_request_id=notification_log.notification_id,
+            )
             # Send to notification microservice
             import asyncio
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             helper = NotificationHelper()
             try:
-                response = loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
+                response = loop.run_until_complete(helper.send_notification(
+                    NOTIFICATION_SERVICE_URL,
+                    notification_request=notification_request,
+                ))
                 notification_log.status = NotificationStatus.PROCESSED.value
                 notification_log.response = str(response.text)
                 notification_log.processed_at = datetime.datetime.now()

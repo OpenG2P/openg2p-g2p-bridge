@@ -73,6 +73,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
+                        beneficiary_notification_status=ProcessStatus.PENDING,
                     )
                 )
 
