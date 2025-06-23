@@ -28,3 +28,4 @@ from .disbursement_geo import (
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
 )
+from .notification_log import NotificationLog, NotificationStatus

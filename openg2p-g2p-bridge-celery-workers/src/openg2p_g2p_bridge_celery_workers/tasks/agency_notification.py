@@ -1,8 +1,10 @@
 import logging
-from typing import Optional, Dict, Any
+import uuid
+from typing import Optional
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 import asyncio
+import datetime
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
@@ -10,6 +12,8 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
     Disbursement,
+    NotificationLog,
+    NotificationStatus,
 )
 from openg2p_g2p_bridge_models.schemas import AgencyNotificationPayload, NotificationType, BeneficiaryEntitlement
 from ..config import Settings
@@ -112,13 +116,34 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 "notification_type": NotificationType.AGENCY_NOTIFICATION.value,
                 "notification_payload": notification_payload.model_dump(),
             }
+            # Create NotificationLog entry (PENDING)
+            notification_log = NotificationLog(
+                notification_id=str(uuid.uuid4()),
+                notification_type=NotificationType.AGENCY_NOTIFICATION.value,
+                recipient=disbursement_batch_control_geo.agency_mnemonic,
+                payload=str(notification_payload.model_dump()),
+                status=NotificationStatus.PENDING.value,
+                sent_at=datetime.datetime.now(),
+                active=True,
+            )
+            session.add(notification_log)
+            session.commit()
             # Send to notification microservice
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             helper = NotificationHelper()
-            loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
-            # Update status to PROCESSED
-            disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PROCESSED
+            try:
+                response = loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
+                notification_log.status = NotificationStatus.PROCESSED.value
+                notification_log.response = str(response.text)
+                notification_log.processed_at = datetime.datetime.now()
+                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PROCESSED
+            except Exception as e:
+                notification_log.status = NotificationStatus.ERROR.value
+                notification_log.error_message = str(e)
+                notification_log.processed_at = datetime.datetime.now()
+                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.ERROR
+                _logger.error(f"Agency notification failed: {e}")
             session.commit()
         except Exception as e:
             _logger.error(f"Agency notification failed: {e}")

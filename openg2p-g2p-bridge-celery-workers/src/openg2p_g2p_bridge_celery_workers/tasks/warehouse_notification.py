@@ -7,7 +7,8 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     ProcessStatus,
     DisbursementEnvelope,
-    
+    NotificationLog,
+    NotificationStatus,
 )
 from openg2p_g2p_bridge_models.schemas import WarehouseNotificationPayload, NotificationType
 
@@ -15,6 +16,7 @@ from ..app import celery_app, get_engine
 from ..config import Settings
 from ..helpers.notification_helper import NotificationHelper
 import asyncio
+import datetime
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -80,20 +82,40 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
             notification_request = {
                 "notification_request_id": str(uuid.uuid4()),
                 "recipient": disbursement_batch_control_geo.warehouse_mnemonic,
-                "recipient_type": "WAREHOUSE",
                 "notification_type": NotificationType.WAREHOUSE_NOTIFICATION.value,
                 "notification_payload": notification_payload.model_dump(),
             }
+            # Create NotificationLog entry (PENDING)
+            notification_log = NotificationLog(
+                notification_id=notification_request["notification_request_id"],
+                notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
+                recipient=disbursement_batch_control_geo.warehouse_mnemonic,
+                payload=str(notification_payload.model_dump()),
+                status=NotificationStatus.PENDING.value,
+                sent_at=datetime.datetime.now(),
+                active=True,
+            )
+            session.add(notification_log)
+            session.commit()
             # Send to notification microservice
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             helper = NotificationHelper()
-            loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
-            # TODO: Persist to NotificationLog and Update status to PROCESSED 
-            disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PROCESSED
+            try:
+                response = loop.run_until_complete(helper.send_notification(NOTIFICATION_SERVICE_URL, notification_request))
+                notification_log.status = NotificationStatus.PROCESSED.value
+                notification_log.response = str(response.text)
+                notification_log.processed_at = datetime.datetime.now()
+                disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PROCESSED
+            except Exception as e:
+                notification_log.status = NotificationStatus.ERROR.value
+                notification_log.error_message = str(e)
+                notification_log.processed_at = datetime.datetime.now()
+                disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.ERROR
+                _logger.error(f"Warehouse notification failed: {e}")
             session.commit()
         except Exception as e:
-            _logger.error(f"Warehouse notification failed: {e}")
+            _logger.error(f"Warehouse notification failed (outer): {e}")
             if disbursement_batch_control_geo:
                 disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.ERROR
                 session.commit() 

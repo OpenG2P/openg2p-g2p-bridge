@@ -16,11 +16,10 @@ class NotificationHelper(BaseService):
         _logger.info(f"Sending async notification to {url} with payload: {payload}")
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
-                return True
-                # response = await client.post(url, json=payload)
-                # response.raise_for_status()
-                # _logger.info(f"Async notification sent successfully. Status: {response.status_code}")
-                # return response
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                _logger.info(f"Async notification sent successfully. Status: {response.status_code}")
+                return response
         except Exception as e:
             _logger.error(f"Async notification failed: {e}")
             raise 
