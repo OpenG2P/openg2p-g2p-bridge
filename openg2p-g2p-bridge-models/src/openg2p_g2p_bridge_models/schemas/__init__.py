@@ -24,6 +24,10 @@ from .disbursement_status import (
     DisbursementStatusPayload,
     DisbursementStatusRequest,
     DisbursementStatusResponse,
+    DisbursementEnvelopeBatchStatusPayload,
+    DistributionDetailsForEnvelope,
+    EnvelopeStatusForPhysicalBenefitsPayload,
+    EnvelopeStatusForDigitalCashPayload
 )
 from .notification import (
     AgencyNotificationPayload,
@@ -31,4 +35,5 @@ from .notification import (
     BeneficiaryEntitlement,
     BeneficiaryNotificationPayload,
     NotificationType,
+    NotificationRequest,
 )
