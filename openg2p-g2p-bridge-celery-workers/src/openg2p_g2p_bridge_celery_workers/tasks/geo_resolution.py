@@ -103,6 +103,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     administrative_zone_mnemonic_large=data["administrative_zone_mnemonic_large"],
                     administrative_zone_id_small=admin_small_id,
                     administrative_zone_mnemonic_small=data["administrative_zone_mnemonic_small"],
+                    no_of_beneficiaries=len([item for item in resolved_data if item["administrative_zone_id_large"] == admin_large_id and item["administrative_zone_id_small"] == admin_small_id]),
                     total_quantity=data["total_quantity"],
                     warehouse_notification_status=ProcessStatus.NOT_APPLICABLE,
                     agency_notification_status=ProcessStatus.NOT_APPLICABLE,
