@@ -74,21 +74,23 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             # Create a map of disbursement_id to disbursement_quantity for quick lookup
             disbursement_quantities = {d.disbursement_id: d.disbursement_quantity for d in disbursements}
 
-            # A dictionary to hold aggregated data for DisbursementBatchControlGeo
-            # Key: (administrative_zone_id_large, administrative_zone_id_small)
+            # Optimized: Aggregate both total_quantity and no_of_beneficiaries in one pass
             batch_control_geo_map = {}
-
             for geo_resolution_item in resolved_data:
-                key = (geo_resolution_item["administrative_zone_id_large"], geo_resolution_item["administrative_zone_id_small"])
+                key = (
+                    geo_resolution_item["administrative_zone_id_large"],
+                    geo_resolution_item["administrative_zone_id_small"],
+                )
                 if key not in batch_control_geo_map:
                     batch_control_geo_map[key] = {
                         "total_quantity": 0,
+                        "no_of_beneficiaries": 0,
                         "administrative_zone_mnemonic_large": geo_resolution_item["administrative_zone_mnemonic_large"],
                         "administrative_zone_mnemonic_small": geo_resolution_item["administrative_zone_mnemonic_small"],
                     }
-
                 quantity = disbursement_quantities.get(geo_resolution_item["disbursement_id"], 0)
                 batch_control_geo_map[key]["total_quantity"] += quantity
+                batch_control_geo_map[key]["no_of_beneficiaries"] += 1
 
             disbursement_batch_control_geos = []
             batch_control_geo_id_map = {}
@@ -103,7 +105,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     administrative_zone_mnemonic_large=data["administrative_zone_mnemonic_large"],
                     administrative_zone_id_small=admin_small_id,
                     administrative_zone_mnemonic_small=data["administrative_zone_mnemonic_small"],
-                    no_of_beneficiaries=len([item for item in resolved_data if item["administrative_zone_id_large"] == admin_large_id and item["administrative_zone_id_small"] == admin_small_id]),
+                    no_of_beneficiaries=data["no_of_beneficiaries"],
                     total_quantity=data["total_quantity"],
                     warehouse_notification_status=ProcessStatus.NOT_APPLICABLE,
                     agency_notification_status=ProcessStatus.NOT_APPLICABLE,
