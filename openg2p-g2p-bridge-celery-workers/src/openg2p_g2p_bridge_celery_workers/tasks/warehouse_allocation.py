@@ -9,6 +9,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
     ProcessStatus,
+    DisbursementEnvelope,
 )
 from openg2p_g2p_bridge_warehouse_allocator.warehouse_allocator.warehouse_allocator_factory import WarehouseAllocatorFactory
 from ..app import celery_app, get_engine
@@ -21,7 +22,7 @@ _config = Settings.get_config()
 
 @celery_app.task(name="warehouse_allocation_worker")
 def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         try:
             # Fetch the batch control record
@@ -45,9 +46,37 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 )
             ).scalars().all()
 
+            # Fetch the related envelope for benefit_code and program
+            disbursement_envelope = session.execute(
+                select(DisbursementEnvelope).where(
+                    DisbursementEnvelope.disbursement_envelope_id == disbursement_batch_control.disbursement_envelope_id
+                )
+            ).scalars().first()
+            if not disbursement_envelope:
+                _logger.error(f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}")
+                return
+
+            # Prepare large_geo_list
+            large_geo_list = [
+                {
+                    'batch_control_geo_id': geo.disbursement_control_geo_id,
+                    'administrative_zone_id_large': geo.administrative_zone_id_large,
+                    'administrative_zone_mnemonic_large': geo.administrative_zone_mnemonic_large,
+                }
+                for geo in disbursement_batch_control_geos
+            ]
+            benefit_code = {
+                'id': disbursement_envelope.benefit_code_id,
+                'mnemonic': disbursement_envelope.benefit_code_mnemonic,
+            }
+            program = {
+                'id': disbursement_envelope.benefit_program_mnemonic,
+                'mnemonic': disbursement_envelope.benefit_program_mnemonic,
+            }
+
             warehouse_allocator = WarehouseAllocatorFactory.get_warehouse_allocator()
             allocation_results: List[Dict[str, Any]] = warehouse_allocator.allocate_warehouse(
-                [geo.__dict__ for geo in disbursement_batch_control_geos]
+                large_geo_list, benefit_code, program
             )
 
             for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
@@ -60,6 +89,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         warehouse_id=allocation["warehouse_id"],
                         warehouse_mnemonic=allocation["warehouse_mnemonic"],
+                        warehouse_additional_attributes=allocation.get("warehouse_additional_attributes", {}),
                     )
                 )
 

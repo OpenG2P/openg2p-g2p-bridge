@@ -27,7 +27,7 @@ NOTIFICATION_SERVICE_URL = _config.notification_service_url
 
 @celery_app.task(name="beneficiary_notification_worker")
 def beneficiary_notification_worker(disbursement_id: str) -> None:
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         try:
             # Fetch the geo address record

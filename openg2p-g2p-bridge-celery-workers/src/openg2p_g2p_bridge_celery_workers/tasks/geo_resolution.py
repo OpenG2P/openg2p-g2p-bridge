@@ -2,14 +2,16 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 
-from openg2p_g2p_bridge_geo_resolver.geo_interface.geo_resolver_interface import GeoResolver
-from openg2p_g2p_bridge_geo_resolver.geo_resolver.geo_resolution_factory import GeoResolutionFactory
+from openg2p_g2p_bridge_geo_resolver.interface import GeoResolver
+from openg2p_g2p_bridge_geo_resolver.factory import GeoResolutionFactory
+from openg2p_g2p_bridge_geo_resolver.models import G2PRegistryType
 from openg2p_g2p_bridge_models.models import (
     Disbursement,
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
     ProcessStatus,
+    DisbursementEnvelope,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
@@ -26,9 +28,10 @@ _engine = get_engine()
 @celery_app.task(name="geo_resolution_worker")
 def geo_resolution_worker(disbursement_batch_control_id: str):
     _logger.info(f"Starting geo resolution for batch: {disbursement_batch_control_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
+    session_maker_farmer = sessionmaker(bind=_engine.get("db_engine_farmer"), expire_on_commit=False)
 
-    with session_maker() as session:
+    with session_maker() as session, session_maker_farmer() as farmer_registry_session:
         try:
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
                 session.execute(
@@ -41,6 +44,16 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             if not disbursement_batch_control:
                 _logger.error(f"No DisbursementBatchControl found for id {disbursement_batch_control_id}")
+                return
+            
+            disbursement_envelope = session.execute(
+                select(DisbursementEnvelope).where(
+                    DisbursementEnvelope.disbursement_envelope_id == disbursement_batch_control.disbursement_envelope_id
+                )
+            ).scalar_one_or_none()
+
+            if not disbursement_envelope:
+                _logger.error(f"Disbursement envelope ID is missing for batch {disbursement_batch_control_id}")
                 return
 
             disbursements: List[Disbursement] = (
@@ -67,10 +80,18 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 }
                 for d in disbursements
             ]
-
+        
             geo_resolver: GeoResolver = GeoResolutionFactory.get_geo_resolver()
-            resolved_data = geo_resolver.resolve_geo(batch_beneficiary_list)
 
+            target_registry = disbursement_envelope.target_registry
+            resolved_data = []
+            if target_registry.lower() == G2PRegistryType.FARMER.value:
+                resolved_data = geo_resolver.resolve_geo(farmer_registry_session, batch_beneficiary_list)
+
+            if not resolved_data:
+                _logger.error(f"Geo resolution failed for batch {disbursement_batch_control_id}")
+                raise ValueError("Geo resolution returned no data")
+            
             # Create a map of disbursement_id to disbursement_quantity for quick lookup
             disbursement_quantities = {d.disbursement_id: d.disbursement_quantity for d in disbursements}
 

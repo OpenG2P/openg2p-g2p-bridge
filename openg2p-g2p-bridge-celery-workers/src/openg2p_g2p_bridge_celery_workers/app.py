@@ -29,8 +29,12 @@ class Initializer(BaseInitializer):
 
 def get_engine():
     if _config.db_datasource:
-        db_engine = create_engine(_config.db_datasource)
-        return db_engine
+        db_engine_bridge = create_engine(_config.db_datasource)
+        db_engine_farmer = create_engine(_config.db_datasource_farmer)
+        return {
+            "db_engine_bridge": db_engine_bridge,
+            "db_engine_farmer": db_engine_farmer,
+        }
 
 
 celery_app = Celery(

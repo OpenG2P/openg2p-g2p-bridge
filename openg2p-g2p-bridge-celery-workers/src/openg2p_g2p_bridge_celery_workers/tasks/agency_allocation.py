@@ -10,6 +10,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
     ProcessStatus,
+    DisbursementEnvelope,
 )
 from openg2p_g2p_bridge_agency_allocator.agency_allocator.agency_allocator_factory import AgencyAllocatorFactory
 from ..config import Settings
@@ -21,7 +22,7 @@ _config = Settings.get_config()
 
 @celery_app.task(name="agency_allocation_worker")
 def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         try:
             # Fetch the batch control record
@@ -44,8 +45,39 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     )
                 )
             ).scalars().all()
+
+            # Fetch the related envelope for benefit_code and program
+            disbursement_envelope = session.execute(
+                select(DisbursementEnvelope).where(
+                    DisbursementEnvelope.disbursement_envelope_id == disbursement_batch_control.disbursement_envelope_id
+                )
+            ).scalars().first()
+            if not disbursement_envelope:
+                _logger.error(f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}")
+                return
+
+            # Prepare small_geo_list
+            small_geo_list = [
+                {
+                    'batch_control_geo_id': geo.disbursement_control_geo_id,
+                    'administrative_zone_id_small': geo.administrative_zone_id_small,
+                    'administrative_zone_mnemonic_small': geo.administrative_zone_mnemonic_small,
+                }
+                for geo in disbursement_batch_control_geos
+            ]
+            benefit_code = {
+                'id': disbursement_envelope.benefit_code_id,
+                'mnemonic': disbursement_envelope.benefit_code_mnemonic,
+            }
+            program = {
+                'id': disbursement_envelope.benefit_program_mnemonic,
+                'mnemonic': disbursement_envelope.benefit_program_mnemonic,
+            }
+
             agency_allocator = AgencyAllocatorFactory.get_agency_allocator()
-            allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency([geo.__dict__ for geo in disbursement_batch_control_geos])
+            allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency(
+                small_geo_list, benefit_code, program
+            )
 
             for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):
                 # Bulk update DisbursementBatchControlGeo
@@ -57,6 +89,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
+                        agency_additional_attributes=allocation.get("agency_additional_attributes", {}),
                         warehouse_notification_status=ProcessStatus.PENDING,
                         agency_notification_status=ProcessStatus.PENDING,
                     )

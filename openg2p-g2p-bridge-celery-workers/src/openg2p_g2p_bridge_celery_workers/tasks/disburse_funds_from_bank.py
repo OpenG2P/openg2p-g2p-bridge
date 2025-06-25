@@ -32,7 +32,7 @@ _engine = get_engine()
 @celery_app.task(name="disburse_funds_from_bank_worker")
 def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
     _logger.info(f"Disbursing funds with bank for batch: {disbursement_batch_control_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         disbursement_batch_control = (

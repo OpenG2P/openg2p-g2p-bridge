@@ -35,7 +35,7 @@ _engine = get_engine()
 @celery_app.task(name="mt940_processor_worker")
 def mt940_processor_worker(statement_id: str):
     _logger.info(f"Processing account statement with statement_id: {statement_id}")
-    session_maker = sessionmaker(bind=_engine)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         account_statement = (

@@ -29,7 +29,7 @@ _logger = logging.getLogger("agency_notification_worker")
 
 @celery_app.task(name="agency_notification_worker")
 def agency_notification_worker(disbursement_control_geo_id: str) -> None:
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         disbursement_batch_control_geo: Optional[DisbursementBatchControlGeo] = None
         try:
