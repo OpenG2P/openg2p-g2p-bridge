@@ -213,9 +213,9 @@ class DisbursementEnvelopeService(BaseService):
             disbursement_envelope_payload.total_disbursement_quantity is None
             or disbursement_envelope_payload.total_disbursement_quantity < 0
         ):
-            _logger.error("Invalid total disbursed quantity")
+            _logger.error("Invalid total disbursement quantity")
             raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_TOTAL_DISBURSED_QUANTITY
+                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
             )
         if (
             disbursement_envelope_payload.disbursement_schedule_date is None
@@ -331,9 +331,9 @@ class DisbursementEnvelopeService(BaseService):
             disbursement_envelope_payload.total_disbursement_quantity is None
             or disbursement_envelope_payload.total_disbursement_quantity < 0
         ):
-            _logger.error("Invalid total disbursed quantity")
+            _logger.error("Invalid total disbursement quantity")
             raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_TOTAL_DISBURSED_QUANTITY
+                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
             )
         if (
             disbursement_envelope_payload.disbursement_schedule_date is None
