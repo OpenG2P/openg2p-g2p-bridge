@@ -8,5 +8,3 @@ class Settings(BaseSettings):
     )
 
     db_dbname: str = "openg2p_g2p_bridge_db"
-
-    # Add geo resolver specific config fields here
