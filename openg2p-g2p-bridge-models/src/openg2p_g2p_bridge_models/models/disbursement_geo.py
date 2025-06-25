@@ -20,8 +20,10 @@ class DisbursementBatchControlGeo(BaseORMModelWithTimes):
     total_quantity: Mapped[float] = mapped_column(Float)
     warehouse_id: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
+    warehouse_additional_attributes: Mapped[str] = mapped_column(String, nullable=True)
     agency_id: Mapped[str] = mapped_column(String, nullable=True)
     agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
+    agency_additional_attributes: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_notification_status: Mapped[ProcessStatus] = mapped_column(
         SqlEnum(ProcessStatus)
     )
