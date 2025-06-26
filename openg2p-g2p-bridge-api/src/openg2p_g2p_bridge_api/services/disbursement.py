@@ -18,6 +18,7 @@ from openg2p_g2p_bridge_models.models import (
     EnvelopeControl,
     EnvelopeBatchStatusForDigitalCash,
     ProcessStatus,
+    BenefitType,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
@@ -171,17 +172,10 @@ class DisbursementService(BaseService):
         import uuid
 
         from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
-        from openg2p_g2p_bridge_models.models import (
-            BenefitType,
-            CashDistributionMode,
-        )
 
         disbursement_batch_control_id = str(uuid.uuid4())
-        # Determine statuses based on benefit_type and cash_distribution_mode
-        if (
-            disbursement_envelope.benefit_type == BenefitType.CASH
-            and disbursement_envelope.cash_distribution_mode == CashDistributionMode.DIGITAL
-        ):
+        # Determine statuses based on benefit_type
+        if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
             fa_resolution_status = ProcessStatus.PENDING
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
             geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE

@@ -16,7 +16,6 @@ from openg2p_g2p_bridge_models.models import (
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
     BenefitType,
-    CashDistributionMode,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopePayload,
@@ -61,7 +60,7 @@ class DisbursementEnvelopeService(BaseService):
                 envelope_control = await self.construct_envelope_control(disbursement_envelope)
                 envelope_controls.append(envelope_control)
 
-                if disbursement_envelope.benefit_type == BenefitType.CASH and disbursement_envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+                if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
                     batch_status = await self.construct_envelope_batch_status_for_digital_cash(
                         disbursement_envelope, session
                     )
@@ -239,7 +238,6 @@ class DisbursementEnvelopeService(BaseService):
             benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
             benefit_code_id=disbursement_envelope_payload.benefit_code_id,
             benefit_type=disbursement_envelope_payload.benefit_type,
-            cash_distribution_mode=disbursement_envelope_payload.cash_distribution_mode,
             disbursement_cycle_id=disbursement_envelope_payload.disbursement_cycle_id,
             disbursement_frequency=disbursement_envelope_payload.disbursement_frequency,
             cycle_code_mnemonic=disbursement_envelope_payload.cycle_code_mnemonic,

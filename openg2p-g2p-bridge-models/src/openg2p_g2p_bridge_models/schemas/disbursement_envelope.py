@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from ..models import (
     DisbursementFrequency,
     BenefitType,
-    CashDistributionMode,
     CancellationStatus,
 )
 
@@ -20,7 +19,6 @@ class DisbursementEnvelopePayload(BaseModel):
     benefit_code_id: Optional[str] = None
     benefit_code_mnemonic: Optional[str] = None
     benefit_type: Optional[BenefitType] = None
-    cash_distribution_mode: Optional[CashDistributionMode] = None
     disbursement_cycle_id: Optional[str] = None
     disbursement_frequency: Optional[DisbursementFrequency] = None
     cycle_code_mnemonic: Optional[str] = None

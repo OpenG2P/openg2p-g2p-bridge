@@ -22,7 +22,6 @@ from .disbursement_envelope import (
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
     BenefitType,
-    CashDistributionMode,
 )
 from .disbursement_geo import (
     DisbursementBatchControlGeo,

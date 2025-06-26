@@ -23,7 +23,8 @@ _config = Settings.get_config()
 @celery_app.task(name="warehouse_allocation_worker")
 def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
     session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
-    with session_maker() as session:
+    session_maker_pbms = sessionmaker(bind=_engine.get("db_engine_pbms"), expire_on_commit=False)
+    with session_maker() as session, session_maker_pbms() as pbms_session:
         try:
             # Fetch the batch control record
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
@@ -76,7 +77,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             warehouse_allocator = WarehouseAllocatorFactory.get_warehouse_allocator()
             allocation_results: List[Dict[str, Any]] = warehouse_allocator.allocate_warehouse(
-                large_geo_list, benefit_code, program
+                pbms_session, large_geo_list, benefit_code, program
             )
 
             for disbursement_batch_control_geo, allocation in zip(disbursement_batch_control_geos, allocation_results):

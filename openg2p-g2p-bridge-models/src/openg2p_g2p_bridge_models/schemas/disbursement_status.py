@@ -95,7 +95,6 @@ class DistributionDetailsForEnvelope(BaseModel):
     no_of_pods_received: Optional[int] = None
 
 class EnvelopeStatusForPhysicalBenefitsPayload(DisbursementEnvelopeBatchStatusPayload):
-    cash_distribution_mode: Optional[str] = None
     no_of_warehouses_allocated: Optional[int] = None
     no_of_warehouses_notified: Optional[int] = None
     no_of_agencies_allocated: Optional[int] = None

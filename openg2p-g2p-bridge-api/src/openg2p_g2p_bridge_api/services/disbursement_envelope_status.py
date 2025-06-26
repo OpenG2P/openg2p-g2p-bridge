@@ -13,7 +13,6 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionGeoAddress,
     ProcessStatus,
     BenefitType,
-    CashDistributionMode,
 )
 from openg2p_g2p_bridge_models.schemas import (
     EnvelopeStatusForPhysicalBenefitsPayload,
@@ -69,7 +68,7 @@ class DisbursementEnvelopeStatusService(BaseService):
             digital_cash_status = None
             beneficiary_notified_count = None
             disbursement_details = None
-            if envelope.benefit_type == BenefitType.CASH and envelope.cash_distribution_mode == CashDistributionMode.DIGITAL:
+            if envelope.benefit_type == BenefitType.CASH_DIGITAL:
                 digital_cash_status = (
                     await session.execute(
                         select(EnvelopeBatchStatusForDigitalCash).where(
@@ -177,7 +176,6 @@ class DisbursementEnvelopeStatusService(BaseService):
                 number_of_disbursements_received=envelope_control.number_of_disbursements_received if envelope_control else 0,
                 total_disbursement_quantity_declared=envelope.total_disbursement_quantity,
                 total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received if envelope_control else 0,
-                cash_distribution_mode=envelope.cash_distribution_mode.value,
                 disbursement_details_for_envelope=disbursement_details,
                 no_of_warehouses_allocated=len(warehouse_ids) if warehouse_ids else 0,
                 no_of_warehouses_notified=len(warehouses_notified) if warehouses_notified else 0,

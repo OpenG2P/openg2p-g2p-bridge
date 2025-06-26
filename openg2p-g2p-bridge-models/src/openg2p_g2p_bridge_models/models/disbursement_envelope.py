@@ -46,13 +46,9 @@ class CancellationStatus(Enum):
 class BenefitType(Enum):
     COMMODITY = "COMMODITY"
     SERVICE = "SERVICE"
-    CASH = "CASH"
+    CASH_DIGITAL = "CASH_DIGITAL"
+    CASH_PHYSICAL = "CASH_PHYSICAL"
     COMBINATION = "COMBINATION"
-
-
-class CashDistributionMode(Enum):
-    PHYSICAL = "PHYSICAL"
-    DIGITAL = "DIGITAL"
 
 
 class DisbursementEnvelope(BaseORMModelWithTimes):
@@ -63,9 +59,6 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
     benefit_code_id: Mapped[str] = mapped_column(String)
     benefit_code_mnemonic: Mapped[str] = mapped_column(String)
     benefit_type: Mapped[BenefitType] = mapped_column(SqlEnum(BenefitType))
-    cash_distribution_mode: Mapped[CashDistributionMode] = mapped_column(
-        SqlEnum(CashDistributionMode)
-    )
     disbursement_cycle_id: Mapped[str] = mapped_column(String)
     disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(
         SqlEnum(DisbursementFrequency)

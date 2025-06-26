@@ -75,7 +75,6 @@ class MockSession:
             benefit_program_mnemonic="test_program",
             benefit_code_id="test_benefit",
             benefit_type=BenefitType.CASH,
-            cash_distribution_mode=CashDistributionMode.DIGITAL,
             disbursement_cycle_id="test_cycle",
             disbursement_frequency=DisbursementFrequency.Monthly,
             cycle_code_mnemonic="test_cycle_mnemonic",

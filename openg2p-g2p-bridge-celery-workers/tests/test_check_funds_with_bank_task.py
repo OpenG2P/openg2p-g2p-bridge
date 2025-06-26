@@ -9,7 +9,6 @@ from openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank_task import (
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     BenefitType,
-    CashDistributionMode,
     DisbursementEnvelope,
     EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
@@ -25,8 +24,7 @@ class MockSession:
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
             benefit_code_id="test_benefit",
-            benefit_type=BenefitType.CASH,
-            cash_distribution_mode=CashDistributionMode.DIGITAL,
+            benefit_type=BenefitType.CASH_DIGITAL,
             disbursement_cycle_id="test_cycle",
             disbursement_frequency=DisbursementFrequency.Monthly,
             cycle_code_mnemonic="test_cycle_mnemonic",
