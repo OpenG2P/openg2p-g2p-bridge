@@ -29,9 +29,9 @@ _engine = get_engine()
 def geo_resolution_worker(disbursement_batch_control_id: str):
     _logger.info(f"Starting geo resolution for batch: {disbursement_batch_control_id}")
     session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
-    session_maker_farmer = sessionmaker(bind=_engine.get("db_engine_farmer"), expire_on_commit=False)
+    session_maker_farmer_registry = sessionmaker(bind=_engine.get("db_engine_farmer_registry"), expire_on_commit=False)
 
-    with session_maker() as session, session_maker_farmer() as farmer_registry_session:
+    with session_maker() as session, session_maker_farmer_registry() as farmer_registry_session:
         try:
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
                 session.execute(

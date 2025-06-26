@@ -12,7 +12,7 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
     DisbursementEnvelope,
 )
-from openg2p_g2p_bridge_agency_allocator.agency_allocator.agency_allocator_factory import AgencyAllocatorFactory
+from openg2p_g2p_bridge_agency_allocator.factory.agency_allocator_factory import AgencyAllocatorFactory
 from ..config import Settings
 from ..app import get_engine, celery_app
 

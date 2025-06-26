@@ -1,5 +1,6 @@
 from typing import List, Dict
-from ..agency_interface.agency_allocator_interface import AgencyAllocator
+import random
+from ..interface import AgencyAllocator
 from sqlalchemy.orm import Session
 from openg2p_g2p_bridge_models.models.disbursement_geo import DisbursementBatchControlGeo
 from ..models import G2PAgency
@@ -14,10 +15,11 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
     ) -> List[Dict]:
         results = []
         for geo in small_geo_list:
-            agency = pbms_session.query(G2PAgency).filter(
+            g2p_agencies = pbms_session.query(G2PAgency).filter(
                 G2PAgency.administrative_zone_id_small == geo["administrative_zone_id_small"]
-            ).first()
-            if agency:
+            ).all()
+            g2p_agency = random.choice(g2p_agencies)
+            if g2p_agency:
                 results.append({
                     'batch_control_geo_id': geo['batch_control_geo_id'],
                     'administrative_zone_id_small': geo['administrative_zone_id_small'],
@@ -26,8 +28,8 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                     'benefit_code_mnemonic': benefit_code.get('mnemonic'),
                     'program_id': program.get('id'),
                     'program_mnemonic': program.get('mnemonic'),
-                    'agency_id': agency.id,
-                    'agency_mnemonic': agency.mnemonic,
+                    'agency_id': g2p_agency.id,
+                    'agency_mnemonic': g2p_agency.mnemonic,
                     'agency_additional_attributes': None,
                 })
         return results 

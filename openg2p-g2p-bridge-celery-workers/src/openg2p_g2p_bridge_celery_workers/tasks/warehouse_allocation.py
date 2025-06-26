@@ -11,7 +11,7 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
     DisbursementEnvelope,
 )
-from openg2p_g2p_bridge_warehouse_allocator.warehouse_allocator.warehouse_allocator_factory import WarehouseAllocatorFactory
+from openg2p_g2p_bridge_warehouse_allocator.factory import WarehouseAllocatorFactory
 from ..app import celery_app, get_engine
 from ..config import Settings
 

@@ -45,4 +45,5 @@ class Settings(BaseSettings):
     notification_service_url: str = ""
 
     # Other DB connection settings
-    db_datasource_farmer: str = "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
+    db_datasource_farmer_registry: str = "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
+    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbms"

@@ -225,6 +225,30 @@ class DisbursementEnvelopeService(BaseService):
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_DISBURSEMENT_SCHEDULE_DATE
             )
+        if (
+            disbursement_envelope_payload.benefit_code_id is None
+            or disbursement_envelope_payload.benefit_code_id == ""
+        ):
+            _logger.error("Invalid benefit code ID")
+            raise DisbursementEnvelopeException(
+                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID
+            )
+        if (
+            disbursement_envelope_payload.target_registry is None
+            or disbursement_envelope_payload.target_registry == ""
+        ):
+            _logger.error("Invalid target registry")
+            raise DisbursementEnvelopeException(
+                G2PBridgeErrorCodes.INVALID_TARGET_REGISTRY
+            )
+        if (
+            disbursement_envelope_payload.benefit_code_mnemonic is None
+            or disbursement_envelope_payload.benefit_code_mnemonic == ""
+        ):
+            _logger.error("Invalid benefit code mnemonic")
+            raise DisbursementEnvelopeException(
+                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_MNEMONIC
+            )
         _logger.info("Disbursement envelope payload validated!")
         return True
 
@@ -236,7 +260,9 @@ class DisbursementEnvelopeService(BaseService):
         disbursement_envelope: DisbursementEnvelope = DisbursementEnvelope(
             disbursement_envelope_id=str(uuid.uuid4()),
             benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
+            benefit_program_id=disbursement_envelope_payload.benefit_program_id,
             benefit_code_id=disbursement_envelope_payload.benefit_code_id,
+            benefit_code_mnemonic=disbursement_envelope_payload.benefit_code_mnemonic,
             benefit_type=disbursement_envelope_payload.benefit_type,
             disbursement_cycle_id=disbursement_envelope_payload.disbursement_cycle_id,
             disbursement_frequency=disbursement_envelope_payload.disbursement_frequency,
