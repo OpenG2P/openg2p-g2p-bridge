@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from openg2p_fastapi_common.models import BaseORMModelWithTimes
-from sqlalchemy import UUID, DateTime, Float, Integer, String
+from sqlalchemy import DateTime, Float, Integer, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 

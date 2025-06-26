@@ -65,10 +65,10 @@ class DisbursementEnvelopeController(BaseController):
             RequestValidation.get_component().validate_create_disbursement_envelope_request_header(
                 disbursement_envelope_request
             )
-            disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = (
-                await self.disbursement_envelope_service.create_disbursement_envelopes(
-                    disbursement_envelope_request
-                )
+            disbursement_envelope_payloads: list[
+                DisbursementEnvelopePayload
+            ] = await self.disbursement_envelope_service.create_disbursement_envelopes(
+                disbursement_envelope_request
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")

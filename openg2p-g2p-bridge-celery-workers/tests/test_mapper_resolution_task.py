@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,7 +13,6 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementEnvelope,
     DisbursementFrequency,
-    DisbursementResolutionFinancialAddress,
     ProcessStatus,
 )
 
@@ -82,6 +81,7 @@ class MockSession:
             def __init__(self, parent, query_type):
                 self.parent = parent
                 self.query_type = query_type
+
             def scalars(self):
                 class AllResult:
                     def all(inner_self):
@@ -90,6 +90,7 @@ class MockSession:
                         elif self.query_type == "disbursement":
                             return [self.parent.disbursement]
                         return []
+
                     def first(inner_self):
                         if self.query_type == "batch_control":
                             if not self.parent.disbursement_batch_controls:
@@ -100,14 +101,20 @@ class MockSession:
                                 return None
                             return self.parent.disbursements[0]
                         return None
+
                 return AllResult()
+
             def first(self):
                 # Return the first batch control or disbursement depending on context
-                if hasattr(self, 'disbursement_batch_controls') and self.disbursement_batch_controls:
+                if (
+                    hasattr(self, "disbursement_batch_controls")
+                    and self.disbursement_batch_controls
+                ):
                     return self.disbursement_batch_controls[0]
-                if hasattr(self, 'disbursements') and self.disbursements:
+                if hasattr(self, "disbursements") and self.disbursements:
                     return self.disbursements[0]
                 return None
+
         return ScalarResult(self, query_type)
 
     def scalars(self):
@@ -229,11 +236,7 @@ def test_mapper_resolution_worker_success(
 
     assert len(mock_session_maker.details_list) != 0
     update_values = next(
-        (
-            item
-            for item in mock_session_maker.updates
-            if "fa_resolution_status" in item
-        ),
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
         None,
     )
     assert update_values is not None
@@ -255,11 +258,7 @@ def test_mapper_resolution_worker_failure(
     mapper_resolution_worker("test_batch_id")
 
     update_values = next(
-        (
-            item
-            for item in mock_session_maker.updates
-            if "fa_resolution_status" in item
-        ),
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
         None,
     )
     assert update_values is not None
@@ -335,15 +334,13 @@ def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_h
         "branch_code": "001",
     }
 
-    process_and_store_resolution("test_batch_control_id", mock_response, beneficiary_map, mock_session_maker)
+    process_and_store_resolution(
+        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
+    )
 
     assert len(mock_session_maker.details_list) == 1
     update_values = next(
-        (
-            item
-            for item in mock_session_maker.updates
-            if "fa_resolution_status" in item
-        ),
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
         None,
     )
     assert update_values is not None
@@ -361,14 +358,12 @@ def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_h
     ]
     beneficiary_map = {"test_beneficiary_id": "test_disbursement_id"}
 
-    process_and_store_resolution("test_batch_control_id", mock_response, beneficiary_map, mock_session_maker)
+    process_and_store_resolution(
+        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
+    )
 
     update_values = next(
-        (
-            item
-            for item in mock_session_maker.updates
-            if "fa_resolution_status" in item
-        ),
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
         None,
     )
     assert update_values is not None

@@ -1,9 +1,8 @@
 from datetime import datetime
 from enum import Enum
-from uuid import UUID
 
 from openg2p_fastapi_common.models import BaseORMModelWithTimes
-from sqlalchemy import Boolean, Date, DateTime, Integer, String
+from sqlalchemy import Date, DateTime, Integer, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -84,7 +83,9 @@ class EnvelopeControl(BaseORMModelWithTimes):
     __tablename__ = "envelope_control"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     number_of_disbursements_received: Mapped[int] = mapped_column(Integer, default=0)
-    total_disbursement_quantity_received: Mapped[int] = mapped_column(Integer, default=0)
+    total_disbursement_quantity_received: Mapped[int] = mapped_column(
+        Integer, default=0
+    )
 
 
 class EnvelopeBatchStatusForDigitalCash(BaseORMModelWithTimes):

@@ -10,7 +10,7 @@ from openg2p_g2p_bridge_models.models import (
     FundsBlockedWithBankEnum,
     ProcessStatus,
 )
-from sqlalchemy import and_, literal, select, update
+from sqlalchemy import literal, select, update
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app, get_engine
@@ -76,18 +76,19 @@ def disburse_funds_from_bank_beat_producer():
             .all()
         )
         for envelope in envelopes:
-
             disbursement_batch_controls: list[DisbursementBatchControl] = (
                 session.execute(
-                select(DisbursementBatchControl).filter(
-                    DisbursementBatchControl.disbursement_envelope_id
-                    == envelope.disbursement_envelope_id,
-                    DisbursementBatchControl.sponsor_bank_dispatch_status
-                    == ProcessStatus.PENDING,
-                ).limit(_config.no_of_tasks_to_process)
-            )
-            .scalars()
-            .all()
+                    select(DisbursementBatchControl)
+                    .filter(
+                        DisbursementBatchControl.disbursement_envelope_id
+                        == envelope.disbursement_envelope_id,
+                        DisbursementBatchControl.sponsor_bank_dispatch_status
+                        == ProcessStatus.PENDING,
+                    )
+                    .limit(_config.no_of_tasks_to_process)
+                )
+                .scalars()
+                .all()
             )
             _logger.info(
                 f"Found {len(disbursement_batch_controls)} pending batch controls for envelope {envelope.disbursement_envelope_id}"

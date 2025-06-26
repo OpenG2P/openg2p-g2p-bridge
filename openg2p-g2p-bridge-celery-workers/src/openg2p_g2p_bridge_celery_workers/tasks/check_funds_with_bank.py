@@ -23,7 +23,9 @@ _engine = get_engine()
 @celery_app.task(name="check_funds_with_bank_worker")
 def check_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Checking funds with bank for envelope: {disbursement_envelope_id}")
-    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
+    session_maker = sessionmaker(
+        bind=_engine.get("db_engine_bridge"), expire_on_commit=False
+    )
 
     with session_maker() as session:
         envelope = (
@@ -92,7 +94,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             envelope_batch_status_for_digital_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = None
+            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = (
+                None
+            )
             envelope_batch_status_for_digital_cash.funds_available_attempts += 1
 
         except Exception as e:
@@ -105,11 +109,14 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             envelope_batch_status_for_digital_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = str(
-                e
+            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = (
+                str(e)
             )
             envelope_batch_status_for_digital_cash.funds_available_attempts += 1
-            if envelope_batch_status_for_digital_cash.funds_available_attempts >= _config.max_funds_check_attempts:
+            if (
+                envelope_batch_status_for_digital_cash.funds_available_attempts
+                >= _config.max_funds_check_attempts
+            ):
                 envelope_batch_status_for_digital_cash.funds_available_with_bank = (
                     FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
                 )

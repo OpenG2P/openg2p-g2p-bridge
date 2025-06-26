@@ -6,7 +6,7 @@ _config = Settings.get_config()
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
 
-from .geo_resolver import GeoResolverFactory, ExampleGeoResolver
+from .geo_resolver import ExampleGeoResolver, GeoResolverFactory
 
 
 class Initializer(BaseInitializer):

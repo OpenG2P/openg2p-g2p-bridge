@@ -2,17 +2,21 @@ import datetime
 import enum
 from typing import List, Optional
 
-from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
 
 class NotificationType(enum.Enum):
     AGENCY_NOTIFICATION = "AGENCY_NOTIFICATION"
     WAREHOUSE_NOTIFICATION = "WAREHOUSE_NOTIFICATION"
     BENEFICIARY_NOTIFICATION = "BENEFICIARY_NOTIFICATION"
 
+
 class NotificationPayload(BaseModel):
     """Base class for all notification payloads."""
+
     pass
+
+
 class WarehouseNotificationPayload(NotificationPayload):
     program_mnemonic: Optional[str] = None
     program_description: Optional[str] = None
@@ -36,10 +40,12 @@ class WarehouseNotificationPayload(NotificationPayload):
     administrative_zone_id_small: Optional[str] = None
     administrative_zone_mnemonic_small: Optional[str] = None
 
+
 class BeneficiaryEntitlement(BaseModel):
     beneficiary_id: Optional[str] = None
     beneficiary_name: Optional[str] = None
     total_quantity: Optional[float] = None
+
 
 class AgencyNotificationPayload(NotificationPayload):
     program_mnemonic: Optional[str] = None
@@ -65,6 +71,7 @@ class AgencyNotificationPayload(NotificationPayload):
     administrative_zone_mnemonic_small: Optional[str] = None
     beneficiary_entitlements: Optional[List[BeneficiaryEntitlement]] = None
 
+
 class BeneficiaryNotificationPayload(NotificationPayload):
     program_mnemonic: Optional[str] = None
     program_description: Optional[str] = None
@@ -88,6 +95,7 @@ class BeneficiaryNotificationPayload(NotificationPayload):
     administrative_zone_mnemonic_small: Optional[str] = None
     beneficiary_entitlement: Optional[BeneficiaryEntitlement] = None
 
+
 class NotificationRequest(BaseModel):
     notification_type: str
     recipient: str
@@ -98,5 +106,3 @@ class NotificationRequest(BaseModel):
     beneficiary_id: Optional[str] = None
     disbursement_id: Optional[str] = None
     notification_request_id: Optional[str] = None
-
-    

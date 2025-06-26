@@ -1,8 +1,5 @@
-
-from datetime import datetime
-
 from openg2p_fastapi_common.models import BaseORMModel
-from sqlalchemy import DateTime, Integer, String, Float
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import mapped_column
 
 

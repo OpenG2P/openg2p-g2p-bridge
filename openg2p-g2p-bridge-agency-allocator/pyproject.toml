@@ -27,4 +27,4 @@ Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge-agency-allocator"
 Source = "https://github.com/OpenG2P/openg2p-g2p-bridge-agency-allocator"
 
 [tool.hatch.version]
-path = "src/openg2p_g2p_bridge_agency_allocator/__init__.py" 
+path = "src/openg2p_g2p_bridge_agency_allocator/__init__.py"

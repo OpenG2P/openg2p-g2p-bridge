@@ -27,4 +27,4 @@ Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge-geo-resolver"
 Source = "https://github.com/OpenG2P/openg2p-g2p-bridge-geo-resolver"
 
 [tool.hatch.version]
-path = "src/openg2p_g2p_bridge_geo_resolver/__init__.py" 
+path = "src/openg2p_g2p_bridge_geo_resolver/__init__.py"

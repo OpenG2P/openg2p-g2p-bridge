@@ -1,6 +1,6 @@
 from openg2p_fastapi_common.models import BaseORMModelWithTimes
-from sqlalchemy import Float, String, Integer
 from sqlalchemy import Enum as SqlEnum
+from sqlalchemy import Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .common_enums import ProcessStatus

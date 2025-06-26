@@ -6,21 +6,21 @@ from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementStatusException
 from openg2p_g2p_bridge_models.models import (
-    EnvelopeControl,
-    EnvelopeBatchStatusForDigitalCash,
-    DisbursementEnvelope,
-    DisbursementBatchControlGeo,
-    DisbursementResolutionGeoAddress,
-    ProcessStatus,
     BenefitType,
+    DisbursementBatchControlGeo,
+    DisbursementEnvelope,
+    DisbursementResolutionGeoAddress,
+    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeControl,
+    ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    EnvelopeStatusForPhysicalBenefitsPayload,
-    EnvelopeStatusForDigitalCashPayload,
-    DistributionDetailsForEnvelope,
     DisbursementEnvelopeBatchStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
+    DistributionDetailsForEnvelope,
+    EnvelopeStatusForDigitalCashPayload,
+    EnvelopeStatusForPhysicalBenefitsPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
@@ -43,12 +43,17 @@ class DisbursementEnvelopeStatusService(BaseService):
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             envelope = (
-                await session.execute(
-                    select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_status_request.message
+                (
+                    await session.execute(
+                        select(DisbursementEnvelope).where(
+                            DisbursementEnvelope.disbursement_envelope_id
+                            == disbursement_envelope_status_request.message
+                        )
                     )
                 )
-            ).scalars().first()
+                .scalars()
+                .first()
+            )
             if not envelope:
                 raise DisbursementStatusException(
                     code=G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_NOT_FOUND,
@@ -56,12 +61,17 @@ class DisbursementEnvelopeStatusService(BaseService):
                 )
 
             envelope_control = (
-                await session.execute(
-                    select(EnvelopeControl).where(
-                        EnvelopeControl.disbursement_envelope_id == envelope.disbursement_envelope_id
+                (
+                    await session.execute(
+                        select(EnvelopeControl).where(
+                            EnvelopeControl.disbursement_envelope_id
+                            == envelope.disbursement_envelope_id
+                        )
                     )
                 )
-            ).scalars().first()
+                .scalars()
+                .first()
+            )
 
             # Fetch batch_control_geos for physical, digital_cash_status for digital
             batch_control_geos = None
@@ -70,20 +80,30 @@ class DisbursementEnvelopeStatusService(BaseService):
             disbursement_details = None
             if envelope.benefit_type == BenefitType.CASH_DIGITAL:
                 digital_cash_status = (
-                    await session.execute(
-                        select(EnvelopeBatchStatusForDigitalCash).where(
-                            EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id == envelope.disbursement_envelope_id
+                    (
+                        await session.execute(
+                            select(EnvelopeBatchStatusForDigitalCash).where(
+                                EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
+                                == envelope.disbursement_envelope_id
+                            )
                         )
                     )
-                ).scalars().first()
+                    .scalars()
+                    .first()
+                )
             else:
                 batch_control_geos = (
-                    await session.execute(
-                        select(DisbursementBatchControlGeo).where(
-                            DisbursementBatchControlGeo.disbursement_envelope_id == envelope.disbursement_envelope_id
+                    (
+                        await session.execute(
+                            select(DisbursementBatchControlGeo).where(
+                                DisbursementBatchControlGeo.disbursement_envelope_id
+                                == envelope.disbursement_envelope_id
+                            )
                         )
                     )
-                ).scalars().all()
+                    .scalars()
+                    .all()
+                )
                 disbursement_details = [
                     DistributionDetailsForEnvelope(
                         administrative_zone_id_large=batch_control_geo.administrative_zone_id_large,
@@ -96,21 +116,28 @@ class DisbursementEnvelopeStatusService(BaseService):
                         agency_mnemonic=batch_control_geo.agency_mnemonic,
                         number_of_beneficiaries=batch_control_geo.no_of_beneficiaries,
                         total_disbursement_quantity=batch_control_geo.total_quantity,
-                        warehouse_notified=batch_control_geo.warehouse_notification_status == ProcessStatus.PROCESSED,
-                        agency_notified=batch_control_geo.agency_notification_status == ProcessStatus.PROCESSED,
+                        warehouse_notified=batch_control_geo.warehouse_notification_status
+                        == ProcessStatus.PROCESSED,
+                        agency_notified=batch_control_geo.agency_notification_status
+                        == ProcessStatus.PROCESSED,
                         no_of_pods_received=None,  # Fill if available
                     )
                     for batch_control_geo in batch_control_geos
                 ]
                 beneficiary_notified_count = (
-                    await session.execute(
-                        select(DisbursementResolutionGeoAddress)
-                        .where(
-                            DisbursementResolutionGeoAddress.disbursement_envelope_id == envelope.disbursement_envelope_id,
-                            DisbursementResolutionGeoAddress.beneficiary_notification_status == ProcessStatus.PROCESSED
+                    (
+                        await session.execute(
+                            select(DisbursementResolutionGeoAddress).where(
+                                DisbursementResolutionGeoAddress.disbursement_envelope_id
+                                == envelope.disbursement_envelope_id,
+                                DisbursementResolutionGeoAddress.beneficiary_notification_status
+                                == ProcessStatus.PROCESSED,
+                            )
                         )
                     )
-                ).scalars().all()
+                    .scalars()
+                    .all()
+                )
 
             return await self.construct_batch_status_payload(
                 envelope=envelope,
@@ -138,33 +165,83 @@ class DisbursementEnvelopeStatusService(BaseService):
                 benefit_code_mnemonic=envelope.benefit_code_mnemonic,
                 benefit_type=envelope.benefit_type.value,
                 number_of_disbursements_declared=envelope.number_of_disbursements,
-                number_of_disbursements_received=envelope_control.number_of_disbursements_received if envelope_control else 0,
+                number_of_disbursements_received=envelope_control.number_of_disbursements_received
+                if envelope_control
+                else 0,
                 total_disbursement_quantity_declared=envelope.total_disbursement_quantity,
-                total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received if envelope_control else 0,
-                funds_available_with_bank=digital_cash_status.funds_available_with_bank if digital_cash_status else None,
-                funds_available_latest_timestamp=digital_cash_status.funds_available_latest_timestamp if digital_cash_status else None,
-                funds_available_latest_error_code=digital_cash_status.funds_available_latest_error_code if digital_cash_status else None,
-                funds_available_attempts=digital_cash_status.funds_available_attempts if digital_cash_status else 0,
-                funds_blocked_with_bank=digital_cash_status.funds_blocked_with_bank if digital_cash_status else None,
-                funds_blocked_latest_timestamp=digital_cash_status.funds_blocked_latest_timestamp if digital_cash_status else None,
-                funds_blocked_latest_error_code=digital_cash_status.funds_blocked_latest_error_code if digital_cash_status else None,
-                funds_blocked_attempts=digital_cash_status.funds_blocked_attempts if digital_cash_status else 0,
-                funds_blocked_reference_number=digital_cash_status.funds_blocked_reference_number if digital_cash_status else None,
+                total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received
+                if envelope_control
+                else 0,
+                funds_available_with_bank=digital_cash_status.funds_available_with_bank
+                if digital_cash_status
+                else None,
+                funds_available_latest_timestamp=digital_cash_status.funds_available_latest_timestamp
+                if digital_cash_status
+                else None,
+                funds_available_latest_error_code=digital_cash_status.funds_available_latest_error_code
+                if digital_cash_status
+                else None,
+                funds_available_attempts=digital_cash_status.funds_available_attempts
+                if digital_cash_status
+                else 0,
+                funds_blocked_with_bank=digital_cash_status.funds_blocked_with_bank
+                if digital_cash_status
+                else None,
+                funds_blocked_latest_timestamp=digital_cash_status.funds_blocked_latest_timestamp
+                if digital_cash_status
+                else None,
+                funds_blocked_latest_error_code=digital_cash_status.funds_blocked_latest_error_code
+                if digital_cash_status
+                else None,
+                funds_blocked_attempts=digital_cash_status.funds_blocked_attempts
+                if digital_cash_status
+                else 0,
+                funds_blocked_reference_number=digital_cash_status.funds_blocked_reference_number
+                if digital_cash_status
+                else None,
                 id_mapper_resolution_required=None,  # Fill if available
-                number_of_disbursements_shipped=digital_cash_status.number_of_disbursements_shipped if digital_cash_status else 0,
-                number_of_disbursements_reconciled=digital_cash_status.number_of_disbursements_reconciled if digital_cash_status else 0,
-                number_of_disbursements_reversed=digital_cash_status.number_of_disbursements_reversed if digital_cash_status else 0,
+                number_of_disbursements_shipped=digital_cash_status.number_of_disbursements_shipped
+                if digital_cash_status
+                else 0,
+                number_of_disbursements_reconciled=digital_cash_status.number_of_disbursements_reconciled
+                if digital_cash_status
+                else 0,
+                number_of_disbursements_reversed=digital_cash_status.number_of_disbursements_reversed
+                if digital_cash_status
+                else 0,
             )
         # PHYSICAL BENEFITS
         else:
-            warehouse_ids = set(geo.warehouse_id for geo in batch_control_geos if geo.warehouse_id) if batch_control_geos else set()
-            agency_ids = set(geo.agency_id for geo in batch_control_geos if geo.agency_id) if batch_control_geos else set()
-            warehouses_notified = set(
-                geo.warehouse_id for geo in batch_control_geos if geo.warehouse_id and geo.warehouse_notification_status == ProcessStatus.PROCESSED
-            ) if batch_control_geos else set()
-            agencies_notified = set(
-                geo.agency_id for geo in batch_control_geos if geo.agency_id and geo.agency_notification_status == ProcessStatus.PROCESSED
-            ) if batch_control_geos else set()
+            warehouse_ids = (
+                {geo.warehouse_id for geo in batch_control_geos if geo.warehouse_id}
+                if batch_control_geos
+                else set()
+            )
+            agency_ids = (
+                {geo.agency_id for geo in batch_control_geos if geo.agency_id}
+                if batch_control_geos
+                else set()
+            )
+            warehouses_notified = (
+                {
+                    geo.warehouse_id
+                    for geo in batch_control_geos
+                    if geo.warehouse_id
+                    and geo.warehouse_notification_status == ProcessStatus.PROCESSED
+                }
+                if batch_control_geos
+                else set()
+            )
+            agencies_notified = (
+                {
+                    geo.agency_id
+                    for geo in batch_control_geos
+                    if geo.agency_id
+                    and geo.agency_notification_status == ProcessStatus.PROCESSED
+                }
+                if batch_control_geos
+                else set()
+            )
             return EnvelopeStatusForPhysicalBenefitsPayload(
                 disbursement_envelope_id=envelope.disbursement_envelope_id,
                 benefit_code_id=envelope.benefit_code_id,
@@ -173,15 +250,25 @@ class DisbursementEnvelopeStatusService(BaseService):
                 number_of_beneficiaries_received=envelope.number_of_beneficiaries,
                 number_of_beneficiaries_declared=envelope.number_of_beneficiaries,
                 number_of_disbursements_declared=envelope.number_of_disbursements,
-                number_of_disbursements_received=envelope_control.number_of_disbursements_received if envelope_control else 0,
+                number_of_disbursements_received=envelope_control.number_of_disbursements_received
+                if envelope_control
+                else 0,
                 total_disbursement_quantity_declared=envelope.total_disbursement_quantity,
-                total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received if envelope_control else 0,
+                total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received
+                if envelope_control
+                else 0,
                 disbursement_details_for_envelope=disbursement_details,
                 no_of_warehouses_allocated=len(warehouse_ids) if warehouse_ids else 0,
-                no_of_warehouses_notified=len(warehouses_notified) if warehouses_notified else 0,
+                no_of_warehouses_notified=len(warehouses_notified)
+                if warehouses_notified
+                else 0,
                 no_of_agencies_allocated=len(agency_ids) if agency_ids else 0,
-                no_of_agencies_notified=len(agencies_notified) if agencies_notified else 0,
-                no_of_beneficiaries_notified=len(beneficiary_notified_count) if beneficiary_notified_count is not None else 0,
+                no_of_agencies_notified=len(agencies_notified)
+                if agencies_notified
+                else 0,
+                no_of_beneficiaries_notified=len(beneficiary_notified_count)
+                if beneficiary_notified_count is not None
+                else 0,
                 no_of_pods_received=None,  # Fill if available
             )
 
@@ -205,7 +292,8 @@ class DisbursementEnvelopeStatusService(BaseService):
     async def construct_disbursement_envelope_status_success_response(
         self,
         disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
-        disbursement_envelope_batch_status_payload: EnvelopeStatusForDigitalCashPayload|EnvelopeStatusForPhysicalBenefitsPayload,
+        disbursement_envelope_batch_status_payload: EnvelopeStatusForDigitalCashPayload
+        | EnvelopeStatusForPhysicalBenefitsPayload,
     ) -> DisbursementEnvelopeStatusResponse:
         """
         Returns a DisbursementEnvelopeStatusResponse with the correct payload type (digital or physical).

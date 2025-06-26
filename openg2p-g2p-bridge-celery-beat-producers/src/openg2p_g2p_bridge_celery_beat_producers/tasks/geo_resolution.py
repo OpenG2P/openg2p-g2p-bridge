@@ -45,4 +45,6 @@ def geo_resolution_beat_producer():
             )
             session.commit()
 
-        _logger.info("Completed checking for disbursement batches to perform geo resolution") 
+        _logger.info(
+            "Completed checking for disbursement batches to perform geo resolution"
+        )

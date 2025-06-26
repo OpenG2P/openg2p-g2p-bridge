@@ -51,12 +51,10 @@ def block_funds_with_bank_beat_producer():
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
                             == FundsBlockedWithBankEnum.PENDING_CHECK.value
-                           
                         ),
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
                             == FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
-                           
                         ),
                     ),
                 )

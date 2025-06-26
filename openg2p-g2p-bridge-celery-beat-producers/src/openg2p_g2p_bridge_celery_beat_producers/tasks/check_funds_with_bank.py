@@ -57,12 +57,10 @@ def check_funds_with_bank_beat_producer():
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.PENDING_CHECK.value
-                           
                         ),
                         and_(
                             EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
-                           
                         ),
                     ),
                 )

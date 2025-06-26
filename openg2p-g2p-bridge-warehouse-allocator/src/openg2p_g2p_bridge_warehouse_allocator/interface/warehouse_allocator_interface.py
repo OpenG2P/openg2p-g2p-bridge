@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List
+
 from sqlalchemy.orm import Session
+
 
 class WarehouseAllocator(ABC):
     @abstractmethod
@@ -9,7 +11,7 @@ class WarehouseAllocator(ABC):
         pbms_session: Session,
         large_geo_list: List[Dict],
         benefit_code: Dict,
-        program: Dict
+        program: Dict,
     ) -> List[Dict]:
         """
         Accepts:
@@ -19,4 +21,4 @@ class WarehouseAllocator(ABC):
           - program: Dict with id and mnemonic
         Returns a list of dicts with warehouse allocation info for each geo.
         """
-        pass 
+        pass

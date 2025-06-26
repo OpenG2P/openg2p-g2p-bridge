@@ -10,15 +10,13 @@ from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementException
 from openg2p_g2p_bridge_models.models import (
+    BenefitType,
     CancellationStatus,
     Disbursement,
     DisbursementBatchControl,
     DisbursementCancellationStatus,
     DisbursementEnvelope,
     EnvelopeControl,
-    EnvelopeBatchStatusForDigitalCash,
-    ProcessStatus,
-    BenefitType,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
@@ -64,22 +62,31 @@ class DisbursementService(BaseService):
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
                     disbursement_payloads=disbursement_request.message,
                 )
-             
+
             disbursement_envelope = (
-                await session.execute(
-                    select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
-                        == str(disbursement_request.message[0].disbursement_envelope_id)
+                (
+                    await session.execute(
+                        select(DisbursementEnvelope).where(
+                            DisbursementEnvelope.disbursement_envelope_id
+                            == str(
+                                disbursement_request.message[0].disbursement_envelope_id
+                            )
+                        )
                     )
                 )
-            ).scalars().first()
+                .scalars()
+                .first()
+            )
 
-            disbursement_batch_control: DisbursementBatchControl = await self.construct_disbursement_batch_control(
-                disbursement_envelope=disbursement_envelope,
+            disbursement_batch_control: DisbursementBatchControl = (
+                await self.construct_disbursement_batch_control(
+                    disbursement_envelope=disbursement_envelope,
+                )
             )
 
             disbursements: List[Disbursement] = await self.construct_disbursements(
-                disbursement_payloads=disbursement_request.message, disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id
+                disbursement_payloads=disbursement_request.message,
+                disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
             )
 
             # Lock the envelope batch status row for update (nowait)
@@ -124,14 +131,10 @@ class DisbursementService(BaseService):
                 max_retries -= 1
 
         else:
-            _logger.error(
-                "Unable to acquire lock on EnvelopeControl after retries"
-            )
+            _logger.error("Unable to acquire lock on EnvelopeControl after retries")
             raise last_exc
 
-        envelope_control.number_of_disbursements_received += len(
-            disbursements
-        )
+        envelope_control.number_of_disbursements_received += len(disbursements)
         envelope_control.total_disbursement_quantity_received += sum(
             d.disbursement_quantity for d in disbursements
         )
@@ -139,7 +142,9 @@ class DisbursementService(BaseService):
         return envelope_control
 
     async def construct_disbursements(
-        self, disbursement_payloads: List[DisbursementPayload], disbursement_batch_control_id: str = None
+        self,
+        disbursement_payloads: List[DisbursementPayload],
+        disbursement_batch_control_id: str = None,
     ) -> List[Disbursement]:
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
@@ -187,7 +192,7 @@ class DisbursementService(BaseService):
             geo_resolutuon_status = ProcessStatus.PENDING
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
             agency_allocation_status = ProcessStatus.NOT_APPLICABLE
-            
+
         disbursement_batch_control = DisbursementBatchControl(
             disbursement_batch_control_id=disbursement_batch_control_id,
             disbursement_cycle_id=disbursement_envelope.disbursement_cycle_id,
@@ -466,13 +471,11 @@ class DisbursementService(BaseService):
             envelope_control.number_of_disbursements_received -= len(
                 disbursements_in_db
             )
-            envelope_control.total_disbursement_quantity_received -= (
-                sum(
-                    [
-                        disbursement.disbursement_quantity
-                        for disbursement in disbursements_in_db
-                    ]
-                )
+            envelope_control.total_disbursement_quantity_received -= sum(
+                [
+                    disbursement.disbursement_quantity
+                    for disbursement in disbursements_in_db
+                ]
             )
 
             session.add_all(disbursements_in_db)

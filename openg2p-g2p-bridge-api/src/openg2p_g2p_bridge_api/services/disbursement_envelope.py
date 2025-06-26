@@ -8,14 +8,14 @@ from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementEnvelopeException
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
+    BenefitType,
     CancellationStatus,
     DisbursementEnvelope,
-    EnvelopeControl,
-    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
+    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeControl,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
-    BenefitType,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopePayload,
@@ -44,7 +44,9 @@ class DisbursementEnvelopeService(BaseService):
         disbursement_envelopes: list[DisbursementEnvelope] = []
         envelope_controls: list[EnvelopeControl] = []
         envelope_batch_statuses: list[EnvelopeBatchStatusForDigitalCash] = []
-        disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = disbursement_envelope_request.message
+        disbursement_envelope_payloads: list[
+            DisbursementEnvelopePayload
+        ] = disbursement_envelope_request.message
         async with session_maker() as session:
             for disbursement_envelope_payload in disbursement_envelope_payloads:
                 try:
@@ -54,15 +56,21 @@ class DisbursementEnvelopeService(BaseService):
                 disbursement_envelope = await self.construct_disbursement_envelope(
                     disbursement_envelope_payload=disbursement_envelope_payload
                 )
-                disbursement_envelope_payload.disbursement_envelope_id = disbursement_envelope.disbursement_envelope_id
+                disbursement_envelope_payload.disbursement_envelope_id = (
+                    disbursement_envelope.disbursement_envelope_id
+                )
                 disbursement_envelopes.append(disbursement_envelope)
 
-                envelope_control = await self.construct_envelope_control(disbursement_envelope)
+                envelope_control = await self.construct_envelope_control(
+                    disbursement_envelope
+                )
                 envelope_controls.append(envelope_control)
 
                 if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
-                    batch_status = await self.construct_envelope_batch_status_for_digital_cash(
-                        disbursement_envelope, session
+                    batch_status = (
+                        await self.construct_envelope_batch_status_for_digital_cash(
+                            disbursement_envelope, session
+                        )
                     )
                     envelope_batch_statuses.append(batch_status)
             session.add_all(disbursement_envelopes)
@@ -317,7 +325,7 @@ class DisbursementEnvelopeService(BaseService):
             disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
-            active=True
+            active=True,
         )
 
     async def validate_envelope_amend_request(

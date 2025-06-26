@@ -10,8 +10,8 @@ from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     BenefitType,
     DisbursementEnvelope,
-    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
+    EnvelopeBatchStatusForDigitalCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
 )

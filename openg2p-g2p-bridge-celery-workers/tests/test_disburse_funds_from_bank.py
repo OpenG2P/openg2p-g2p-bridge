@@ -15,12 +15,10 @@ from openg2p_g2p_bridge_models.models import (
     BenefitType,
     Disbursement,
     DisbursementBatchControl,
-    DisbursementBatchControlGeo,
     DisbursementEnvelope,
-    EnvelopeBatchStatusForDigitalCash,
     DisbursementFrequency,
     DisbursementResolutionFinancialAddress,
-    DisbursementResolutionGeoAddress,
+    EnvelopeBatchStatusForDigitalCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
     ProcessStatus,
@@ -204,7 +202,8 @@ def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory)
         == ProcessStatus.PROCESSED.value
     )
     assert (
-        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code is None
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
+        is None
     )
     assert (
         mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped
@@ -251,7 +250,9 @@ def test_disburse_funds_exception(
         mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
         == "TEST_EXCEPTION"
     )
-    assert mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_attempts == 1
+    assert (
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_attempts == 1
+    )
     assert mock_session_maker.committed
 
 

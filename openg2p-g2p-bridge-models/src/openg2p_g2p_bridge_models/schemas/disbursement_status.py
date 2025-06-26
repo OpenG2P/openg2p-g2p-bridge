@@ -1,5 +1,4 @@
 import datetime
-from enum import Enum
 from typing import List, Optional
 
 from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
@@ -11,6 +10,7 @@ from ..models import FundsAvailableWithBankEnum, FundsBlockedWithBankEnum
 
 class DisbursementStatusRequest(Request):
     message: List[str]
+
 
 class DisbursementReconPayload(BaseModel):
     bank_disbursement_batch_id: str
@@ -67,6 +67,7 @@ class DisbursementStatusResponse(SyncResponse):
 class DisbursementEnvelopeStatusRequest(Request):
     message: str
 
+
 class DisbursementEnvelopeBatchStatusPayload(BaseModel):
     disbursement_envelope_id: str
     benefit_code_id: Optional[str] = None
@@ -78,6 +79,7 @@ class DisbursementEnvelopeBatchStatusPayload(BaseModel):
     number_of_disbursements_received: int
     total_disbursement_quantity_declared: Optional[float] = None
     total_disbursement_quantity_received: int
+
 
 class DistributionDetailsForEnvelope(BaseModel):
     administrative_zone_id_large: Optional[str] = None
@@ -94,6 +96,7 @@ class DistributionDetailsForEnvelope(BaseModel):
     agency_notified: Optional[bool] = None
     no_of_pods_received: Optional[int] = None
 
+
 class EnvelopeStatusForPhysicalBenefitsPayload(DisbursementEnvelopeBatchStatusPayload):
     no_of_warehouses_allocated: Optional[int] = None
     no_of_warehouses_notified: Optional[int] = None
@@ -101,10 +104,12 @@ class EnvelopeStatusForPhysicalBenefitsPayload(DisbursementEnvelopeBatchStatusPa
     no_of_agencies_notified: Optional[int] = None
     no_of_beneficiaries_notified: Optional[int] = None
     no_of_pods_received: Optional[int] = None
-    disbursement_details_for_envelope: Optional[List[DistributionDetailsForEnvelope]] = None
-       
-class EnvelopeStatusForDigitalCashPayload(DisbursementEnvelopeBatchStatusPayload):
+    disbursement_details_for_envelope: Optional[
+        List[DistributionDetailsForEnvelope]
+    ] = None
 
+
+class EnvelopeStatusForDigitalCashPayload(DisbursementEnvelopeBatchStatusPayload):
     funds_available_with_bank: FundsAvailableWithBankEnum
     funds_available_latest_timestamp: Optional[datetime.datetime] = None
     funds_available_latest_error_code: Optional[str] = None
@@ -123,4 +128,6 @@ class EnvelopeStatusForDigitalCashPayload(DisbursementEnvelopeBatchStatusPayload
 
 
 class DisbursementEnvelopeStatusResponse(SyncResponse):
-    message: Optional[EnvelopeStatusForDigitalCashPayload|EnvelopeStatusForPhysicalBenefitsPayload] = None
+    message: Optional[
+        EnvelopeStatusForDigitalCashPayload | EnvelopeStatusForPhysicalBenefitsPayload
+    ] = None

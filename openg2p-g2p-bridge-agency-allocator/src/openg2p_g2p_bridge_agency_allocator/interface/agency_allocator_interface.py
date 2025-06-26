@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import Dict, List
+
 from sqlalchemy.orm import Session
+
 
 class AgencyAllocator(ABC):
     @abstractmethod
@@ -9,7 +11,7 @@ class AgencyAllocator(ABC):
         pbms_session: Session,
         small_geo_list: List[Dict],
         benefit_code: Dict,
-        program: Dict
+        program: Dict,
     ) -> List[Dict]:
         """
         Accepts:
@@ -19,4 +21,4 @@ class AgencyAllocator(ABC):
           - program: Dict with id and mnemonic
         Returns a list of dicts with agency allocation info for each geo.
         """
-        pass 
+        pass

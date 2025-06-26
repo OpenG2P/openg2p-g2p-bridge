@@ -16,9 +16,9 @@ from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     Disbursement,
     DisbursementBatchControl,
-    EnvelopeBatchStatusForDigitalCash,
     DisbursementErrorRecon,
     DisbursementRecon,
+    EnvelopeBatchStatusForDigitalCash,
     ProcessStatus,
 )
 from sqlalchemy.exc import OperationalError
@@ -35,7 +35,9 @@ _engine = get_engine()
 @celery_app.task(name="mt940_processor_worker")
 def mt940_processor_worker(statement_id: str):
     _logger.info(f"Processing account statement with statement_id: {statement_id}")
-    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
+    session_maker = sessionmaker(
+        bind=_engine.get("db_engine_bridge"), expire_on_commit=False
+    )
 
     with session_maker() as session:
         account_statement = (
@@ -315,7 +317,8 @@ def get_bank_batch_id(parsed_transaction, session):
     batch_control = (
         session.query(DisbursementBatchControl)
         .filter(
-            DisbursementBatchControl.disbursement_batch_control_id == parsed_transaction["disbursement_batch_control_id"]
+            DisbursementBatchControl.disbursement_batch_control_id
+            == parsed_transaction["disbursement_batch_control_id"]
         )
         .first()
     )
@@ -508,7 +511,9 @@ def update_envelope_batch_status_reconciled(
             )
             raise last_exc
 
-        envelope_batch_status_for_digital_cash.number_of_disbursements_reconciled += count
+        envelope_batch_status_for_digital_cash.number_of_disbursements_reconciled += (
+            count
+        )
         session.add(envelope_batch_status_for_digital_cash)
         session.commit()
 

@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     agency_allocation_max_attempts: int = 3
     warehouse_notification_max_attempts: int = 3
     agency_notification_max_attempts: int = 3
-    
+
     mapper_resolve_frequency: int = 5
     funds_available_check_frequency: int = 10
     funds_blocked_frequency: int = 3600

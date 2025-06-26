@@ -10,10 +10,11 @@ from .disbursement import (
     Disbursement,
     DisbursementBatchControl,
     DisbursementCancellationStatus,
-    MapperResolvedFaType,
     DisbursementResolutionFinancialAddress,
+    MapperResolvedFaType,
 )
 from .disbursement_envelope import (
+    BenefitType,
     CancellationStatus,
     DisbursementEnvelope,
     DisbursementFrequency,
@@ -21,7 +22,6 @@ from .disbursement_envelope import (
     EnvelopeControl,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
-    BenefitType,
 )
 from .disbursement_geo import (
     DisbursementBatchControlGeo,

@@ -5,13 +5,13 @@ from openg2p_g2p_bridge_models.models import DisbursementBatchControl, ProcessSt
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 
-
 from ..app import celery_app, get_engine
 from ..config import Settings
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
 _engine = get_engine()
+
 
 @celery_app.task(name="mapper_resolution_beat_producer")
 def mapper_resolution_beat_producer():
@@ -31,7 +31,8 @@ def mapper_resolution_beat_producer():
         session.execute(
             update(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PROCESSING,
+                DisbursementBatchControl.fa_resolution_status
+                == ProcessStatus.PROCESSING,
                 DisbursementBatchControl.updated_at > stale_at,
             )
             .values(fa_resolution_status=ProcessStatus.PENDING)
