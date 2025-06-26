@@ -8,9 +8,11 @@ from openg2p_g2p_bridge_bank_connectors.bank_interface import (
 )
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
+    DisbursementBatchControl,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     FundsBlockedWithBankEnum,
+    ProcessStatus
 )
 from sqlalchemy.orm import sessionmaker
 
@@ -25,7 +27,7 @@ _engine = get_engine()
 @celery_app.task(name="block_funds_with_bank_worker")
 def block_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Blocking funds with bank for envelope: {disbursement_envelope_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         envelope = (
@@ -43,16 +45,21 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
             return
 
-        batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
+        envelope_batch_status_for_digital_cash = (
+            session.query(EnvelopeBatchStatusForDigitalCash)
             .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                 == disbursement_envelope_id
             )
             .first()
         )
 
-        if not batch_status:
+        disbursement_batch_control = session.query(DisbursementBatchControl).filter(
+            DisbursementBatchControl.disbursement_envelope_id
+            == disbursement_envelope_id
+        ).first()
+
+        if not envelope_batch_status_for_digital_cash:
             _logger.error(
                 f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
             )
@@ -67,7 +74,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             .first()
         )
 
-        total_funds_needed = envelope.total_disbursement_amount
+        total_funds_needed = envelope.total_disbursement_quantity
         bank_connector: BankConnectorInterface = (
             BankConnectorFactory.get_component().get_bank_connector(
                 benefit_program_configuration.sponsor_bank_code
@@ -82,35 +89,41 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
 
             if funds_blocked.status == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS:
-                batch_status.funds_blocked_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
                 )
-                batch_status.funds_blocked_reference_number = (
+                envelope_batch_status_for_digital_cash.funds_blocked_reference_number = (
                     funds_blocked.block_reference_no
                 )
-                batch_status.funds_blocked_latest_error_code = None
+                envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = None
+                disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.PENDING
             else:
-                batch_status.funds_blocked_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 )
-                batch_status.funds_blocked_reference_number = ""
-                batch_status.funds_blocked_latest_error_code = funds_blocked.error_code
+                envelope_batch_status_for_digital_cash.funds_blocked_reference_number = ""
+                envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = funds_blocked.error_code
 
-            batch_status.funds_blocked_latest_timestamp = datetime.now()
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_timestamp = datetime.now()
 
-            batch_status.funds_blocked_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_blocked_attempts += 1
 
         except Exception as e:
             _logger.error(
                 f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
             )
-            batch_status.funds_blocked_with_bank = (
+            envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
                 FundsBlockedWithBankEnum.PENDING_CHECK.value
             )
-            batch_status.funds_blocked_latest_timestamp = datetime.now()
-            batch_status.funds_blocked_latest_error_code = str(e)
-            batch_status.funds_blocked_attempts += 1
-            batch_status.funds_blocked_reference_number = ""
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_timestamp = datetime.now()
+            envelope_batch_status_for_digital_cash.funds_blocked_latest_error_code = str(e)
+            envelope_batch_status_for_digital_cash.funds_blocked_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_blocked_reference_number = ""
+            if envelope_batch_status_for_digital_cash.funds_blocked_attempts >= _config.max_funds_blocking_attempts:
+                envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
+                    FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
+                )
+                disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.FAILED
             session.commit()
 
         session.commit()

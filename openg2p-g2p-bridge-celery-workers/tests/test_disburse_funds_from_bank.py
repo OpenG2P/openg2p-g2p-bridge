@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,13 +11,19 @@ from openg2p_g2p_bridge_celery_workers.tasks.disburse_funds_from_bank import (
     disburse_funds_from_bank_worker,
 )
 from openg2p_g2p_bridge_models.models import (
-    BankDisbursementBatchStatus,
     BenefitProgramConfiguration,
+    BenefitType,
+    CashDistributionMode,
     Disbursement,
     DisbursementBatchControl,
+    DisbursementBatchControlGeo,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
-    MapperResolutionDetails,
+    EnvelopeBatchStatusForDigitalCash,
+    DisbursementFrequency,
+    DisbursementResolutionFinancialAddress,
+    DisbursementResolutionGeoAddress,
+    FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
     ProcessStatus,
 )
 
@@ -28,19 +35,31 @@ class MockSession:
         self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            cycle_code_mnemonic="test_cycle",
-            total_disbursement_amount=1000,
+            benefit_code_id="test_benefit",
+            benefit_type=BenefitType.CASH,
+            cash_distribution_mode=CashDistributionMode.DIGITAL,
+            disbursement_cycle_id="test_cycle",
+            disbursement_frequency=DisbursementFrequency.Monthly,
+            cycle_code_mnemonic="test_cycle_mnemonic",
+            number_of_beneficiaries=10,
+            number_of_disbursements=10,
+            total_disbursement_quantity=1000,
+            measurement_unit="KES",
+            disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_reference_number="test_block_ref",
             number_of_disbursements_shipped=0,
         )
-        self.bank_disbursement_batch_status = BankDisbursementBatchStatus(
-            bank_disbursement_batch_id="test_batch_id",
+        self.bank_disbursement_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            disbursement_status=ProcessStatus.PENDING.value,
-            disbursement_attempts=0,
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
+            funds_blocked_reference_number="test_block_ref",
+            number_of_disbursements_shipped=0,
         )
         self.benefit_program_configuration = BenefitProgramConfiguration(
             benefit_program_mnemonic="test_program",
@@ -50,23 +69,33 @@ class MockSession:
         )
         self.disbursement = Disbursement(
             disbursement_id="test_disbursement_id",
+            disbursement_envelope_id="test_envelope_id",
             beneficiary_id="test_beneficiary",
             beneficiary_name="Test Beneficiary",
-            disbursement_amount=100,
+            disbursement_quantity=100,
             narrative="Test payment",
+            disbursement_cycle_id="test_cycle",
+            disbursement_batch_control_id="test_batch_control_id",
         )
-        self.disbursement_batch_control = DisbursementBatchControl(
-            disbursement_id="test_disbursement_id",
-            bank_disbursement_batch_id="test_batch_id",
-            mapper_status=ProcessStatus.PROCESSED.value,
+        self.disbursement_batch_status = DisbursementBatchControl(
+            disbursement_batch_control_id="test_batch_control_id",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_envelope_id="test_envelope_id",
+            fa_resolution_status=ProcessStatus.PROCESSED,
+            sponsor_bank_dispatch_status=ProcessStatus.PENDING,
+            geo_resolutuon_status=ProcessStatus.PROCESSED,
+            warehouse_allocation_status=ProcessStatus.PROCESSED,
+            sponsor_bank_dispatch_attempts=0,
         )
-        self.mapper_resolution_details = MapperResolutionDetails(
-            disbursement_id="test_disbursement_id",
-            bank_account_number="test_bank_account",
-            bank_code="test_bank",
-            branch_code="test_branch",
-            mobile_number="1234567890",
-            email_address="test@example.com",
+        self.disbursement_resolution_financial_address = (
+            DisbursementResolutionFinancialAddress(
+                disbursement_id="test_disbursement_id",
+                bank_account_number="test_bank_account",
+                bank_code="test_bank",
+                branch_code="test_branch",
+                mobile_number="1234567890",
+                email_address="test@example.com",
+            )
         )
 
     def __enter__(self):
@@ -87,21 +116,27 @@ class MockSession:
         return self.first()
 
     def first(self):
-        if self.query_args[0] is BankDisbursementBatchStatus:
-            return self.bank_disbursement_batch_status
-        elif self.query_args[0] is DisbursementEnvelope:
+        if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
-            return self.disbursement_envelope_batch_status
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
+            if (
+                hasattr(self.filter_args[0], "right")
+                and self.filter_args[0].right.value == "test_batch_id"
+            ):
+                return self.bank_disbursement_batch_status
+            else:
+                return self.disbursement_envelope_batch_status
         elif self.query_args[0] is BenefitProgramConfiguration:
             return self.benefit_program_configuration
-        elif self.query_args[0] is MapperResolutionDetails:
-            return self.mapper_resolution_details
+        elif self.query_args[0] is DisbursementResolutionFinancialAddress:
+            return self.disbursement_resolution_financial_address
+        elif self.query_args[0] is Disbursement:
+            return [self.disbursement]
         return None
 
     def all(self):
         if self.query_args[0] is DisbursementBatchControl:
-            return [self.disbursement_batch_control]
+            return [self.disbursement_batch_status]
         elif self.query_args[0] is Disbursement:
             return [self.disbursement]
         return []
@@ -146,6 +181,18 @@ def mock_bank_connector_factory():
         yield mock_bank_connector
 
 
+@pytest.fixture(autouse=True)
+def patch_bank_connector_factory_global():
+    mock_bank_connector = MagicMock()
+    mock_bank_factory = MagicMock()
+    mock_bank_factory.get_bank_connector.return_value = mock_bank_connector
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.disburse_funds_from_bank.BankConnectorFactory.get_component",
+        return_value=mock_bank_factory,
+    ):
+        yield
+
+
 def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory):
     mock_bank_connector_factory.initiate_payment.return_value = PaymentResponse(
         status=PaymentStatus.SUCCESS,
@@ -155,10 +202,12 @@ def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory)
     disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_status
         == ProcessStatus.PROCESSED.value
     )
-    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code is None
+    assert (
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code is None
+    )
     assert (
         mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped
         == 1
@@ -175,11 +224,11 @@ def test_disburse_funds_failure(mock_session_maker, mock_bank_connector_factory)
     disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_status
         == ProcessStatus.PENDING.value
     )
     assert (
-        mock_session_maker.bank_disbursement_batch_status.latest_error_code
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
         == "TEST_ERROR"
     )
     assert mock_session_maker.committed
@@ -197,14 +246,14 @@ def test_disburse_funds_exception(
 
     assert "TEST_EXCEPTION" in caplog.text
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_status
         == ProcessStatus.PENDING.value
     )
     assert (
-        mock_session_maker.bank_disbursement_batch_status.latest_error_code
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
         == "TEST_EXCEPTION"
     )
-    assert mock_session_maker.bank_disbursement_batch_status.disbursement_attempts == 5
+    assert mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_attempts == 1
     assert mock_session_maker.committed
 
 

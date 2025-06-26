@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,10 +17,16 @@ from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     AccountStatementLob,
     BenefitProgramConfiguration,
+    BenefitType,
+    CashDistributionMode,
     Disbursement,
     DisbursementBatchControl,
-    DisbursementEnvelopeBatchStatus,
+    DisbursementEnvelope,
+    EnvelopeBatchStatusForDigitalCash,
+    DisbursementFrequency,
     DisbursementRecon,
+    FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
     ProcessStatus,
 )
 
@@ -57,17 +63,44 @@ class MockSession:
         self.disbursement = Disbursement(
             disbursement_id="test_disbursement_id",
             disbursement_envelope_id="test_envelope_id",
+            beneficiary_id="test_beneficiary_id",
+            beneficiary_name="Test Beneficiary",
+            disbursement_quantity=100.0,
+            narrative="Test disbursement",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_batch_control_id="test_batch_control_id",
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
+            benefit_program_mnemonic="test_program",
+            benefit_code_id="test_benefit",
+            benefit_type=BenefitType.CASH,
+            cash_distribution_mode=CashDistributionMode.DIGITAL,
+            disbursement_cycle_id="test_cycle",
+            disbursement_frequency=DisbursementFrequency.Monthly,
+            cycle_code_mnemonic="test_cycle_mnemonic",
+            number_of_beneficiaries=10,
+            number_of_disbursements=10,
+            total_disbursement_quantity=1000,
+            measurement_unit="KES",
+            disbursement_schedule_date=date.today(),
+        )
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
+            disbursement_envelope_id="test_envelope_id",
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             number_of_disbursements_reconciled=0,
             number_of_disbursements_reversed=0,
         )
         self.disbursement_recon = None
         self.disbursement_batch_control = DisbursementBatchControl(
-            disbursement_id="test_disbursement_id",
-            bank_disbursement_batch_id="test_batch_id",
-            mapper_status=ProcessStatus.PROCESSED.value,
+            disbursement_batch_control_id="test_batch_control_id",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_envelope_id="test_envelope_id",
+            fa_resolution_status=ProcessStatus.PROCESSED,
+            sponsor_bank_dispatch_status=ProcessStatus.PROCESSED,
+            geo_resolutuon_status=ProcessStatus.PROCESSED,
+            warehouse_allocation_status=ProcessStatus.PROCESSED,
         )
 
     def __enter__(self):
@@ -93,7 +126,7 @@ class MockSession:
             return self.benefit_program_configuration
         elif self.query_args[0] is Disbursement:
             return self.disbursement
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
             return self.disbursement_envelope_batch_status
         elif self.query_args[0] is DisbursementRecon:
             return self.disbursement_recon
@@ -286,6 +319,7 @@ def test_process_debit_transactions_success(
         {
             "disbursement_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
+            "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
             "debit_credit_indicator": "D",
             "beneficiary_name_from_bank": "Test Beneficiary",
@@ -325,6 +359,7 @@ def test_process_debit_transactions_invalid_disbursement(
         {
             "disbursement_id": "INVALID_ID",  # Set to an invaild id for this test
             "disbursement_envelope_id": "test_envelope_id",
+            "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
             "debit_credit_indicator": "D",
             "beneficiary_name_from_bank": "Test Beneficiary",
@@ -378,6 +413,7 @@ def test_process_debit_transactions_duplicate(mock_session_maker):
         {
             "disbursement_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
+            "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
             "debit_credit_indicator": "D",
             "beneficiary_name_from_bank": "Test Beneficiary",
@@ -422,6 +458,7 @@ def test_process_reversal_of_debits_success(mock_session_maker):
         {
             "disbursement_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
+            "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
             "debit_credit_indicator": "RD",
             "beneficiary_name_from_bank": "Test Beneficiary",

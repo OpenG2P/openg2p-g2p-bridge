@@ -34,3 +34,15 @@ class Settings(BaseSettings):
     audience: str = ""
 
     sender_id: str = ""
+
+    agency_allocation_max_attempts: int = 3
+    warehouse_allocation_max_attempts: int = 3
+    geo_resolution_max_attempts: int = 3
+
+    notification_service_url: str = ""
+
+    # ... existing code ...
+    notification_service_url: str = ""
+
+    # Other DB connection settings
+    db_datasource_farmer: str = "postgresql://postgres:postgres@localhost:5432/socialregistrydb"

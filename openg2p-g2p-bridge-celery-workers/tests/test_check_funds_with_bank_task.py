@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,9 +8,13 @@ from openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank_task import (
 )
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
+    BenefitType,
+    CashDistributionMode,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
+    DisbursementFrequency,
     FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
 )
 
 
@@ -19,11 +24,22 @@ class MockSession:
         self.disbursement_envelope = DisbursementEnvelope(
             disbursement_envelope_id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            total_disbursement_amount=1000,
+            benefit_code_id="test_benefit",
+            benefit_type=BenefitType.CASH,
+            cash_distribution_mode=CashDistributionMode.DIGITAL,
+            disbursement_cycle_id="test_cycle",
+            disbursement_frequency=DisbursementFrequency.Monthly,
+            cycle_code_mnemonic="test_cycle_mnemonic",
+            number_of_beneficiaries=10,
+            number_of_disbursements=10,
+            total_disbursement_quantity=1000,
+            measurement_unit="KES",
+            disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = DisbursementEnvelopeBatchStatus(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
             disbursement_envelope_id="test_envelope_id",
-            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
+            funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_available_attempts=0,
         )
         self.benefit_program_configuration = BenefitProgramConfiguration(
@@ -51,7 +67,7 @@ class MockSession:
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
 
-        elif self.query_args[0] is DisbursementEnvelopeBatchStatus:
+        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
             return self.disbursement_envelope_batch_status
 
         elif self.query_args[0] is BenefitProgramConfiguration:

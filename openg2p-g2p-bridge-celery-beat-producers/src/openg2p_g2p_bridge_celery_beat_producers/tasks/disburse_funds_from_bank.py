@@ -2,11 +2,11 @@ import logging
 from datetime import datetime, timedelta
 
 from openg2p_g2p_bridge_models.models import (
-    BankDisbursementBatchStatus,
     CancellationStatus,
     DisbursementBatchControl,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeControl,
     FundsBlockedWithBankEnum,
     ProcessStatus,
 )
@@ -28,16 +28,16 @@ def disburse_funds_from_bank_beat_producer():
     with session_maker() as session:
         # 1. Reset stale 'PROCESSING' batches back to 'PENDING'
         stale_at = datetime.now() - timedelta(
-            minutes=_config.disbursement_retry_threshold_minutes
+            minutes=_config.task_stale_threshold_minutes
         )
         reset_stmt = (
-            update(BankDisbursementBatchStatus)
+            update(DisbursementBatchControl)
             .where(
-                BankDisbursementBatchStatus.disbursement_status
-                == ProcessStatus.PROCESSING.value,
-                BankDisbursementBatchStatus.updated_at < stale_at,
+                DisbursementBatchControl.sponsor_bank_dispatch_status
+                == ProcessStatus.PROCESSING,
+                DisbursementBatchControl.updated_at < stale_at,
             )
-            .values(disbursement_status=ProcessStatus.PENDING.value)
+            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING)
         )
         session.execute(reset_stmt)
         session.commit()
@@ -52,17 +52,22 @@ def disburse_funds_from_bank_beat_producer():
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    DisbursementEnvelopeBatchStatus,
+                    EnvelopeControl,
                     DisbursementEnvelope.disbursement_envelope_id
-                    == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
+                    == EnvelopeControl.disbursement_envelope_id,
+                )
+                .join(
+                    EnvelopeBatchStatusForDigitalCash,
+                    DisbursementEnvelope.disbursement_envelope_id
+                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    == CancellationStatus.NOT_CANCELLED.value,
                     DisbursementEnvelope.number_of_disbursements
-                    == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
-                    DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
+                    == EnvelopeControl.number_of_disbursements_received,
+                    EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
                     == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
                 )
                 .limit(_config.no_of_tasks_to_process)
@@ -71,58 +76,31 @@ def disburse_funds_from_bank_beat_producer():
             .all()
         )
         for envelope in envelopes:
-            pending_batches = (
+
+            disbursement_batch_controls: list[DisbursementBatchControl] = (
                 session.execute(
-                    select(BankDisbursementBatchStatus)
-                    .filter(
-                        and_(
-                            BankDisbursementBatchStatus.disbursement_envelope_id
-                            == envelope.disbursement_envelope_id,
-                            BankDisbursementBatchStatus.disbursement_status
-                            == ProcessStatus.PENDING.value,
-                            BankDisbursementBatchStatus.disbursement_attempts
-                            < _config.funds_disbursement_attempts,
-                        )
-                    )
-                    .limit(_config.no_of_tasks_to_process)
-                )
-                .scalars()
-                .all()
+                select(DisbursementBatchControl).filter(
+                    DisbursementBatchControl.disbursement_envelope_id
+                    == envelope.disbursement_envelope_id,
+                    DisbursementBatchControl.sponsor_bank_dispatch_status
+                    == ProcessStatus.PENDING,
+                ).limit(_config.no_of_tasks_to_process)
+            )
+            .scalars()
+            .all()
             )
             _logger.info(
-                f"Found {len(pending_batches)} pending batches for envelope {envelope.disbursement_envelope_id}"
+                f"Found {len(disbursement_batch_controls)} pending batch controls for envelope {envelope.disbursement_envelope_id}"
             )
 
-            for batch in pending_batches:
-                unprocessed_disbursement_batch_control = (
-                    session.query(DisbursementBatchControl)
-                    .filter(
-                        DisbursementBatchControl.bank_disbursement_batch_id
-                        == batch.bank_disbursement_batch_id,
-                        DisbursementBatchControl.mapper_status
-                        != ProcessStatus.PROCESSED.value,
-                    )
-                    .first()
-                )
-
-                if unprocessed_disbursement_batch_control:
-                    _logger.info(
-                        f"Batch {batch.bank_disbursement_batch_id} has un-processed controls; skipping."
-                    )
-                    continue
-
-                _logger.info(
-                    f"Sending task to disburse funds for batch {batch.bank_disbursement_batch_id}"
-                )
-                batch.disbursement_status = ProcessStatus.PROCESSING.value
-                session.add(batch)
+            for disbursement_batch_control in disbursement_batch_controls:
                 _logger.info("Added batch to session")
                 session.commit()
                 celery_app.send_task(
                     "disburse_funds_from_bank_worker",
-                    (batch.bank_disbursement_batch_id,),
+                    (disbursement_batch_control.disbursement_batch_control_id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
             _logger.info(
-                f"Sent tasks to disburse funds for {len(pending_batches)} batches"
+                f"Sent tasks to disburse funds for {len(disbursement_batch_controls)} batches"
             )

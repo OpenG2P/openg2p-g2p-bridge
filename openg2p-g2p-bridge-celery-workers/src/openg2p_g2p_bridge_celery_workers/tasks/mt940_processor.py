@@ -16,7 +16,7 @@ from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     Disbursement,
     DisbursementBatchControl,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     DisbursementErrorRecon,
     DisbursementRecon,
     ProcessStatus,
@@ -35,7 +35,7 @@ _engine = get_engine()
 @celery_app.task(name="mt940_processor_worker")
 def mt940_processor_worker(statement_id: str):
     _logger.info(f"Processing account statement with statement_id: {statement_id}")
-    session_maker = sessionmaker(bind=_engine)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         account_statement = (
@@ -311,17 +311,17 @@ def get_disbursement_recon(parsed_transaction, session):
 
 
 def get_bank_batch_id(parsed_transaction, session):
-    bank_disbursement_batch_id = (
+    # Look up the DisbursementBatchControl by disbursement_batch_control_id
+    batch_control = (
         session.query(DisbursementBatchControl)
         .filter(
-            DisbursementBatchControl.disbursement_id
-            == parsed_transaction["disbursement_id"]
+            DisbursementBatchControl.disbursement_batch_control_id == parsed_transaction["disbursement_batch_control_id"]
         )
         .first()
     )
-    if not bank_disbursement_batch_id:
-        bank_disbursement_batch_id.bank_disbursement_batch_id = None
-    return bank_disbursement_batch_id.bank_disbursement_batch_id
+    if not batch_control:
+        return None
+    return batch_control.disbursement_batch_control_id
 
 
 def construct_disbursement_error_recon(
@@ -479,10 +479,10 @@ def update_envelope_batch_status_reconciled(
 
         while max_retries:
             try:
-                status = (
-                    session.query(DisbursementEnvelopeBatchStatus)
+                envelope_batch_status_for_digital_cash = (
+                    session.query(EnvelopeBatchStatusForDigitalCash)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                         == envelope_id
                     )
                     .with_for_update(nowait=True)
@@ -508,8 +508,8 @@ def update_envelope_batch_status_reconciled(
             )
             raise last_exc
 
-        status.number_of_disbursements_reconciled += count
-        session.add(status)
+        envelope_batch_status_for_digital_cash.number_of_disbursements_reconciled += count
+        session.add(envelope_batch_status_for_digital_cash)
         session.commit()
 
 
@@ -542,10 +542,10 @@ def update_envelope_batch_status_reversed(
 
         while max_retries:
             try:
-                disbursement_envelope_batch_status = (
-                    session.query(DisbursementEnvelopeBatchStatus)
+                envelope_batch_status_for_digital_cash = (
+                    session.query(EnvelopeBatchStatusForDigitalCash)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                        EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                         == disbursement_envelope_id
                     )
                     .with_for_update(nowait=True)
@@ -571,6 +571,6 @@ def update_envelope_batch_status_reversed(
             )
             raise last_exc
 
-        disbursement_envelope_batch_status.number_of_disbursements_reversed += count
-        session.add(disbursement_envelope_batch_status)
+        envelope_batch_status_for_digital_cash.number_of_disbursements_reversed += count
+        session.add(envelope_batch_status_for_digital_cash)
         session.commit()

@@ -7,7 +7,7 @@ from openg2p_g2p_bridge_bank_connectors.bank_connectors import (
 from openg2p_g2p_bridge_models.models import (
     BenefitProgramConfiguration,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
     FundsAvailableWithBankEnum,
 )
 from sqlalchemy.orm import sessionmaker
@@ -23,7 +23,7 @@ _engine = get_engine()
 @celery_app.task(name="check_funds_with_bank_worker")
 def check_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Checking funds with bank for envelope: {disbursement_envelope_id}")
-    session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         envelope = (
@@ -41,18 +41,18 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             )
             return
 
-        disbursement_envelope_batch_status = (
-            session.query(DisbursementEnvelopeBatchStatus)
+        envelope_batch_status_for_digital_cash = (
+            session.query(EnvelopeBatchStatusForDigitalCash)
             .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                 == disbursement_envelope_id
             )
             .first()
         )
 
-        if not disbursement_envelope_batch_status:
+        if not envelope_batch_status_for_digital_cash:
             _logger.error(
-                f"Disbursement Envelope Batch Status not found for envelope id: {disbursement_envelope_id}"
+                f"Envelope Batch Status For Digital Cash not found for envelope id: {disbursement_envelope_id}"
             )
             return
 
@@ -65,7 +65,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             .first()
         )
 
-        total_funds_needed = envelope.total_disbursement_amount
+        total_funds_needed = envelope.total_disbursement_quantity
         bank_connector = BankConnectorFactory.get_component().get_bank_connector(
             benefit_program_configuration.sponsor_bank_code
         )
@@ -81,34 +81,41 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             )
 
             if funds_available:
-                disbursement_envelope_batch_status.funds_available_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_available_with_bank = (
                     FundsAvailableWithBankEnum.FUNDS_AVAILABLE.value
                 )
             else:
-                disbursement_envelope_batch_status.funds_available_with_bank = (
+                envelope_batch_status_for_digital_cash.funds_available_with_bank = (
                     FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
                 )
 
-            disbursement_envelope_batch_status.funds_available_latest_timestamp = (
+            envelope_batch_status_for_digital_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            disbursement_envelope_batch_status.funds_available_latest_error_code = None
-            disbursement_envelope_batch_status.funds_available_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = None
+            envelope_batch_status_for_digital_cash.funds_available_attempts += 1
 
         except Exception as e:
             _logger.error(
                 f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}"
             )
-            disbursement_envelope_batch_status.funds_available_with_bank = (
+            envelope_batch_status_for_digital_cash.funds_available_with_bank = (
                 FundsAvailableWithBankEnum.PENDING_CHECK.value
             )
-            disbursement_envelope_batch_status.funds_available_latest_timestamp = (
+            envelope_batch_status_for_digital_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            disbursement_envelope_batch_status.funds_available_latest_error_code = str(
+            envelope_batch_status_for_digital_cash.funds_available_latest_error_code = str(
                 e
             )
-            disbursement_envelope_batch_status.funds_available_attempts += 1
+            envelope_batch_status_for_digital_cash.funds_available_attempts += 1
+            if envelope_batch_status_for_digital_cash.funds_available_attempts >= _config.max_funds_check_attempts:
+                envelope_batch_status_for_digital_cash.funds_available_with_bank = (
+                    FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
+                )
+                _logger.error(
+                    f"Max attempts reached for checking funds with bank for envelope {disbursement_envelope_id}"
+                )
         _logger.info(
             f"Checked funds with bank for envelope: {disbursement_envelope_id}"
         )

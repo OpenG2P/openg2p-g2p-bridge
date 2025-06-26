@@ -4,7 +4,8 @@ from datetime import datetime
 from openg2p_g2p_bridge_models.models import (
     CancellationStatus,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
+    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeControl,
     FundsAvailableWithBankEnum,
 )
 from sqlalchemy import and_, literal, or_, select
@@ -30,34 +31,38 @@ def check_funds_with_bank_beat_producer():
             if not _config.process_future_disbursement_schedules
             else literal(True)
         )
+
         envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    DisbursementEnvelopeBatchStatus,
+                    EnvelopeBatchStatusForDigitalCash,
                     DisbursementEnvelope.disbursement_envelope_id
-                    == DisbursementEnvelopeBatchStatus.disbursement_envelope_id,
+                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
+                )
+                .join(
+                    EnvelopeControl,
+                    DisbursementEnvelope.disbursement_envelope_id
+                    == EnvelopeControl.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    == CancellationStatus.NOT_CANCELLED.value,
                     DisbursementEnvelope.number_of_disbursements
-                    == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
-                    DisbursementEnvelope.total_disbursement_amount
-                    == DisbursementEnvelopeBatchStatus.total_disbursement_amount_received,
+                    == EnvelopeControl.number_of_disbursements_received,
+                    DisbursementEnvelope.total_disbursement_quantity
+                    == EnvelopeControl.total_disbursement_quantity_received,
                     or_(
                         and_(
-                            DisbursementEnvelopeBatchStatus.funds_available_with_bank
-                            == FundsAvailableWithBankEnum.PENDING_CHECK.value,
-                            DisbursementEnvelopeBatchStatus.funds_available_attempts
-                            < _config.funds_available_check_attempts,
+                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
+                            == FundsAvailableWithBankEnum.PENDING_CHECK.value
+                           
                         ),
                         and_(
-                            DisbursementEnvelopeBatchStatus.funds_available_with_bank
-                            == FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value,
-                            DisbursementEnvelopeBatchStatus.funds_available_attempts
-                            < _config.funds_available_check_attempts,
+                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
+                            == FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
+                           
                         ),
                     ),
                 )
@@ -72,16 +77,16 @@ def check_funds_with_bank_beat_producer():
                 f"Sending task to check funds with bank for envelope {envelope.disbursement_envelope_id}"
             )
             envelope_batch_status = (
-                session.query(DisbursementEnvelopeBatchStatus)
+                session.query(EnvelopeBatchStatusForDigitalCash)
                 .filter(
-                    DisbursementEnvelopeBatchStatus.disbursement_envelope_id
+                    EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
                     == envelope.disbursement_envelope_id
                 )
                 .first()
             )
 
             envelope_batch_status.funds_available_with_bank = (
-                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS.value
+                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS
             )
             celery_app.send_task(
                 "check_funds_with_bank_worker",
