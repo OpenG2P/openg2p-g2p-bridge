@@ -1,9 +1,9 @@
-from openg2p_fastapi_common.models import BaseORMModelWithTimes
+from .base import BaseORMModelWithId
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 
-class BenefitProgramConfiguration(BaseORMModelWithTimes):
+class BenefitProgramConfiguration(BaseORMModelWithId):
     __tablename__ = "benefit_program_configurations"
 
     benefit_program_mnemonic: Mapped[str] = mapped_column(String, unique=True)

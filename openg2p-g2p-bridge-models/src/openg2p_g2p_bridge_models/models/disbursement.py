@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from openg2p_fastapi_common.models import BaseORMModelWithTimes
+from .base import BaseORMModelWithId
 from sqlalchemy import DateTime, Float, Integer, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,9 +20,9 @@ class MapperResolvedFaType(Enum):
     EMAIL_WALLET = "EMAIL_WALLET"
 
 
-class Disbursement(BaseORMModelWithTimes):
+class Disbursement(BaseORMModelWithId):
     __tablename__ = "disbursements"
-    disbursement_id: Mapped[str] = mapped_column(String, unique=True)
+
     mis_reference_number: Mapped[str] = mapped_column(
         String, nullable=True, default=None
     )
@@ -35,8 +35,8 @@ class Disbursement(BaseORMModelWithTimes):
         DateTime, default=datetime.utcnow
     )
     cancellation_status: Mapped[DisbursementCancellationStatus] = mapped_column(
-        SqlEnum(DisbursementCancellationStatus),
-        default=DisbursementCancellationStatus.NOT_CANCELLED,
+        String,
+        default=DisbursementCancellationStatus.NOT_CANCELLED.value,
     )
     cancellation_time_stamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
@@ -45,14 +45,12 @@ class Disbursement(BaseORMModelWithTimes):
     disbursement_batch_control_id: Mapped[str] = mapped_column(String)
 
 
-class DisbursementBatchControl(BaseORMModelWithTimes):
+class DisbursementBatchControl(BaseORMModelWithId):
     __tablename__ = "disbursement_batch_control"
-    disbursement_batch_control_id: Mapped[str] = mapped_column(
-        String, unique=True, index=True
-    )
+
     disbursement_cycle_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
-    fa_resolution_status: Mapped[ProcessStatus] = mapped_column(SqlEnum(ProcessStatus))
+    fa_resolution_status: Mapped[ProcessStatus] = mapped_column(String)
     fa_resolution_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
@@ -60,9 +58,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     fa_resolution_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    sponsor_bank_dispatch_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
-    )
+    sponsor_bank_dispatch_status: Mapped[ProcessStatus] = mapped_column(String)
     sponsor_bank_dispatch_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
@@ -70,7 +66,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     sponsor_bank_dispatch_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    geo_resolution_status: Mapped[ProcessStatus] = mapped_column(SqlEnum(ProcessStatus))
+    geo_resolution_status: Mapped[ProcessStatus] = mapped_column(String)
     geo_resolution_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
@@ -78,9 +74,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     geo_resolution_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    warehouse_allocation_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
-    )
+    warehouse_allocation_status: Mapped[ProcessStatus] = mapped_column(String)
     warehouse_allocation_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
@@ -88,9 +82,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     warehouse_allocation_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    agency_allocation_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
-    )
+    agency_allocation_status: Mapped[ProcessStatus] = mapped_column(String)
     agency_allocation_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
@@ -100,7 +92,7 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
     agency_allocation_attempts: Mapped[int] = mapped_column(Integer, default=0)
 
 
-class DisbursementResolutionFinancialAddress(BaseORMModelWithTimes):
+class DisbursementResolutionFinancialAddress(BaseORMModelWithId):
     __tablename__ = "disbursement_resolution_financial_address"
     disbursement_batch_control_id = mapped_column(
         String, nullable=True, default=None, index=True
@@ -112,7 +104,7 @@ class DisbursementResolutionFinancialAddress(BaseORMModelWithTimes):
         String, nullable=True, default=None
     )
     mapper_resolved_fa_type: Mapped[MapperResolvedFaType] = mapped_column(
-        SqlEnum(MapperResolvedFaType), nullable=True, default=None
+        String, nullable=True, default=None
     )
     bank_account_number: Mapped[str] = mapped_column(
         String, nullable=True, default=None

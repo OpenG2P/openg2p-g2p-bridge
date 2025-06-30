@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from openg2p_fastapi_common.models import BaseORMModelWithTimes
+from .base import BaseORMModelWithId
 from sqlalchemy import Date, DateTime, Integer, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
@@ -50,18 +50,16 @@ class BenefitType(Enum):
     COMBINATION = "COMBINATION"
 
 
-class DisbursementEnvelope(BaseORMModelWithTimes):
+class DisbursementEnvelope(BaseORMModelWithId):
     __tablename__ = "disbursement_envelopes"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     benefit_program_mnemonic: Mapped[str] = mapped_column(String)
     target_registry: Mapped[str] = mapped_column(String, nullable=True)
     benefit_code_id: Mapped[str] = mapped_column(String)
     benefit_code_mnemonic: Mapped[str] = mapped_column(String)
-    benefit_type: Mapped[BenefitType] = mapped_column(SqlEnum(BenefitType))
+    benefit_type: Mapped[BenefitType] = mapped_column(String)
     disbursement_cycle_id: Mapped[str] = mapped_column(String)
-    disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(
-        SqlEnum(DisbursementFrequency)
-    )
+    disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(String)
     cycle_code_mnemonic: Mapped[str] = mapped_column(String)
     number_of_beneficiaries: Mapped[int] = mapped_column(Integer)
     number_of_disbursements: Mapped[int] = mapped_column(Integer)
@@ -72,14 +70,14 @@ class DisbursementEnvelope(BaseORMModelWithTimes):
         DateTime(), default=datetime.now()
     )
     cancellation_status: Mapped[CancellationStatus] = mapped_column(
-        String, default=CancellationStatus.NOT_CANCELLED
+        String, default=CancellationStatus.NOT_CANCELLED.value
     )
     cancellation_timestamp: Mapped[datetime] = mapped_column(
         DateTime(), nullable=True, default=None
     )
 
 
-class EnvelopeControl(BaseORMModelWithTimes):
+class EnvelopeControl(BaseORMModelWithId):
     __tablename__ = "envelope_control"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     number_of_disbursements_received: Mapped[int] = mapped_column(Integer, default=0)
@@ -88,7 +86,7 @@ class EnvelopeControl(BaseORMModelWithTimes):
     )
 
 
-class EnvelopeBatchStatusForDigitalCash(BaseORMModelWithTimes):
+class EnvelopeBatchStatusForDigitalCash(BaseORMModelWithId):
     __tablename__ = "envelope_batch_status_for_digital_cash"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     funds_available_with_bank: Mapped[FundsAvailableWithBankEnum] = mapped_column(

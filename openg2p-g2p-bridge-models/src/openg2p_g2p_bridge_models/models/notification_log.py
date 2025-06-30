@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from openg2p_fastapi_common.models import BaseORMModelWithTimes
+from .base import BaseORMModelWithId
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,7 +13,7 @@ class NotificationStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class NotificationLog(BaseORMModelWithTimes):
+class NotificationLog(BaseORMModelWithId):
     __tablename__ = "notification_logs"
     notification_id: Mapped[str] = mapped_column(String, unique=True)
     notification_type: Mapped[str] = mapped_column(String, index=True)

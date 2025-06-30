@@ -123,8 +123,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                         agency_additional_attributes=allocation.get(
                             "agency_additional_attributes", {}
                         ),
-                        warehouse_notification_status=ProcessStatus.PENDING,
-                        agency_notification_status=ProcessStatus.PENDING,
+                        warehouse_notification_status=ProcessStatus.PENDING.value,
+                        agency_notification_status=ProcessStatus.PENDING.value,
                     )
                 )
 
@@ -142,13 +142,13 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
-                        beneficiary_notification_status=ProcessStatus.PENDING,
+                        beneficiary_notification_status=ProcessStatus.PENDING.value,
                     )
                 )
 
             # Update batch control status
             disbursement_batch_control.agency_allocation_status = (
-                ProcessStatus.PROCESSED
+                ProcessStatus.PROCESSED.value
             )
             disbursement_batch_control.agency_allocation_attempts += 1
             disbursement_batch_control.agency_allocation_latest_error_code = None
@@ -177,6 +177,6 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     >= _config.agency_allocation_max_attempts
                 ):
                     disbursement_batch_control.agency_allocation_status = (
-                        ProcessStatus.ERROR
+                        ProcessStatus.ERROR.value
                     )
                 session.commit()

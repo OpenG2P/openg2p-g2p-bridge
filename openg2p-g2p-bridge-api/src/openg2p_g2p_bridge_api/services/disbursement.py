@@ -162,7 +162,6 @@ class DisbursementService(BaseService):
                 narrative=disbursement_payload.narrative,
                 disbursement_cycle_id=disbursement_payload.disbursement_cycle_id,
                 disbursement_batch_control_id=disbursement_batch_control_id,
-                active=True,
             )
             disbursement_payload.id = disbursement.id
             disbursement_payload.disbursement_id = disbursement.disbursement_id
@@ -217,7 +216,6 @@ class DisbursementService(BaseService):
             warehouse_allocation_attempts=0,
             agency_allocation_timestamp=None,
             agency_allocation_latest_error_code=None,
-            active=True,
         )
         _logger.info("Disbursement Batch Control Constructed!")
         return disbursement_batch_control

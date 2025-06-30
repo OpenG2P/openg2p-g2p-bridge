@@ -197,7 +197,6 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 payload=str(notification_payload.model_dump()),
                 status=NotificationStatus.PENDING.value,
                 sent_at=datetime.datetime.now(),
-                active=True,
             )
             session.add(notification_log)
             session.commit()
@@ -226,14 +225,14 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 notification_log.response = str(response.text)
                 notification_log.processed_at = datetime.datetime.now()
                 disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.PROCESSED
+                    ProcessStatus.PROCESSED.value
                 )
             except Exception as e:
                 notification_log.status = NotificationStatus.ERROR.value
                 notification_log.error_message = str(e)
                 notification_log.processed_at = datetime.datetime.now()
                 disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.ERROR
+                    ProcessStatus.ERROR.value
                 )
                 _logger.error(f"Agency notification failed: {e}")
             session.commit()
@@ -241,6 +240,6 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
             _logger.error(f"Agency notification failed: {e}")
             if disbursement_batch_control_geo:
                 disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.ERROR
+                    ProcessStatus.ERROR.value
                 )
                 session.commit()

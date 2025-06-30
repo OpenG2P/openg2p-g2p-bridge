@@ -168,7 +168,6 @@ class ExampleBankConnector(BankConnectorInterface):
                         narrative_4=disbursement_payment_payload.beneficiary_id,
                         narrative_5="",
                         narrative_6="",
-                        active=True,
                     )
                     bank_payment_payloads.append(bank_payment_payload.model_dump())
 

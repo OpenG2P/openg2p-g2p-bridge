@@ -142,7 +142,6 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 payload=str(notification_payload.model_dump()),
                 status=NotificationStatus.PENDING.value,
                 sent_at=datetime.datetime.now(),
-                active=True,
             )
             session.add(notification_log)
             session.commit()
@@ -172,16 +171,16 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 notification_log.status = NotificationStatus.PROCESSED.value
                 notification_log.response = str(response.text)
                 notification_log.processed_at = datetime.datetime.now()
-                geo_address.beneficiary_notification_status = ProcessStatus.PROCESSED
+                geo_address.beneficiary_notification_status = ProcessStatus.PROCESSED.value
             except Exception as e:
                 notification_log.status = NotificationStatus.ERROR.value
                 notification_log.error_message = str(e)
                 notification_log.processed_at = datetime.datetime.now()
-                geo_address.beneficiary_notification_status = ProcessStatus.ERROR
+                geo_address.beneficiary_notification_status = ProcessStatus.ERROR.value
                 _logger.error(f"Beneficiary notification failed: {e}")
             session.commit()
         except Exception as e:
             _logger.error(f"Beneficiary notification failed: {e}")
             if geo_address:
-                geo_address.beneficiary_notification_status = ProcessStatus.ERROR
+                geo_address.beneficiary_notification_status = ProcessStatus.ERROR.value
                 session.commit()

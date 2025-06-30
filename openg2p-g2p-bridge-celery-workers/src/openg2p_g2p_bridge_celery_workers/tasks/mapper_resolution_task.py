@@ -82,7 +82,7 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
                 == disbursement_batch_control_id
             ).update(
                 {
-                    DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING,
+                    DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING.value,
                     DisbursementBatchControl.fa_resolution_latest_error_code: error_msg,
                     DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
                     + 1,
@@ -153,7 +153,6 @@ def process_and_store_resolution(
                     if single_response.account_provider_info
                     else None,
                     **deconstructed_fa,
-                    active=True,
                 )
             )
             details_list.append(disbursement_resolution_financial_address)
@@ -171,7 +170,7 @@ def process_and_store_resolution(
             == disbursement_batch_control_id
         ).update(
             {
-                DisbursementBatchControl.fa_resolution_status: ProcessStatus.PROCESSED,
+                DisbursementBatchControl.fa_resolution_status: ProcessStatus.PROCESSED.value,
                 DisbursementBatchControl.fa_resolution_timestamp: datetime.now(),
                 DisbursementBatchControl.fa_resolution_latest_error_code: None,
                 DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
@@ -185,7 +184,7 @@ def process_and_store_resolution(
             == disbursement_batch_control_id
         ).update(
             {
-                DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING,
+                DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING.value,
                 DisbursementBatchControl.fa_resolution_latest_error_code: "Failed to resolve the request for a beneficiary id",
                 DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
                 + 1,

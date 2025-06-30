@@ -1,3 +1,4 @@
+from .base import BaseORMModelWithId
 from .account_statement import (
     AccountStatement,
     AccountStatementLob,

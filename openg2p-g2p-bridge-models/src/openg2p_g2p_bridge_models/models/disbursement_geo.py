@@ -1,4 +1,4 @@
-from openg2p_fastapi_common.models import BaseORMModelWithTimes
+from .base import BaseORMModelWithId
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy import Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .common_enums import ProcessStatus
 
 
-class DisbursementBatchControlGeo(BaseORMModelWithTimes):
+class DisbursementBatchControlGeo(BaseORMModelWithId):
     __tablename__ = "disbursement_batch_control_geo"
     disbursement_control_geo_id: Mapped[str] = mapped_column(String, unique=True)
     disbursement_cycle_id: Mapped[str] = mapped_column(String)
@@ -25,10 +25,10 @@ class DisbursementBatchControlGeo(BaseORMModelWithTimes):
     agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
     agency_additional_attributes: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_notification_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
+        String
     )
     agency_notification_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus)
+        String
     )
     __table_args__ = (
         # Unique index on (disbursement_batch_control_id, administrative_zone_id_large, administrative_zone_small)
@@ -36,7 +36,7 @@ class DisbursementBatchControlGeo(BaseORMModelWithTimes):
     )
 
 
-class DisbursementResolutionGeoAddress(BaseORMModelWithTimes):
+class DisbursementResolutionGeoAddress(BaseORMModelWithId):
     __tablename__ = "disbursement_resolution_geo_address"
     disbursement_id: Mapped[str] = mapped_column(String, unique=True)
     disbursement_cycle_id: Mapped[str] = mapped_column(String, index=True)
@@ -53,5 +53,5 @@ class DisbursementResolutionGeoAddress(BaseORMModelWithTimes):
     agency_id: Mapped[str] = mapped_column(String, index=True, nullable=True)
     agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_notification_status: Mapped[ProcessStatus] = mapped_column(
-        SqlEnum(ProcessStatus), default=ProcessStatus.NOT_APPLICABLE
+        String, default=ProcessStatus.NOT_APPLICABLE
     )

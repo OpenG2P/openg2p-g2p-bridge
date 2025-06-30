@@ -395,7 +395,6 @@ def test_process_debit_transactions_duplicate(mock_session_maker):
         disbursement_id="test_disbursement_id",
         remittance_statement_id="test_statement_id",
         disbursement_envelope_id="test_envelope_id",
-        active=True,
         remittance_reference_number="test_ref",
         remittance_entry_sequence=1,
         remittance_entry_date=datetime.now(),
@@ -444,7 +443,6 @@ def test_process_reversal_of_debits_success(mock_session_maker):
     mock_session_maker.disbursement_recon = DisbursementRecon(
         disbursement_id="test_disbursement_id",
         disbursement_envelope_id="test_envelope_id",
-        active=True,
     )
 
     account_statement = AccountStatement(
@@ -512,7 +510,6 @@ def test_update_envelope_batch_status_reversed(mock_session_maker):
         DisbursementRecon(
             disbursement_envelope_id="test_envelope_id",
             disbursement_id="test_disbursement_id_1",
-            active=True,
             remittance_reference_number="test_ref_1",
             remittance_entry_sequence=1,
             remittance_entry_date=datetime.now(),
@@ -521,7 +518,6 @@ def test_update_envelope_batch_status_reversed(mock_session_maker):
         DisbursementRecon(
             disbursement_envelope_id="test_envelope_id",
             disbursement_id="test_disbursement_id_2",
-            active=True,
             remittance_reference_number="test_ref_2",
             remittance_entry_sequence=2,
             remittance_entry_date=datetime.now(),

@@ -145,12 +145,12 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             # Update batch control status
             disbursement_batch_control.warehouse_allocation_status = (
-                ProcessStatus.PROCESSED
+                ProcessStatus.PROCESSED.value
             )
             disbursement_batch_control.warehouse_allocation_latest_error_code = None
             disbursement_batch_control.warehouse_allocation_attempts += 1
             disbursement_batch_control.warehouse_allocation_timestamp = datetime.now()
-            disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING
+            disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING.value
             session.commit()
         except Exception as e:
             _logger.error(f"Warehouse allocation failed: {e}")
@@ -165,6 +165,6 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                     >= _config.warehouse_allocation_max_attempts
                 ):
                     disbursement_batch_control.warehouse_allocation_status = (
-                        ProcessStatus.ERROR
+                        ProcessStatus.ERROR.value
                     )
                 session.commit()

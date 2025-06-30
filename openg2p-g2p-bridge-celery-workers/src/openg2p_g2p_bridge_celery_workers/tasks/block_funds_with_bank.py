@@ -105,7 +105,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                     None
                 )
                 disbursement_batch_control.sponsor_bank_dispatch_status = (
-                    ProcessStatus.PENDING
+                    ProcessStatus.PENDING.value
                 )
             else:
                 envelope_batch_status_for_digital_cash.funds_blocked_with_bank = (
@@ -147,7 +147,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 )
                 disbursement_batch_control.sponsor_bank_dispatch_status = (
-                    ProcessStatus.FAILED
+                    ProcessStatus.FAILED.value
                 )
             session.commit()
 

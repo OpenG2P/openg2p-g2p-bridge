@@ -105,7 +105,7 @@ def mt940_processor_worker(statement_id: str):
                 _logger.error(
                     f"Benefit program configuration not found for account number: {account_statement.account_number}"
                 )
-                account_statement.statement_process_status = ProcessStatus.ERROR
+                account_statement.statement_process_status = ProcessStatus.ERROR.value
                 account_statement.statement_process_error_code = (
                     G2PBridgeErrorCodes.INVALID_ACCOUNT_NUMBER.value
                 )
@@ -184,7 +184,7 @@ def mt940_processor_worker(statement_id: str):
             session.add_all(disbursement_error_recons)
 
             # Update account statement with parsed data
-            account_statement.statement_process_status = ProcessStatus.PROCESSED
+            account_statement.statement_process_status = ProcessStatus.PROCESSED.value
             account_statement.statement_process_error_code = None
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
@@ -201,7 +201,7 @@ def mt940_processor_worker(statement_id: str):
                 f"Error processing account statement for statement id: {statement_id}"
                 f" with error: {str(e)}",
             )
-            account_statement.statement_process_status = ProcessStatus.PENDING
+            account_statement.statement_process_status = ProcessStatus.PENDING.value
             account_statement.statement_process_error_code = str(e)
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
@@ -344,7 +344,6 @@ def construct_disbursement_error_recon(
         error_reason=g2p_bridge_error_code,
         disbursement_id=parsed_transaction["disbursement_id"],
         bank_reference_number=parsed_transaction["remittance_reference_number"],
-        active=True,
     )
 
 
@@ -386,7 +385,6 @@ def construct_new_disbursement_recon(
         remittance_entry_sequence=parsed_transaction["remittance_entry_sequence"],
         remittance_entry_date=parsed_transaction["remittance_entry_date"],
         remittance_value_date=parsed_transaction["remittance_value_date"],
-        active=True,
     )
     return disbursement_recon
 

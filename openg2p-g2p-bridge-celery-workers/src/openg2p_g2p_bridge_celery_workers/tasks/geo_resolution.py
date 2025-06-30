@@ -81,10 +81,10 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     f"No disbursements found for batch {disbursement_batch_control_id}"
                 )
                 disbursement_batch_control.geo_resolution_status = (
-                    ProcessStatus.PROCESSED
+                    ProcessStatus.PROCESSED.value
                 )
                 disbursement_batch_control.warehouse_allocation_status = (
-                    ProcessStatus.PENDING
+                    ProcessStatus.PENDING.value
                 )
                 session.commit()
                 return
@@ -160,9 +160,8 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     ],
                     no_of_beneficiaries=data["no_of_beneficiaries"],
                     total_quantity=data["total_quantity"],
-                    warehouse_notification_status=ProcessStatus.NOT_APPLICABLE,
-                    agency_notification_status=ProcessStatus.NOT_APPLICABLE,
-                    active=True,
+                    warehouse_notification_status=ProcessStatus.NOT_APPLICABLE.value,
+                    agency_notification_status=ProcessStatus.NOT_APPLICABLE.value,
                 )
                 disbursement_batch_control_geos.append(disbursement_batch_control_geo)
                 batch_control_geo_id_map[
@@ -199,7 +198,6 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     administrative_zone_mnemonic_small=geo_resolution_item[
                         "administrative_zone_mnemonic_small"
                     ],
-                    active=True,
                 )
                 disbursement_resolution_geo_addresses.append(
                     disbursement_resolution_geo_address
@@ -209,9 +207,9 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             # Update the DisbursementBatchControl status
 
-            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSED
+            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSED.value
             disbursement_batch_control.warehouse_allocation_status = (
-                ProcessStatus.PENDING
+                ProcessStatus.PENDING.value
             )
             disbursement_batch_control.geo_resolution_timestamp = datetime.now()
             disbursement_batch_control.geo_resolution_latest_error_code = None
@@ -242,7 +240,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 )
                 if disbursement_batch_control_to_update:
                     disbursement_batch_control_to_update.geo_resolution_status = (
-                        ProcessStatus.PENDING
+                        ProcessStatus.PENDING.value
                     )
                     disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(
                         e
@@ -256,7 +254,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                         >= _config.geo_resolution_max_attempts
                     ):
                         disbursement_batch_control_to_update.geo_resolution_status = (
-                            ProcessStatus.ERROR
+                            ProcessStatus.ERROR.value
                         )
                         disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(
                             e

@@ -34,14 +34,12 @@ class AccountStatementService(BaseService):
             statement = AccountStatement(
                 statement_id=statement_id,
                 statement_date=statement_date,
-                active=True,
             )
             session.add(statement)
 
             statement_lob = AccountStatementLob(
                 statement_id=statement_id,
                 statement_lob=str(statement_file.decode("utf-8")),
-                active=True,
             )
             session.add(statement_lob)
 
