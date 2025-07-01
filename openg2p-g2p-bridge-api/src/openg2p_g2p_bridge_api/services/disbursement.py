@@ -9,6 +9,8 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementException
+from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
+
 from openg2p_g2p_bridge_models.models import (
     BenefitType,
     CancellationStatus,
@@ -67,7 +69,7 @@ class DisbursementService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.disbursement_envelope_id
+                            DisbursementEnvelope.id
                             == str(
                                 disbursement_request.message[0].disbursement_envelope_id
                             )
@@ -86,7 +88,7 @@ class DisbursementService(BaseService):
 
             disbursements: List[Disbursement] = await self.construct_disbursements(
                 disbursement_payloads=disbursement_request.message,
-                disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
+                disbursement_batch_control_id=disbursement_batch_control.id,
             )
 
             # Lock the envelope batch status row for update (nowait)
@@ -151,7 +153,7 @@ class DisbursementService(BaseService):
         for disbursement_payload in disbursement_payloads:
             generated_id: str = generate(size=16)
             disbursement = Disbursement(
-                disbursement_id=generated_id,
+                id=generated_id,
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
@@ -164,7 +166,6 @@ class DisbursementService(BaseService):
                 disbursement_batch_control_id=disbursement_batch_control_id,
             )
             disbursement_payload.id = disbursement.id
-            disbursement_payload.disbursement_id = disbursement.disbursement_id
             disbursements.append(disbursement)
         _logger.info("Disbursements Constructed!")
         return disbursements
@@ -175,27 +176,25 @@ class DisbursementService(BaseService):
         _logger.info("Constructing Disbursement Batch Control")
         import uuid
 
-        from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
-
-        disbursement_batch_control_id = str(uuid.uuid4())
+        id = str(uuid.uuid4())
         # Determine statuses based on benefit_type
         if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
-            fa_resolution_status = ProcessStatus.PENDING
-            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
-            geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE
-            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
-            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
+            fa_resolution_status = ProcessStatus.PENDING.value
+            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value
+            geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE.value
+            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE.value
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE.value
         else:
-            fa_resolution_status = ProcessStatus.NOT_APPLICABLE
-            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE
-            geo_resolutuon_status = ProcessStatus.PENDING
-            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE
-            agency_allocation_status = ProcessStatus.NOT_APPLICABLE
+            fa_resolution_status = ProcessStatus.NOT_APPLICABLE.value
+            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value
+            geo_resolutuon_status = ProcessStatus.PENDING.value
+            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE.value
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE.value
 
         disbursement_batch_control = DisbursementBatchControl(
-            disbursement_batch_control_id=disbursement_batch_control_id,
+            id=id,
             disbursement_cycle_id=disbursement_envelope.disbursement_cycle_id,
-            disbursement_envelope_id=disbursement_envelope.disbursement_envelope_id,
+            disbursement_envelope_id=disbursement_envelope.id,
             fa_resolution_status=fa_resolution_status,
             sponsor_bank_dispatch_status=sponsor_bank_dispatch_status,
             geo_resolution_status=geo_resolutuon_status,
@@ -280,7 +279,7 @@ class DisbursementService(BaseService):
             (
                 await session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
+                        DisbursementEnvelope.id
                         == str(disbursement_envelope_id)
                     )
                 )

@@ -13,7 +13,7 @@ from ..models import (
 
 class DisbursementEnvelopePayload(BaseModel):
     id: Optional[str] = None
-    disbursement_envelope_id: Optional[str] = None
+    benefit_program_id: Optional[str] = None
     benefit_program_mnemonic: Optional[str] = None
     target_registry: Optional[str] = None
     benefit_code_id: Optional[str] = None

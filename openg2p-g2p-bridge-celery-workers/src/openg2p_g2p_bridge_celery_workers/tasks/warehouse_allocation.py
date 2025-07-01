@@ -37,7 +37,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.disbursement_batch_control_id
+                            DisbursementBatchControl.id
                             == disbursement_batch_control_id
                         )
                     )
@@ -49,7 +49,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 _logger.error(
                     f"No batch control found for id {disbursement_batch_control_id}"
                 )
-                return
+                raise Exception(f"No batch control found for id {disbursement_batch_control_id}")
 
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
@@ -69,7 +69,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_envelope = (
                 session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
+                        DisbursementEnvelope.id
                         == disbursement_batch_control.disbursement_envelope_id
                     )
                 )
@@ -80,23 +80,23 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 _logger.error(
                     f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}"
                 )
-                return
+                raise Exception(f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}")
 
             # Prepare large_geo_list
             large_geo_list = [
                 {
-                    "batch_control_geo_id": geo.disbursement_control_geo_id,
-                    "administrative_zone_id_large": geo.administrative_zone_id_large,
-                    "administrative_zone_mnemonic_large": geo.administrative_zone_mnemonic_large,
+                    "batch_control_geo_id": disbursement_batch_control_geo.id,
+                    "administrative_zone_id_large": disbursement_batch_control_geo.administrative_zone_id_large,
+                    "administrative_zone_mnemonic_large": disbursement_batch_control_geo.administrative_zone_mnemonic_large,
                 }
-                for geo in disbursement_batch_control_geos
+                for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
             benefit_code = {
                 "id": disbursement_envelope.benefit_code_id,
                 "mnemonic": disbursement_envelope.benefit_code_mnemonic,
             }
             program = {
-                "id": disbursement_envelope.benefit_program_mnemonic,
+                "id": disbursement_envelope.benefit_program_id,
                 "mnemonic": disbursement_envelope.benefit_program_mnemonic,
             }
 
@@ -114,8 +114,8 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 session.execute(
                     update(DisbursementBatchControlGeo)
                     .where(
-                        DisbursementBatchControlGeo.disbursement_control_geo_id
-                        == disbursement_batch_control_geo.disbursement_control_geo_id
+                        DisbursementBatchControlGeo.id
+                        == disbursement_batch_control_geo.id
                     )
                     .values(
                         warehouse_id=allocation["warehouse_id"],

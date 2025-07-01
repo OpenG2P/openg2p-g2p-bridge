@@ -34,10 +34,10 @@ def disburse_funds_from_bank_beat_producer():
             update(DisbursementBatchControl)
             .where(
                 DisbursementBatchControl.sponsor_bank_dispatch_status
-                == ProcessStatus.PROCESSING,
+                == ProcessStatus.PROCESSING.value,
                 DisbursementBatchControl.updated_at < stale_at,
             )
-            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING)
+            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING.value)
         )
         session.execute(reset_stmt)
         session.commit()
@@ -53,12 +53,12 @@ def disburse_funds_from_bank_beat_producer():
                 select(DisbursementEnvelope)
                 .join(
                     EnvelopeControl,
-                    DisbursementEnvelope.disbursement_envelope_id
+                    DisbursementEnvelope.id
                     == EnvelopeControl.disbursement_envelope_id,
                 )
                 .join(
                     EnvelopeBatchStatusForDigitalCash,
-                    DisbursementEnvelope.disbursement_envelope_id
+                    DisbursementEnvelope.id
                     == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
                 )
                 .filter(
@@ -83,7 +83,7 @@ def disburse_funds_from_bank_beat_producer():
                         DisbursementBatchControl.disbursement_envelope_id
                         == envelope.disbursement_envelope_id,
                         DisbursementBatchControl.sponsor_bank_dispatch_status
-                        == ProcessStatus.PENDING,
+                        == ProcessStatus.PENDING.value,
                     )
                     .limit(_config.no_of_tasks_to_process)
                 )

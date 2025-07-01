@@ -39,7 +39,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.disbursement_batch_control_id
+                            DisbursementBatchControl.id
                             == disbursement_batch_control_id
                         )
                     )
@@ -71,7 +71,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_envelope = (
                 session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
+                        DisbursementEnvelope.id
                         == disbursement_batch_control.disbursement_envelope_id
                     )
                 )
@@ -87,11 +87,11 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             # Prepare small_geo_list
             small_geo_list = [
                 {
-                    "batch_control_geo_id": geo.disbursement_control_geo_id,
-                    "administrative_zone_id_small": geo.administrative_zone_id_small,
-                    "administrative_zone_mnemonic_small": geo.administrative_zone_mnemonic_small,
+                    "batch_control_geo_id": disbursement_batch_control_geo.id,
+                    "administrative_zone_id_small": disbursement_batch_control_geo.administrative_zone_id_small,
+                    "administrative_zone_mnemonic_small": disbursement_batch_control_geo.administrative_zone_mnemonic_small,
                 }
-                for geo in disbursement_batch_control_geos
+                for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
             benefit_code = {
                 "id": disbursement_envelope.benefit_code_id,
@@ -114,8 +114,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 session.execute(
                     update(DisbursementBatchControlGeo)
                     .where(
-                        DisbursementBatchControlGeo.disbursement_control_geo_id
-                        == disbursement_batch_control_geo.disbursement_control_geo_id
+                        DisbursementBatchControlGeo.id
+                        == disbursement_batch_control_geo.id
                     )
                     .values(
                         agency_id=allocation["agency_id"],

@@ -37,12 +37,12 @@ def check_funds_with_bank_beat_producer():
                 select(DisbursementEnvelope)
                 .join(
                     EnvelopeBatchStatusForDigitalCash,
-                    DisbursementEnvelope.disbursement_envelope_id
+                    DisbursementEnvelope.id
                     == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
                 )
                 .join(
                     EnvelopeControl,
-                    DisbursementEnvelope.disbursement_envelope_id
+                    DisbursementEnvelope.id
                     == EnvelopeControl.disbursement_envelope_id,
                 )
                 .filter(
@@ -84,7 +84,7 @@ def check_funds_with_bank_beat_producer():
             )
 
             envelope_batch_status.funds_available_with_bank = (
-                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS
+                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS.value
             )
             celery_app.send_task(
                 "check_funds_with_bank_worker",

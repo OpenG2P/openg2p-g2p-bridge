@@ -41,7 +41,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 DisbursementBatchControl
             ] = session.execute(
                 select(DisbursementBatchControl).where(
-                    DisbursementBatchControl.disbursement_batch_control_id
+                    DisbursementBatchControl.id
                     == disbursement_batch_control_id
                 )
             ).scalar_one_or_none()
@@ -50,11 +50,11 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 _logger.error(
                     f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
                 )
-                return
+                raise Exception(f"No DisbursementBatchControl found for id {disbursement_batch_control_id}")
 
             disbursement_envelope = session.execute(
                 select(DisbursementEnvelope).where(
-                    DisbursementEnvelope.disbursement_envelope_id
+                    DisbursementEnvelope.id
                     == disbursement_batch_control.disbursement_envelope_id
                 )
             ).scalar_one_or_none()
@@ -91,7 +91,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             batch_beneficiary_list = [
                 {
-                    "disbursement_id": d.disbursement_id,
+                    "disbursement_id": d.id,
                     "beneficiary_id": d.beneficiary_id,
                 }
                 for d in disbursements
@@ -114,7 +114,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             # Create a map of disbursement_id to disbursement_quantity for quick lookup
             disbursement_quantities = {
-                d.disbursement_id: d.disbursement_quantity for d in disbursements
+                d.id: d.disbursement_quantity for d in disbursements
             }
 
             # Optimized: Aggregate both total_quantity and no_of_beneficiaries in one pass
@@ -149,7 +149,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_control_geo_id=disbursement_control_geo_id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
-                    disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
+                    disbursement_batch_control_id=disbursement_batch_control.id,
                     administrative_zone_id_large=admin_large_id,
                     administrative_zone_mnemonic_large=data[
                         "administrative_zone_mnemonic_large"
@@ -183,7 +183,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_id=geo_resolution_item["disbursement_id"],
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
-                    disbursement_batch_control_id=disbursement_batch_control.disbursement_batch_control_id,
+                    disbursement_batch_control_id=disbursement_batch_control.id,
                     disbursement_batch_control_geo_id=disbursement_batch_control_geo_id,
                     beneficiary_id=geo_resolution_item["beneficiary_id"],
                     administrative_zone_id_large=geo_resolution_item[
@@ -234,7 +234,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 disbursement_batch_control_to_update = (
                     error_session.query(DisbursementBatchControl)
                     .filter_by(
-                        disbursement_batch_control_id=disbursement_batch_control_id
+                        id=disbursement_batch_control_id
                     )
                     .first()
                 )

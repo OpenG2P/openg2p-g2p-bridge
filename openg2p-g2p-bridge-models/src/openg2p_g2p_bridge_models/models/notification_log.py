@@ -15,7 +15,6 @@ class NotificationStatus(enum.Enum):
 
 class NotificationLog(BaseORMModelWithId):
     __tablename__ = "notification_logs"
-    notification_id: Mapped[str] = mapped_column(String, unique=True)
     notification_type: Mapped[str] = mapped_column(String, index=True)
     recipient: Mapped[str] = mapped_column(String, index=True)
     payload: Mapped[str] = mapped_column(Text)

@@ -22,7 +22,7 @@ def beneficiary_notification_beat_producer():
         result = session.execute(
             select(DisbursementResolutionGeoAddress).where(
                 DisbursementResolutionGeoAddress.beneficiary_notification_status
-                == ProcessStatus.PENDING
+                == ProcessStatus.PENDING.value
             )
         )
         disbursement_resolution_geo_addresses = result.scalars().all()

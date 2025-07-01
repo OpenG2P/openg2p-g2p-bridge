@@ -47,7 +47,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControlGeo).where(
-                            DisbursementBatchControlGeo.disbursement_control_geo_id
+                            DisbursementBatchControlGeo.id
                             == disbursement_control_geo_id
                         )
                     )
@@ -65,7 +65,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.disbursement_envelope_id
+                            DisbursementEnvelope.id
                             == disbursement_batch_control_geo.disbursement_envelope_id
                         )
                     )
@@ -105,7 +105,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 .all()
             )
             disbursement_map = {
-                (d.beneficiary_id, d.disbursement_id): d for d in disbursements
+                (d.beneficiary_id, d.id): d for d in disbursements
             }
 
             beneficiary_entitlements = []
@@ -191,7 +191,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
 
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
-                notification_id=str(uuid.uuid4()),
+                id=str(uuid.uuid4()),
                 notification_type=NotificationType.AGENCY_NOTIFICATION.value,
                 recipient=disbursement_batch_control_geo.agency_mnemonic,
                 payload=str(notification_payload.model_dump()),
@@ -208,7 +208,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 notification_payload=notification_payload,
                 disbursement_control_geo_id=disbursement_batch_control_geo.disbursement_control_geo_id,
                 agency_mnemonic=disbursement_batch_control_geo.agency_mnemonic,
-                notification_request_id=notification_log.notification_id,
+                notification_request_id=notification_log.id,
             )
             # Send to notification microservice
             loop = asyncio.new_event_loop()

@@ -26,7 +26,7 @@ def mt940_processor_beat_producer():
                 .filter(
                     and_(
                         AccountStatement.statement_process_status
-                        == ProcessStatus.PENDING,
+                        == ProcessStatus.PENDING.value,
                         AccountStatement.statement_process_attempts
                         < _config.statement_process_attempts,
                     )
@@ -38,7 +38,7 @@ def mt940_processor_beat_producer():
         )
 
         for statement in account_statements:
-            statement.statement_process_status = ProcessStatus.PROCESSING
+            statement.statement_process_status = ProcessStatus.PROCESSING.value
             _logger.info(
                 f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}"
             )

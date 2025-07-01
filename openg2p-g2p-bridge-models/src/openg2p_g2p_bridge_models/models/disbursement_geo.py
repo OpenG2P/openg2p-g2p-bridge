@@ -53,5 +53,5 @@ class DisbursementResolutionGeoAddress(BaseORMModelWithId):
     agency_id: Mapped[str] = mapped_column(String, index=True, nullable=True)
     agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_notification_status: Mapped[ProcessStatus] = mapped_column(
-        String, default=ProcessStatus.NOT_APPLICABLE
+        String, default=ProcessStatus.NOT_APPLICABLE.value
     )

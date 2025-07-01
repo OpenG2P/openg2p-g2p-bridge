@@ -32,16 +32,16 @@ def mapper_resolution_beat_producer():
             update(DisbursementBatchControl)
             .where(
                 DisbursementBatchControl.fa_resolution_status
-                == ProcessStatus.PROCESSING,
+                == ProcessStatus.PROCESSING.value,
                 DisbursementBatchControl.updated_at > stale_at,
             )
-            .values(fa_resolution_status=ProcessStatus.PENDING)
+            .values(fa_resolution_status=ProcessStatus.PENDING.value)
         )
 
         # 2. Select pending tasks
         disbursement_batch_controls = session.scalars(
             select(DisbursementBatchControl).where(
-                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING,
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING.value,
                 DisbursementBatchControl.fa_resolution_attempts
                 < _config.mapper_resolution_max_attempts,
             )
@@ -53,7 +53,7 @@ def mapper_resolution_beat_producer():
 
         for disbursement_batch_control in disbursement_batch_controls:
             # 3. Mark as in progress
-            disbursement_batch_control.fa_resolution_status = ProcessStatus.PROCESSING
+            disbursement_batch_control.fa_resolution_status = ProcessStatus.PROCESSING.value
             session.add(disbursement_batch_control)
             session.commit()
 

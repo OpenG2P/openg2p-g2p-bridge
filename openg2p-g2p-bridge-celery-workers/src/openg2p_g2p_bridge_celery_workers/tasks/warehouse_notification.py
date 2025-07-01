@@ -43,7 +43,7 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControlGeo).where(
-                            DisbursementBatchControlGeo.disbursement_control_geo_id
+                            DisbursementBatchControlGeo.id
                             == disbursement_control_geo_id
                         )
                     )
@@ -62,7 +62,7 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.disbursement_envelope_id
+                            DisbursementEnvelope.id
                             == disbursement_batch_control_geo.disbursement_envelope_id
                         )
                     )
@@ -136,7 +136,7 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
             notification_id = str(uuid.uuid4())
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
-                notification_id=notification_id,
+                id=notification_id,
                 notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
                 recipient=disbursement_batch_control_geo.warehouse_mnemonic,
                 payload=str(notification_payload.model_dump()),
