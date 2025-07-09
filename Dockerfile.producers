@@ -27,4 +27,4 @@ RUN python3 -m pip install \
 
 USER ${container_user}
 
-CMD celery -A main.celery_app worker --beat --loglevel=info
+CMD celery -A main.celery_app worker --beat --loglevel=info --schedule=/tmp/celery-beat-schedule.db
