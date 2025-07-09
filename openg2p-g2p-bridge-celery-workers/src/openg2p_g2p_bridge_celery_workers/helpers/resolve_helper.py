@@ -135,7 +135,9 @@ class ResolveHelper(BaseService):
             payload = orjson.dumps(payload)
         elif isinstance(payload, str):
             payload = payload.encode()
-        km_token = await self.get_keymanager_auth_token()
+        cookies = {}
+        if _config.keymanager_auth_enabled:
+            cookies["Authorization"] = await self.get_keymanager_auth_token()
         current_time = self.get_current_isotimestamp()
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -154,7 +156,7 @@ class ResolveHelper(BaseService):
                         "includeCertHash": include_cert_hash,
                     },
                 },
-                cookies={"Authorization": km_token},
+                cookies=cookies,
                 timeout=_config.keymanager_api_timeout,
             )
         _logger.debug("Keymanager JWT Sign API response: %s", response.text)

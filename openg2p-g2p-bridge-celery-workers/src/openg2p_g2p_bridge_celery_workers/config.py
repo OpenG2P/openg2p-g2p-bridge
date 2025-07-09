@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     keymanager_api_timeout: int = 10
     keymanager_api_base_url: str = ""
+    keymanager_auth_enabled: bool = True
     keymanager_auth_url: str = ""
     keymanager_auth_client_id: str = "openg2p-g2p-bridge"
     keymanager_auth_client_secret: str = ""
