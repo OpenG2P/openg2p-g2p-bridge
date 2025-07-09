@@ -20,6 +20,10 @@ dependencies = [
   "openg2p-g2p-bridge-bank-connectors",
   "celery",
   "psycopg2",
+  "asyncpg",
+  "redis",
+  "hiredis",
+  "parse",
 ]
 dynamic = ["version"]
 

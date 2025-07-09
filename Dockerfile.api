@@ -10,7 +10,7 @@ ENV BRANCH_NAME=${BRANCH_NAME}
 RUN groupadd -g ${container_user_gid} ${container_user_group} \
   && useradd -mN -u ${container_user_uid} -G ${container_user_group} -s /bin/bash ${container_user}
 
-RUN install_packages libpq-dev \
+RUN install_packages libpq-dev libmagic-dev \
   && apt-get clean && rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 WORKDIR /app
