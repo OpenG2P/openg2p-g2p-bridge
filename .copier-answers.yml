@@ -11,7 +11,5 @@ module_name: openg2p_g2p_bridge_api
 org_name: OpenG2P
 org_slug: OpenG2P
 package_name: openg2p-g2p-bridge-api
-repo_name: ' openg2p-g2p-bridge-api
-
-    '
+repo_name: openg2p-g2p-bridge-api
 repo_slug: openg2p-g2p-bridge-api

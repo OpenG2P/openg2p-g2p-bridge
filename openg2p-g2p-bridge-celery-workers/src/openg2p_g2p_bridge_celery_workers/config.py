@@ -25,12 +25,18 @@ class Settings(BaseSettings):
 
     mapper_resolve_api_url: str = ""
 
-    bank_fa_deconstruct_strategy: str = ""
-    mobile_wallet_deconstruct_strategy: str = ""
-    email_wallet_deconstruct_strategy: str = ""
+    bank_fa_deconstruct_strategy: str = r"^account_number:(?P<account_number>.*)\.branch_code:(?P<branch_code>.*)\.bank_code:(?P<bank_code>.*)\.mobile_number:(?P<mobile_number>.*)\.email_address:(?P<email_address>.*)\.fa_type:(?P<fa_type>.*)$"
+    mobile_wallet_deconstruct_strategy: str = r"^mobile_number:(?P<mobile_number>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
+    email_wallet_deconstruct_strategy: str = r"^email_address:(?P<email_address>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
 
-    private_key: str = ""
-    issuer: str = ""
-    audience: str = ""
+    mapper_request_sender_id: str = "openg2p-g2p-bridge"
 
-    sender_id: str = ""
+    sign_key_keymanager_app_id: str = "G2PBRIDGE"
+    sign_key_keymanager_ref_id: str = ""
+
+    keymanager_api_timeout: int = 10
+    keymanager_api_base_url: str = ""
+    keymanager_auth_enabled: bool = True
+    keymanager_auth_url: str = ""
+    keymanager_auth_client_id: str = "openg2p-g2p-bridge"
+    keymanager_auth_client_secret: str = ""

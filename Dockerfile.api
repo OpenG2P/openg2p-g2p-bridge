@@ -1,0 +1,36 @@
+FROM bitnami/python:3.12.5-debian-12-r0
+
+ARG container_user=openg2p
+ARG container_user_group=openg2p
+ARG container_user_uid=1001
+ARG container_user_gid=1001
+ARG BRANCH_NAME
+ENV BRANCH_NAME=${BRANCH_NAME}
+
+RUN groupadd -g ${container_user_gid} ${container_user_group} \
+  && useradd -mN -u ${container_user_uid} -G ${container_user_group} -s /bin/bash ${container_user}
+
+RUN install_packages libpq-dev libmagic-dev \
+  && apt-get clean && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+WORKDIR /app
+
+ADD openg2p-g2p-bridge-models /app/openg2p-g2p-bridge-models
+ADD openg2p-g2p-bridge-api /app/openg2p-g2p-bridge-api
+RUN mv /app/openg2p-g2p-bridge-api/main.py /app
+
+RUN python3 -m pip install git+https://github.com/openg2p/openg2p-fastapi-common@1.1\#subdirectory=openg2p-fastapi-common  # to_be_removed_on_tag
+RUN python3 -m pip install git+https://github.com/openg2p/openg2p-g2pconnect-common-lib@1.1\#subdirectory=openg2p-g2pconnect-common-lib # to_be_removed_on_tag
+RUN python3 -m pip install \
+    -e /app/openg2p-g2p-bridge-models \
+    -e /app/openg2p-g2p-bridge-api
+
+USER ${container_user}
+
+ENV G2P_BRIDGE_NO_OF_WORKERS=1
+ENV G2P_BRIDGE_HOST=0.0.0.0
+ENV G2P_BRIDGE_PORT=8000
+ENV G2P_BRIDGE_WORKER_TYPE=gunicorn
+
+CMD python3 main.py migrate; \
+    gunicorn "main:app" --workers ${G2P_BRIDGE_NO_OF_WORKERS} --worker-class uvicorn.workers.UvicornWorker --bind ${G2P_BRIDGE_HOST}:${G2P_BRIDGE_PORT}
