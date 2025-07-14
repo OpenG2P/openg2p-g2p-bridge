@@ -25,14 +25,12 @@ _config = Settings.get_config()
 session_maker = sessionmaker(
     bind=_engine.get("db_engine_bridge"), expire_on_commit=False
 )
-session_maker_pbms = sessionmaker(
-    bind=_engine.get("db_engine_pbms"), expire_on_commit=False
-)  # TODO: Change engine if agency DB is different
+# Remove session_maker_pbms and pbms_session
 
 
 @celery_app.task(name="agency_allocation_worker")
 def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
-    with session_maker() as session, session_maker_pbms() as pbms_session:
+    with session_maker() as session:
         try:
             # Fetch the batch control record
             disbursement_batch_control: Optional[DisbursementBatchControl] = (
@@ -104,7 +102,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             agency_allocator = AgencyAllocatorFactory.get_agency_allocator()
             allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency(
-                pbms_session, small_geo_list, benefit_code, program
+                small_geo_list, benefit_code, program
             )
 
             for disbursement_batch_control_geo, allocation in zip(
