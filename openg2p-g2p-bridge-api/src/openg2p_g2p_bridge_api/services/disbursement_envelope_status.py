@@ -75,11 +75,11 @@ class DisbursementEnvelopeStatusService(BaseService):
 
             # Fetch batch_control_geos for physical, digital_cash_status for digital
             batch_control_geos = None
-            digital_cash_status = None
+            envelope_batch_status_for_digital_cash = None
             beneficiary_notified_count = None
             disbursement_details = None
             if envelope.benefit_type == BenefitType.CASH_DIGITAL:
-                digital_cash_status = (
+                envelope_batch_status_for_digital_cash = (
                     (
                         await session.execute(
                             select(EnvelopeBatchStatusForDigitalCash).where(
@@ -143,7 +143,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                 envelope=envelope,
                 envelope_control=envelope_control,
                 batch_control_geos=batch_control_geos,
-                digital_cash_status=digital_cash_status,
+                digital_cash_status=envelope_batch_status_for_digital_cash,
                 beneficiary_notified_count=beneficiary_notified_count,
                 disbursement_details=disbursement_details,
             )

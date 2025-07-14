@@ -5,10 +5,14 @@ import pytest
 from openg2p_g2p_bridge_api.controllers import DisbursementEnvelopeStatusController
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementStatusException
+from openg2p_g2p_bridge_models.models.disbursement_envelope import (
+    FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
+)
 from openg2p_g2p_bridge_models.schemas import (
-    DisbursementEnvelopeBatchStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
+    EnvelopeStatusForDigitalCashPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     RequestHeader,
@@ -34,15 +38,15 @@ async def test_get_disbursement_envelope_status_success(
 
     # Mock service methods
     mock_service_instance.get_disbursement_envelope_batch_status = AsyncMock(
-        return_value=DisbursementEnvelopeBatchStatusPayload(
+        return_value=EnvelopeStatusForDigitalCashPayload(
             disbursement_envelope_id="env123",
             number_of_disbursements_received=100,
             total_disbursement_quantity_received=5000,
-            funds_available_with_bank="FUNDS_AVAILABLE",
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_available_latest_timestamp=datetime.now(),
             funds_available_latest_error_code=None,
             funds_available_attempts=3,
-            funds_blocked_with_bank="FUNDS_BLOCK_SUCCESS",
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_latest_timestamp=datetime.now(),
             funds_blocked_latest_error_code=None,
             funds_blocked_attempts=2,
@@ -62,15 +66,15 @@ async def test_get_disbursement_envelope_status_success(
             status=StatusEnum.succ,
             status_reason_message="",
         ),
-        message=DisbursementEnvelopeBatchStatusPayload(
+        message=EnvelopeStatusForDigitalCashPayload(
             disbursement_envelope_id="env123",
             number_of_disbursements_received=100,
             total_disbursement_quantity_received=5000,
-            funds_available_with_bank="FUNDS_AVAILABLE",
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_available_latest_timestamp=datetime.now(),
             funds_available_latest_error_code=None,
             funds_available_attempts=3,
-            funds_blocked_with_bank="FUNDS_BLOCK_SUCCESS",
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_latest_timestamp=datetime.now(),
             funds_blocked_latest_error_code=None,
             funds_blocked_attempts=2,

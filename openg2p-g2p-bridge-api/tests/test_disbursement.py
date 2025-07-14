@@ -39,6 +39,7 @@ async def test_create_disbursements_success(
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
+            disbursement_id="disb123",
             disbursement_envelope_id="env123",
             beneficiary_id="123AB",
             disbursement_amount=1000,
@@ -97,6 +98,7 @@ async def test_create_disbursements_failure(
     mock_service_instance = AsyncMock()
     disbursement_payloads = [
         DisbursementPayload(
+            disbursement_id="disb123",
             disbursement_envelope_id="env123",
             beneficiary_id="123AB",
             disbursement_amount=1000,

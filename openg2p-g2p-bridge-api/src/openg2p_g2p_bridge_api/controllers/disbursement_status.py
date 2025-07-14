@@ -11,6 +11,8 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementStatusPayload,
     DisbursementStatusRequest,
     DisbursementStatusResponse,
+    DisbursementBatchControlRequest,
+    DisbursementBatchControlResponse,
 )
 from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
@@ -32,6 +34,12 @@ class DisbursementStatusController(BaseController):
             "/get_disbursement_status",
             self.get_disbursement_status,
             responses={200: {"model": DisbursementStatusResponse}},
+            methods=["POST"],
+        )
+        self.router.add_api_route(
+            "/get_disbursement_batch_control",
+            self.get_disbursement_batch_control,
+            responses={200: {"model": DisbursementBatchControlResponse}},
             methods=["POST"],
         )
 
@@ -68,3 +76,37 @@ class DisbursementStatusController(BaseController):
                 disbursement_status_request, e.code
             )
             return error_response
+
+    async def get_disbursement_batch_control(
+        self,
+        disbursement_batch_control_request: DisbursementBatchControlRequest,
+        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+    ) -> DisbursementBatchControlResponse:
+        _logger.info("Retrieving disbursement batch status")
+        try:
+            RequestValidation.get_component().validate_signature(is_signature_valid)
+            RequestValidation.get_component().validate_request(
+                disbursement_batch_control_request
+            )
+            disbursement_batch_control_payloads = await self.disbursement_service.get_disbursement_batch_control_payloads(
+                disbursement_batch_control_request
+            )
+            disbursement_batch_control_response = DisbursementBatchControlResponse(
+                header=disbursement_batch_control_request.header,
+                message=disbursement_batch_control_payloads,
+            )
+            return disbursement_batch_control_response
+        except RequestValidationException as e:
+            _logger.error("Error validating request")
+            disbursement_batch_control_response = DisbursementBatchControlResponse(
+                header=disbursement_batch_control_request.header,
+                message=[],
+            )
+            return disbursement_batch_control_response
+        except Exception as e:
+            _logger.error(f"Error retrieving disbursement batch status: {e}")
+            disbursement_batch_control_response = DisbursementBatchControlResponse(
+                header=disbursement_batch_control_request.header,
+                message=[],
+            )
+            return disbursement_batch_control_response

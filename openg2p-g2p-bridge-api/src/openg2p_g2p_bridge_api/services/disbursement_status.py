@@ -8,6 +8,8 @@ from openg2p_g2p_bridge_models.errors.exceptions import DisbursementStatusExcept
 from openg2p_g2p_bridge_models.models import (
     DisbursementErrorRecon,
     DisbursementRecon,
+    DisbursementBatchControl,
+    DisbursementBatchControlGeo,
 )
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementErrorReconPayload,
@@ -16,6 +18,9 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementStatusPayload,
     DisbursementStatusRequest,
     DisbursementStatusResponse,
+    DisbursementBatchControlRequest,
+    DisbursementBatchControlPayload,
+    DisbursementBatchControlGeoPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
@@ -132,6 +137,93 @@ class DisbursementStatusService(BaseService):
         )
 
         return disbursement_recon_records
+
+    async def get_disbursement_batch_status_payloads(
+        self, disbursement_batch_status_request: DisbursementBatchControlRequest
+    ) -> DisbursementBatchControlPayload:
+        session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
+        async with session_maker() as session:
+            disbursement_batch_status_payloads = []
+            disbursement_batch_control = (
+                (
+                    await session.execute(
+                        select(DisbursementBatchControl).where(
+                            DisbursementBatchControl.id == DisbursementBatchControlRequest.disbursement_batch_control_id
+                        )
+                    )
+                )
+                .scalars()
+                .first()
+            )
+            if not disbursement_batch_control:
+                return
+            disbursement_batch_control_geos = (
+                (
+                    await session.execute(
+                        select(DisbursementBatchControlGeo).where(
+                            DisbursementBatchControlGeo.disbursement_batch_control_id == disbursement_batch_control.id
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            disbursement_batch_control_geo_payloads = [
+                DisbursementBatchControlGeoPayload(
+                    disbursement_batch_control_geo_id = disbursement_batch_control_geo.id,
+                    disbursement_cycle_id = disbursement_batch_control_geo.disbursement_cycle_id,
+                    disbursement_envelope_id = disbursement_batch_control_geo.disbursement_envelope_id,
+                    disbursement_batch_control_id = disbursement_batch_control_geo.disbursement_batch_control_id,
+                    administrative_zone_id_large = disbursement_batch_control_geo.administrative_zone_id_large,
+                    administrative_zone_mnemonic_large = disbursement_batch_control_geo.administrative_zone_mnemonic_large,
+                    administrative_zone_id_small = disbursement_batch_control_geo.administrative_zone_id_small,
+                    administrative_zone_mnemonic_small = disbursement_batch_control_geo.administrative_zone_mnemonic_small,
+                    no_of_beneficiaries = disbursement_batch_control_geo.no_of_beneficiaries,
+                    total_quantity = disbursement_batch_control_geo.total_quantity,
+                    warehouse_id = disbursement_batch_control_geo.warehouse_id,
+                    warehouse_mnemonic = disbursement_batch_control_geo.warehouse_mnemonic,
+                    warehouse_additional_attributes = disbursement_batch_control_geo.warehouse_additional_attributes,
+                    agency_id = disbursement_batch_control_geo.agency_id,
+                    agency_mnemonic = disbursement_batch_control_geo.agency_mnemonic,
+                    agency_additional_attributes = disbursement_batch_control_geo.agency_additional_attributes,
+                    warehouse_notification_status = str(
+                        disbursement_batch_control_geo.warehouse_notification_status
+                    ),
+                    agency_notification_status = str(   
+                        disbursement_batch_control_geo.agency_notification_status
+                    ),
+                )
+                for disbursement_batch_control_geo in disbursement_batch_control_geos
+            ]
+            disbursement_batch_status_payloads.append(
+                DisbursementBatchControlPayload(
+                    disbursement_batch_control_id=disbursement_batch_control.id,
+                    disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
+                    disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
+                    fa_resolution_status=str(disbursement_batch_control.fa_resolution_status),
+                    fa_resolution_timestamp=disbursement_batch_control.fa_resolution_timestamp,
+                    fa_resolution_latest_error_code=disbursement_batch_control.fa_resolution_latest_error_code,
+                    fa_resolution_attempts=disbursement_batch_control.fa_resolution_attempts,
+                    sponsor_bank_dispatch_status=str(disbursement_batch_control.sponsor_bank_dispatch_status),
+                    sponsor_bank_dispatch_timestamp=disbursement_batch_control.sponsor_bank_dispatch_timestamp,
+                    sponsor_bank_dispatch_latest_error_code=disbursement_batch_control.sponsor_bank_dispatch_latest_error_code,
+                    sponsor_bank_dispatch_attempts=disbursement_batch_control.sponsor_bank_dispatch_attempts,
+                    geo_resolution_status=str(disbursement_batch_control.geo_resolution_status),
+                    geo_resolution_timestamp=disbursement_batch_control.geo_resolution_timestamp,
+                    geo_resolution_latest_error_code=disbursement_batch_control.geo_resolution_latest_error_code,
+                    geo_resolution_attempts=disbursement_batch_control.geo_resolution_attempts,
+                    warehouse_allocation_status=str(disbursement_batch_control.warehouse_allocation_status),
+                    warehouse_allocation_timestamp=disbursement_batch_control.warehouse_allocation_timestamp,
+                    warehouse_allocation_latest_error_code=disbursement_batch_control.warehouse_allocation_latest_error_code,
+                    warehouse_allocation_attempts=disbursement_batch_control.warehouse_allocation_attempts,
+                    agency_allocation_status=str(disbursement_batch_control.agency_allocation_status),
+                    agency_allocation_timestamp=disbursement_batch_control.agency_allocation_timestamp,
+                    agency_allocation_latest_error_code=disbursement_batch_control.agency_allocation_latest_error_code,
+                    agency_allocation_attempts=disbursement_batch_control.agency_allocation_attempts,
+                    disbursement_batch_control_geos=disbursement_batch_control_geo_payloads,
+                )
+            )
+        return disbursement_batch_status_payloads
 
     async def construct_disbursement_status_error_response(
         self,

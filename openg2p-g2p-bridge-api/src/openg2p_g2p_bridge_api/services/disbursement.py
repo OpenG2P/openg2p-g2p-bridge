@@ -4,7 +4,6 @@ import random
 from datetime import datetime
 from typing import List
 
-from fastnanoid import generate
 from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
@@ -82,6 +81,7 @@ class DisbursementService(BaseService):
 
             disbursement_batch_control: DisbursementBatchControl = (
                 await self.construct_disbursement_batch_control(
+                    disbursement_request.disbursement_batch_control_id,
                     disbursement_envelope=disbursement_envelope,
                 )
             )
@@ -151,13 +151,12 @@ class DisbursementService(BaseService):
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
-            generated_id: str = generate(size=16)
+            # generated_id: str = generate(size=16)
             disbursement = Disbursement(
-                id=generated_id,
+                id=disbursement_payload.disbursement_id,
                 disbursement_envelope_id=str(
                     disbursement_payload.disbursement_envelope_id
                 ),
-                mis_reference_number=disbursement_payload.mis_reference_number,
                 beneficiary_id=disbursement_payload.beneficiary_id,
                 beneficiary_name=disbursement_payload.beneficiary_name,
                 disbursement_quantity=disbursement_payload.disbursement_quantity,
@@ -165,18 +164,16 @@ class DisbursementService(BaseService):
                 disbursement_cycle_id=disbursement_payload.disbursement_cycle_id,
                 disbursement_batch_control_id=disbursement_batch_control_id,
             )
-            disbursement_payload.id = disbursement.id
             disbursements.append(disbursement)
         _logger.info("Disbursements Constructed!")
         return disbursements
 
     async def construct_disbursement_batch_control(
-        self, disbursement_envelope: DisbursementEnvelope
+        self,disbursement_batch_control_id: str, disbursement_envelope: DisbursementEnvelope
     ):
         _logger.info("Constructing Disbursement Batch Control")
-        import uuid
-
-        id = str(uuid.uuid4())
+        
+        id = disbursement_batch_control_id
         # Determine statuses based on benefit_type
         if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
             fa_resolution_status = ProcessStatus.PENDING.value
