@@ -10,6 +10,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
+    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from sqlalchemy import update
@@ -141,6 +142,26 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
                         beneficiary_notification_status=ProcessStatus.PENDING.value,
+                    )
+                )
+
+                # Update DisbursementBatchControlGeoAttributes
+                session.execute(
+                    update(DisbursementBatchControlGeoAttributes)
+                    .where(
+                        DisbursementBatchControlGeoAttributes.id
+                        == disbursement_batch_control_geo.id
+                    )
+                    .values(
+                       agency_admin_name=allocation.get(
+                            "agency_admin_name", None
+                        ),
+                        agency_admin_email=allocation.get(
+                            "agency_admin_email", None
+                        ),
+                        agency_admin_phone=allocation.get(
+                        "agency_admin_phone", None
+                        )
                     )
                 )
 

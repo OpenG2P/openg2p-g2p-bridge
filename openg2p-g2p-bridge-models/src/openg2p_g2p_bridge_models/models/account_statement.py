@@ -40,7 +40,7 @@ class AccountStatementLob(BaseORMModelWithId):
 
 class DisbursementRecon(BaseORMModelWithId):
     __tablename__ = "disbursement_recons"
-    bank_disbursement_batch_id: Mapped[str] = mapped_column(String, index=True)
+    disbursement_batch_control_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_id: Mapped[str] = mapped_column(String, index=True, unique=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_name_from_bank: Mapped[str] = mapped_column(String, nullable=True)

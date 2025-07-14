@@ -27,5 +27,6 @@ from .disbursement_envelope import (
 from .disbursement_geo import (
     DisbursementBatchControlGeo,
     DisbursementResolutionGeoAddress,
+    DisbursementBatchControlGeoAttributes,
 )
-from .notification_log import NotificationLog, NotificationStatus
+from .notification_log import NotificationLog

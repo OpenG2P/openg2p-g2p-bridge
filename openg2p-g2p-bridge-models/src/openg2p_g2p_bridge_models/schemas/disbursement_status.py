@@ -121,7 +121,6 @@ class EnvelopeStatusForDigitalCashPayload(DisbursementEnvelopeBatchStatusPayload
     funds_blocked_attempts: int
     funds_blocked_reference_number: Optional[str] = None
 
-    id_mapper_resolution_required: Optional[bool] = None
     number_of_disbursements_shipped: int
     number_of_disbursements_reconciled: int
     number_of_disbursements_reversed: int
@@ -131,3 +130,56 @@ class DisbursementEnvelopeStatusResponse(SyncResponse):
     message: Optional[
         EnvelopeStatusForDigitalCashPayload | EnvelopeStatusForPhysicalBenefitsPayload
     ] = None
+
+
+class DisbursementBatchControlGeoPayload(BaseModel):
+    disbursement_batch_control_geo_id: str
+    disbursement_cycle_id: str
+    disbursement_envelope_id: str
+    disbursement_batch_control_id: str
+    administrative_zone_id_large: Optional[str] = None
+    administrative_zone_mnemonic_large: Optional[str] = None
+    administrative_zone_id_small: Optional[str] = None
+    administrative_zone_mnemonic_small: Optional[str] = None
+    no_of_beneficiaries:Optional[int] = None
+    total_quantity: Optional[float] = None
+    warehouse_id: Optional[str] = None
+    warehouse_mnemonic: Optional[str] = None
+    warehouse_additional_attributes: Optional[str] = None
+    agency_id: Optional[str] = None
+    agency_mnemonic:Optional[str] = None
+    agency_additional_attributes: Optional[str] = None
+    warehouse_notification_status: Optional[str] = None
+    agency_notification_status: Optional[str] = None
+
+class DisbursementBatchControlPayload(BaseModel):
+    disbursement_batch_control_id: str
+    disbursement_cycle_id: str
+    disbursement_envelope_id: str
+    fa_resolution_status: str
+    fa_resolution_timestamp: Optional[datetime.datetime] = None
+    fa_resolution_latest_error_code: Optional[str] = None
+    fa_resolution_attempts: int
+    sponsor_bank_dispatch_status: str
+    sponsor_bank_dispatch_timestamp: Optional[datetime.datetime] = None
+    sponsor_bank_dispatch_latest_error_code: Optional[str] = None
+    sponsor_bank_dispatch_attempts: int
+    geo_resolution_status: str
+    geo_resolution_timestamp: Optional[datetime.datetime] = None
+    geo_resolution_latest_error_code: Optional[str] = None
+    geo_resolution_attempts: int
+    warehouse_allocation_status: str
+    warehouse_allocation_timestamp: Optional[datetime.datetime] = None
+    warehouse_allocation_latest_error_code: Optional[str] = None
+    warehouse_allocation_attempts: int
+    agency_allocation_status: str
+    agency_allocation_timestamp: Optional[datetime.datetime] = None
+    agency_allocation_latest_error_code: Optional[str] = None
+    agency_allocation_attempts: int
+    disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
+
+class DisbursementBatchControlRequest(Request):
+    disbursement_batch_control_id: str
+
+class DisbursementBatchControlResponse(SyncResponse):
+    message: Optional[DisbursementBatchControlPayload] = None

@@ -39,10 +39,9 @@ class Settings(BaseSettings):
     warehouse_allocation_max_attempts: int = 3
     geo_resolution_max_attempts: int = 3
 
-    notification_service_url: str = ""
-
-    # ... existing code ...
-    notification_service_url: str = ""
+    agency_notification_max_attempts: int = 3
+    warehouse_notification_max_attempts: int = 3
+    beneficiary_notification_max_attempts: int = 3
 
     # Other DB connection settings
     db_datasource_farmer_registry: str = (

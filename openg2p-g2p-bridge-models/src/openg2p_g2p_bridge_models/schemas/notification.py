@@ -4,22 +4,14 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-
-class NotificationType(enum.Enum):
-    AGENCY_NOTIFICATION = "AGENCY_NOTIFICATION"
-    WAREHOUSE_NOTIFICATION = "WAREHOUSE_NOTIFICATION"
-    BENEFICIARY_NOTIFICATION = "BENEFICIARY_NOTIFICATION"
-
-
 class NotificationPayload(BaseModel):
     """Base class for all notification payloads."""
-
-    pass
+    program_mnemonic: Optional[str] = None
+    program_description: Optional[str] = None
 
 
 class WarehouseNotificationPayload(NotificationPayload):
-    program_mnemonic: Optional[str] = None
-    program_description: Optional[str] = None
+    
     target_registry: Optional[str] = None
     disbursement_cycle_mnemonic: Optional[str] = None
     disbursement_date: Optional[datetime.datetime] = None
@@ -94,7 +86,6 @@ class BeneficiaryNotificationPayload(NotificationPayload):
     administrative_zone_id_small: Optional[str] = None
     administrative_zone_mnemonic_small: Optional[str] = None
     beneficiary_entitlement: Optional[BeneficiaryEntitlement] = None
-
 
 class NotificationRequest(BaseModel):
     notification_type: str

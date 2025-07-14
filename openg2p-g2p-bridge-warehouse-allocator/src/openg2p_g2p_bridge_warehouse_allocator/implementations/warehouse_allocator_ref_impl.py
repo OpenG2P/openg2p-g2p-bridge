@@ -4,16 +4,13 @@ from typing import Dict, List
 import logging
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy.orm import Session
 
 from ..interface import WarehouseAllocator
 from ..models import G2PWarehouse
-from ..config import Settings
-from ..app import get_engine
+from ..engine import get_engine
 
 _logger = logging.getLogger("warehouse_allocator_ref_impl")
 _engine = get_engine()
-_config = Settings.get_config()
 session_maker = sessionmaker(
     bind=_engine.get("db_engine_pbms"), expire_on_commit=False
 )
@@ -55,6 +52,9 @@ class WarehouseAllocatorRefImpl(WarehouseAllocator):
                             "warehouse_id": g2p_warehouse.id,
                             "warehouse_mnemonic": g2p_warehouse.mnemonic,
                             "warehouse_additional_attributes": None,
+                            "warehouse_admin_name": g2p_warehouse.admin_name,
+                            "warehouse_admin_email": g2p_warehouse.admin_email,
+                            "warehouse_admin_phone": g2p_warehouse.contact_phone,
                         }
                     )
         return results

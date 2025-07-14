@@ -44,8 +44,7 @@ class DisbursementController(BaseController):
     async def create_disbursements(
         self,
         disbursement_request: DisbursementRequest,
-        # is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool = True,  # TODO: Remove this line when JWT validation is implemented
+        is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:

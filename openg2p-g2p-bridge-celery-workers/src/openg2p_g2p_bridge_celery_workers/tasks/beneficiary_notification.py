@@ -8,21 +8,21 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
     NotificationLog,
-    NotificationStatus,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
     BeneficiaryEntitlement,
     BeneficiaryNotificationPayload,
     NotificationRequest,
-    NotificationType,
 )
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app, get_engine
 from ..config import Settings
-from ..helpers import NotificationHelper
+
+from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
+from openg2p_g2p_bridge_notification_connectors.models import Recipient, NotificationResponse, NotificationType, NotificationResponseStatus
 
 _logger = logging.getLogger("beneficiary_notification_worker")
 _config = Settings.get_config()
@@ -139,47 +139,48 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
                 recipient=disbursement_resolution_geo_address.beneficiary_id,
                 payload=str(notification_payload.model_dump()),
-                status=NotificationStatus.PENDING.value,
                 sent_at=datetime.datetime.now(),
             )
             session.add(notification_log)
             session.commit()
-            # Build NotificationRequest object
-            notification_request = NotificationRequest(
-                notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
-                recipient=disbursement_resolution_geo_address.beneficiary_id,
-                recipient_type="BENEFICIARY",
-                notification_payload=notification_payload,
-                beneficiary_id=disbursement_resolution_geo_address.beneficiary_id,
-                disbursement_id=disbursement_resolution_geo_address.disbursement_id,
-                notification_request_id=notification_log.id,
-            )
-            # Send to notification microservice
-            import asyncio
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            helper = NotificationHelper()
+            # Send to notification microservice
+            notifier = NotificationFactory.get_notifier()
+            recipient = Recipient(
+                recipient_id=disbursement_resolution_geo_address.beneficiary_id,
+                recipient_name=disbursement_resolution_geo_address.beneficiary_name,
+                recipient_email=disbursement_resolution_geo_address.beneficiary_email,
+                recipient_phone=disbursement_resolution_geo_address.beneficiary_phone,
+            )
             try:
-                response = loop.run_until_complete(
-                    helper.send_notification(
-                        NOTIFICATION_SERVICE_URL,
-                        notification_request=notification_request,
-                    )
+                notification_response: NotificationResponse = notifier.send_notification(
+                    notification_id=notification_log.id,
+                    payload=notification_payload.model_dump(),
+                    notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
+                    recipient=recipient
                 )
-                notification_log.status = NotificationStatus.PROCESSED.value
-                notification_log.response = str(response.text)
+                if notification_response.status == NotificationResponseStatus.FAILURE:
+                    raise Exception(notification_response.error_message or "Notification failed")
+                
+                notification_log.status = notification_response.status.value
+                notification_log.response = notification_response.response if notification_response else "SENT"
                 notification_log.processed_at = datetime.datetime.now()
                 disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.PROCESSED.value
             except Exception as e:
-                notification_log.status = NotificationStatus.ERROR.value
+                notification_log.status = "ERROR"
                 notification_log.error_message = str(e)
                 notification_log.processed_at = datetime.datetime.now()
-                disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.ERROR.value
                 _logger.error(f"Beneficiary notification failed: {e}")
+                raise e
             session.commit()
         except Exception as e:
+            session.rollback()
             _logger.error(f"Beneficiary notification failed: {e}")
             if disbursement_resolution_geo_address:
+                disbursement_resolution_geo_address.beneficiary_notification_attempts += 1
+                disbursement_resolution_geo_address.beneficiary_notification_latest_error_code = str(e)
+                disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.PENDING.value
+
+            if disbursement_resolution_geo_address.beneficiary_notification_attempts >= _config.beneficiary_notification_max_attempts:
                 disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.ERROR.value
                 session.commit()

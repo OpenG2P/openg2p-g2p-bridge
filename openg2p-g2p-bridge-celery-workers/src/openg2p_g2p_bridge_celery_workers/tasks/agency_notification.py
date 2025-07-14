@@ -9,15 +9,16 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
+    DisbursementBatchControlGeoAttributes,
     NotificationLog,
-    NotificationStatus,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
     AgencyNotificationPayload,
     BeneficiaryEntitlement,
-    NotificationRequest,
-    NotificationType,
+)
+from openg2p_g2p_bridge_notification_connectors.models import (
+    NotificationType, NotificationResponse, NotificationResponseStatus
 )
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
@@ -25,11 +26,11 @@ from sqlalchemy.orm import sessionmaker
 from ..app import celery_app, get_engine
 from ..config import Settings
 from ..helpers.notification_helper import NotificationHelper
+from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
+from openg2p_g2p_bridge_notification_connectors.models import Recipient
 
 _config = Settings.get_config()
 _engine = get_engine()
-
-NOTIFICATION_SERVICE_URL = _config.notification_service_url
 
 _logger = logging.getLogger("agency_notification_worker")
 
@@ -80,7 +81,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 return
 
             # Fetch all DisbursementResolutionGeoAddress records for this agency/zone
-            geo_addresses = (
+            disbursement_resolution_geo_addresses = (
                 session.execute(
                     select(DisbursementResolutionGeoAddress).where(
                         DisbursementResolutionGeoAddress.disbursement_batch_control_geo_id
@@ -93,7 +94,7 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
 
             # Fetch Disbursement records for these beneficiaries
             beneficiary_ids = [
-                geo_address.beneficiary_id for geo_address in geo_addresses
+                disbursement_resolution_geo_address.beneficiary_id for disbursement_resolution_geo_address in disbursement_resolution_geo_addresses
             ]
             disbursements = (
                 session.execute(
@@ -109,17 +110,17 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
             }
 
             beneficiary_entitlements = []
-            for geo_address in geo_addresses:
+            for disbursement_resolution_geo_address in disbursement_resolution_geo_addresses:
                 # Try to find the matching Disbursement by beneficiary_id and disbursement_id if available
                 disbursement = disbursement_map.get(
                     (
-                        geo_address.beneficiary_id,
-                        getattr(geo_address, "disbursement_id", None),
+                        disbursement_resolution_geo_address.beneficiary_id,
+                        getattr(disbursement_resolution_geo_address, "disbursement_id", None),
                     )
                 )
                 beneficiary_entitlements.append(
                     BeneficiaryEntitlement(
-                        beneficiary_id=geo_address.beneficiary_id,
+                        beneficiary_id=disbursement_resolution_geo_address.beneficiary_id,
                         beneficiary_name=getattr(disbursement, "beneficiary_name", None)
                         if disbursement
                         else None,
@@ -195,51 +196,70 @@ def agency_notification_worker(disbursement_control_geo_id: str) -> None:
                 notification_type=NotificationType.AGENCY_NOTIFICATION.value,
                 recipient=disbursement_batch_control_geo.agency_mnemonic,
                 payload=str(notification_payload.model_dump()),
-                status=NotificationStatus.PENDING.value,
                 sent_at=datetime.datetime.now(),
             )
             session.add(notification_log)
             session.commit()
-            # Build NotificationRequest object
-            notification_request = NotificationRequest(
-                notification_type=NotificationType.AGENCY_NOTIFICATION.value,
-                recipient=disbursement_batch_control_geo.agency_mnemonic,
-                recipient_type="AGENCY",
-                notification_payload=notification_payload,
-                disbursement_control_geo_id=disbursement_batch_control_geo.disbursement_control_geo_id,
-                agency_mnemonic=disbursement_batch_control_geo.agency_mnemonic,
-                notification_request_id=notification_log.id,
-            )
-            # Send to notification microservice
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            helper = NotificationHelper()
-            try:
-                response = loop.run_until_complete(
-                    helper.send_notification(
-                        NOTIFICATION_SERVICE_URL,
-                        notification_request=notification_request,
+
+            disbursement_batch_control_geo_attributes = (
+                session.execute(
+                    select(DisbursementBatchControlGeoAttributes).where(
+                        DisbursementBatchControlGeoAttributes.id
+                        == disbursement_batch_control_geo.id
                     )
                 )
-                notification_log.status = NotificationStatus.PROCESSED.value
-                notification_log.response = str(response.text)
+                .scalars()
+                .first()
+            )
+            if not disbursement_batch_control_geo_attributes:
+                _logger.error(
+                    f"No DisbursementBatchControlGeoAttributes found for id {disbursement_batch_control_geo.id}"
+                )
+                return
+           
+            # Send to notification microservice
+            notifier = NotificationFactory.get_notifier()
+            recipient = Recipient(
+                recipient_id=disbursement_batch_control_geo_attributes.agency_id,
+                recipient_name=disbursement_batch_control_geo.agency_admin_name,
+                recipient_email=disbursement_batch_control_geo_attributes.agency_admin_email, 
+                recipient_phone=disbursement_batch_control_geo_attributes.agency_admin_phone
+            )
+            try:
+                notification_response: NotificationResponse = notifier.send_notification(
+                    notification_id=notification_log.id,
+                    payload=notification_payload.model_dump(),
+                    notification_type=NotificationType.AGENCY_NOTIFICATION.value,
+                    recipient=recipient
+                )
+                if notification_response.status == NotificationResponseStatus.FAILURE:
+                    raise Exception(notification_response.error_message or "Notification failed")
+                
+                notification_log.status = notification_response.status.value
+                notification_log.response = notification_response.response if notification_response else "SENT"
                 notification_log.processed_at = datetime.datetime.now()
                 disbursement_batch_control_geo.agency_notification_status = (
                     ProcessStatus.PROCESSED.value
                 )
             except Exception as e:
-                notification_log.status = NotificationStatus.ERROR.value
+                notification_log.status = "ERROR"
                 notification_log.error_message = str(e)
                 notification_log.processed_at = datetime.datetime.now()
-                disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.ERROR.value
-                )
                 _logger.error(f"Agency notification failed: {e}")
+                raise e
             session.commit()
+
         except Exception as e:
+            session.rollback()
             _logger.error(f"Agency notification failed: {e}")
             if disbursement_batch_control_geo:
+                disbursement_batch_control_geo.agency_notification_attempts += 1
+                disbursement_batch_control_geo.agency_notification_latest_error_code = str(e)
+                disbursement_batch_control_geo.agency_notification_status = (
+                    ProcessStatus.PENDING.value
+                )
+            if disbursement_batch_control_geo.agency_notification_attempts > _config.agency_notification_max_attempts:
                 disbursement_batch_control_geo.agency_notification_status = (
                     ProcessStatus.ERROR.value
                 )
-                session.commit()
+            session.commit()

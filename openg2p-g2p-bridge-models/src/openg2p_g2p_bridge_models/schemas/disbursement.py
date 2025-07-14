@@ -8,9 +8,7 @@ from ..models import DisbursementCancellationStatus
 
 
 class DisbursementPayload(BaseModel):
-    id: Optional[str] = None
-    mis_reference_number: Optional[str] = None
-    id: Optional[str] = None
+    disbursement_id: str
     disbursement_envelope_id: Optional[str] = None
     beneficiary_id: Optional[str] = None
     beneficiary_name: Optional[str] = None
@@ -20,13 +18,15 @@ class DisbursementPayload(BaseModel):
     cancellation_status: Optional[DisbursementCancellationStatus] = None
     cancellation_time_stamp: Optional[datetime.datetime] = None
     disbursement_cycle_id: Optional[str] = None
-    disbursement_batch_control_id: Optional[str] = None
+    disbursement_batch_control_id: Optional[str] = None 
     response_error_codes: Optional[List[str]] = None
 
 
 class DisbursementRequest(Request):
+    disbursement_batch_control_id: Optional[str] = None
     message: List[DisbursementPayload]
 
 
 class DisbursementResponse(SyncResponse):
+    disbursement_batch_control_id: Optional[str] = None
     message: Optional[List[DisbursementPayload]] = None

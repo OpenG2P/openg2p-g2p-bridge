@@ -7,6 +7,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
+    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_warehouse_allocator.factory import WarehouseAllocatorFactory
@@ -138,6 +139,26 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         warehouse_id=allocation["warehouse_id"],
                         warehouse_mnemonic=allocation["warehouse_mnemonic"],
+                    )
+                )
+
+                # Update DisbursementBatchControlGeoAttributes
+                session.execute(
+                    update(DisbursementBatchControlGeoAttributes)
+                    .where(
+                        DisbursementBatchControlGeoAttributes.id
+                        == disbursement_batch_control_geo.id
+                    )
+                    .values(
+                       warehouse_admin_name=allocation.get(
+                            "warehouse_admin_name", None
+                        ),
+                        warehouse_admin_email=allocation.get(
+                            "warehouse_admin_email", None
+                        ),
+                        warehouse_admin_phone=allocation.get(
+                        "warehouse_admin_phone", None
+                        )
                     )
                 )
 

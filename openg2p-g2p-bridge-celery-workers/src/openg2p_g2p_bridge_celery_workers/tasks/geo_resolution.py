@@ -12,6 +12,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
+    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from sqlalchemy import select
@@ -142,11 +143,12 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 batch_control_geo_map[key]["no_of_beneficiaries"] += 1
 
             disbursement_batch_control_geos = []
+            disbursement_batch_control_geo_attributes_list = []
             batch_control_geo_id_map = {}
             for (admin_large_id, admin_small_id), data in batch_control_geo_map.items():
-                disbursement_control_geo_id = str(uuid.uuid4())
+                disbursement_batch_control_geo_id = str(uuid.uuid4())
                 disbursement_batch_control_geo = DisbursementBatchControlGeo(
-                    disbursement_control_geo_id=disbursement_control_geo_id,
+                    id=disbursement_batch_control_geo_id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
                     disbursement_batch_control_id=disbursement_batch_control.id,
@@ -166,9 +168,18 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 disbursement_batch_control_geos.append(disbursement_batch_control_geo)
                 batch_control_geo_id_map[
                     (admin_large_id, admin_small_id)
-                ] = disbursement_control_geo_id
+                ] = disbursement_batch_control_geo_id
+
+                disbursement_batch_control_geo_attributes: DisbursementBatchControlGeoAttributes = DisbursementBatchControlGeoAttributes(
+                    id=disbursement_batch_control_geo_id,
+                    disbursement_batch_control_id=disbursement_batch_control.id,
+                )
+                disbursement_batch_control_geo_attributes_list.append(
+                    disbursement_batch_control_geo_attributes
+                )
 
             session.add_all(disbursement_batch_control_geos)
+            session.add_all(disbursement_batch_control_geo_attributes_list)
             session.flush()  # Ensure IDs are available
 
             # Now create DisbursementResolutionGeoAddress with the correct disbursement_batch_control_geo_id
@@ -180,24 +191,33 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 )
                 disbursement_batch_control_geo_id = batch_control_geo_id_map.get(key)
                 disbursement_resolution_geo_address = DisbursementResolutionGeoAddress(
-                    disbursement_id=geo_resolution_item["disbursement_id"],
+                    disbursement_id=geo_resolution_item.get("disbursement_id", None),
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
                     disbursement_batch_control_id=disbursement_batch_control.id,
                     disbursement_batch_control_geo_id=disbursement_batch_control_geo_id,
-                    beneficiary_id=geo_resolution_item["beneficiary_id"],
-                    administrative_zone_id_large=geo_resolution_item[
-                        "administrative_zone_id_large"
-                    ],
-                    administrative_zone_mnemonic_large=geo_resolution_item[
-                        "administrative_zone_mnemonic_large"
-                    ],
-                    administrative_zone_id_small=geo_resolution_item[
-                        "administrative_zone_id_small"
-                    ],
-                    administrative_zone_mnemonic_small=geo_resolution_item[
-                        "administrative_zone_mnemonic_small"
-                    ],
+                    beneficiary_id=geo_resolution_item.get("beneficiary_id", None),
+                    administrative_zone_id_large=geo_resolution_item.get(
+                        "administrative_zone_id_large", None
+                    ),
+                    administrative_zone_mnemonic_large=geo_resolution_item.get(
+                        "administrative_zone_mnemonic_large", None
+                    ),
+                    administrative_zone_id_small=geo_resolution_item.get(
+                        "administrative_zone_id_small", None
+                    ),
+                    administrative_zone_mnemonic_small=geo_resolution_item.get(
+                        "administrative_zone_mnemonic_small", None
+                    ),
+                    beneficiary_name = geo_resolution_item.get(
+                        "beneficiary_name", None
+                    ),
+                    beneficiary_email = geo_resolution_item.get(
+                        "beneficiary_email", None
+                    ),
+                    beneficiary_phone = geo_resolution_item.get(
+                        "beneficiary_phone", None
+                    ),
                 )
                 disbursement_resolution_geo_addresses.append(
                     disbursement_resolution_geo_address

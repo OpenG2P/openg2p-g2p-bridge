@@ -54,8 +54,6 @@ class DisbursementEnvelopeController(BaseController):
         self,
         disbursement_envelope_request: DisbursementEnvelopeRequest,
         is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        # is_signature_valid: bool = True, #TODO
-
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Bulk creating disbursement envelopes")
         try:

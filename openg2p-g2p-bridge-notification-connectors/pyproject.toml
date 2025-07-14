@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "openg2p-g2p-bridge-notification"
+name = "openg2p-g2p-bridge-notification-connectors"
 authors = [
   { name="OpenG2P", email="info@openg2p.org" },
 ]
-description = "OpenG2P G2P Bridge Notification Module"
+description = "OpenG2P G2P Bridge Notification Connectors"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -19,15 +19,15 @@ dependencies = [
   "openg2p-fastapi-common",
   "httpx",
   "pydantic",
-  "novu",
+  "novu-py",
 ]
 dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://openg2p.org"
 Documentation = "https://docs.openg2p.org/"
-Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge-notification"
-Source = "https://github.com/OpenG2P/openg2p-g2p-bridge-notification"
+Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge"
+Source = "https://github.com/OpenG2P/openg2p-g2p-bridge/openg2p-g2p-bridge-notification-connectors"
 
 [tool.hatch.version]
-path = "src/openg2p_g2p_bridge_notification/__init__.py" 
+path = "src/openg2p_g2p_bridge_notification_connectors/__init__.py" 

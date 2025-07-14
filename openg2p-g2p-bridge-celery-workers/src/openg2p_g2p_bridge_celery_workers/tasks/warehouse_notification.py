@@ -7,14 +7,16 @@ from typing import Optional
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
+    DisbursementBatchControlGeoAttributes,
     NotificationLog,
-    NotificationStatus,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
     NotificationRequest,
-    NotificationType,
     WarehouseNotificationPayload,
+)
+from openg2p_g2p_bridge_notification_connectors.models import (
+    NotificationType, NotificationResponse, NotificationResponseStatus
 )
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
@@ -22,6 +24,8 @@ from sqlalchemy.orm import sessionmaker
 from ..app import celery_app, get_engine
 from ..config import Settings
 from ..helpers.notification_helper import NotificationHelper
+from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
+from openg2p_g2p_bridge_notification_connectors.models import Recipient
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -31,7 +35,7 @@ _logger = logging.getLogger("warehouse_notification_worker")
 
 
 @celery_app.task(name="warehouse_notification_worker")
-def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
+def warehouse_notification_worker(disbursement_batch_control_geo_id: str) -> None:
     session_maker = sessionmaker(
         bind=_engine.get("db_engine_bridge"), expire_on_commit=False
     )
@@ -44,7 +48,7 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                     session.execute(
                         select(DisbursementBatchControlGeo).where(
                             DisbursementBatchControlGeo.id
-                            == disbursement_control_geo_id
+                            == disbursement_batch_control_geo_id
                         )
                     )
                 )
@@ -53,7 +57,7 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
             )
             if not disbursement_batch_control_geo:
                 _logger.error(
-                    f"No batch control geo found for id {disbursement_control_geo_id}"
+                    f"No batch control geo found for id {disbursement_batch_control_geo_id}"
                 )
                 return
 
@@ -140,50 +144,71 @@ def warehouse_notification_worker(disbursement_control_geo_id: str) -> None:
                 notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
                 recipient=disbursement_batch_control_geo.warehouse_mnemonic,
                 payload=str(notification_payload.model_dump()),
-                status=NotificationStatus.PENDING.value,
                 sent_at=datetime.datetime.now(),
             )
             session.add(notification_log)
             session.commit()
-            # Build NotificationRequest object
-            notification_request = NotificationRequest(
-                notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
-                recipient=disbursement_batch_control_geo.warehouse_mnemonic,
-                recipient_type="WAREHOUSE",
-                notification_payload=notification_payload,
-                disbursement_control_geo_id=disbursement_batch_control_geo.disbursement_control_geo_id,
-                notification_request_id=notification_id,
-            )
-            # Send to notification microservice
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            helper = NotificationHelper()
-            try:
-                response = loop.run_until_complete(
-                    helper.send_notification(
-                        NOTIFICATION_SERVICE_URL,
-                        notification_request=notification_request,
+
+            disbursement_batch_control_geo_attributes = (
+                session.execute(
+                    select(DisbursementBatchControlGeoAttributes).where(
+                        DisbursementBatchControlGeoAttributes.id
+                        == disbursement_batch_control_geo.id
                     )
                 )
-                notification_log.status = NotificationStatus.PROCESSED.value
-                notification_log.response = str(response.text)
+                .scalars()
+                .first()
+            )
+            if not disbursement_batch_control_geo_attributes:
+                _logger.error(
+                    f"No DisbursementBatchControlGeoAttributes found for id {disbursement_batch_control_geo.id}"
+                )
+                return
+                
+
+            # Send notification 
+            notifier = NotificationFactory.get_notifier()
+            recipient = Recipient(
+                recipient_id=disbursement_batch_control_geo_attributes.warehouse_id,
+                recipient_name=disbursement_batch_control_geo_attributes.warehouse_admin_name,
+                recipient_email=disbursement_batch_control_geo_attributes.warehouse_admin_email,
+                recipient_phone=disbursement_batch_control_geo_attributes.warehouse_admin_phone
+            )
+            try:
+                notification_response: NotificationResponse = notifier.send_notification(
+                    notification_id=notification_id,
+                    payload=notification_payload.model_dump(),
+                    notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
+                    recipient=recipient
+                )
+                if notification_response.status == NotificationResponseStatus.FAILURE:
+                    raise Exception(notification_response.error_message or "Notification failed")
+                
+                notification_log.status = notification_response.status.value
+                notification_log.response = notification_response.response if notification_response else "SENT"
                 notification_log.processed_at = datetime.datetime.now()
                 disbursement_batch_control_geo.warehouse_notification_status = (
                     ProcessStatus.PROCESSED.value
                 )
             except Exception as e:
-                notification_log.status = NotificationStatus.ERROR.value
+                notification_log.status = "ERROR"
                 notification_log.error_message = str(e)
                 notification_log.processed_at = datetime.datetime.now()
-                disbursement_batch_control_geo.warehouse_notification_status = (
-                    ProcessStatus.ERROR.value
-                )
                 _logger.error(f"Warehouse notification failed: {e}")
+                raise e
             session.commit()
+
         except Exception as e:
-            _logger.error(f"Warehouse notification failed (outer): {e}")
+            session.rollback()
+            _logger.error(f"Warehouse notification failed: {e}")
             if disbursement_batch_control_geo:
+                disbursement_batch_control_geo.warehouse_notification_attempts += 1
+                disbursement_batch_control_geo.warehouse_notification_latest_error_code = str(e)
+                disbursement_batch_control_geo.warehouse_notification_status = (
+                    ProcessStatus.PENDING.value
+                )
+            if disbursement_batch_control_geo.warehouse_notification_attempts > _config.warehouse_notification_max_attempts:
                 disbursement_batch_control_geo.warehouse_notification_status = (
                     ProcessStatus.ERROR.value
                 )
-                session.commit()
+            session.commit()
