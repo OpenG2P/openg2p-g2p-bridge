@@ -1,8 +1,10 @@
-from ..implementations import GeoResolverImpl
+from ..implementations import FarmerGeoResolverImpl
 from ..interface import GeoResolver
 
 
 class GeoResolutionFactory:
     @staticmethod
-    def get_geo_resolver() -> GeoResolver:
-        return GeoResolverImpl()
+    def get_geo_resolver(target_registry: str) -> GeoResolver:
+        if target_registry.lower() == "farmer":
+            return FarmerGeoResolverImpl()
+        return None

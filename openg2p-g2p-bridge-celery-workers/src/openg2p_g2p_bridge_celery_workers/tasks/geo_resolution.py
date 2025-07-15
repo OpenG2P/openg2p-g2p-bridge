@@ -1,12 +1,13 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from openg2p_g2p_bridge_geo_resolver.factory import GeoResolutionFactory
 from openg2p_g2p_bridge_geo_resolver.interface import GeoResolver
 from openg2p_g2p_bridge_geo_resolver.models import G2PRegistryType
 from openg2p_g2p_bridge_models.models import (
+    BenefitType,
     Disbursement,
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
@@ -51,7 +52,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 _logger.error(
                     f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
                 )
-                raise Exception(f"No DisbursementBatchControl found for id {disbursement_batch_control_id}")
+                raise ValueError(f"No DisbursementBatchControl found for id {disbursement_batch_control_id}")
 
             disbursement_envelope = session.execute(
                 select(DisbursementEnvelope).where(
@@ -64,7 +65,9 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 _logger.error(
                     f"Disbursement envelope ID is missing for batch {disbursement_batch_control_id}"
                 )
-                return
+                raise ValueError(
+                    f"Disbursement envelope ID is missing for batch {disbursement_batch_control_id}"
+                )
 
             disbursements: List[Disbursement] = (
                 session.execute(
@@ -81,14 +84,9 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 _logger.warning(
                     f"No disbursements found for batch {disbursement_batch_control_id}"
                 )
-                disbursement_batch_control.geo_resolution_status = (
-                    ProcessStatus.PROCESSED.value
+                raise ValueError(
+                    f"No disbursements found for batch {disbursement_batch_control_id}"
                 )
-                disbursement_batch_control.warehouse_allocation_status = (
-                    ProcessStatus.PENDING.value
-                )
-                session.commit()
-                return
 
             batch_beneficiary_list = [
                 {
@@ -98,14 +96,12 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 for d in disbursements
             ]
 
-            geo_resolver: GeoResolver = GeoResolutionFactory.get_geo_resolver()
+            geo_resolver: GeoResolver = GeoResolutionFactory.get_component().get_geo_resolver(disbursement_envelope.target_registry)
 
-            target_registry = disbursement_envelope.target_registry
-            resolved_data = []
-            if target_registry.lower() == G2PRegistryType.FARMER.value:
-                resolved_data = geo_resolver.resolve_geo(
-                    farmer_registry_session, batch_beneficiary_list
-                )
+            resolved_data: List[Dict[str, str]]
+            resolved_data = geo_resolver.resolve_geo(
+                batch_beneficiary_list
+            )
 
             if not resolved_data:
                 _logger.error(
@@ -228,9 +224,18 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             # Update the DisbursementBatchControl status
 
             disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSED.value
-            disbursement_batch_control.warehouse_allocation_status = (
-                ProcessStatus.PENDING.value
-            )
+
+            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+                disbursement_batch_control.agency_allocation_status = (
+                    ProcessStatus.PENDING.value
+                )
+            else:
+                # For non-cash physical benefits, set warehouse allocation status to PENDING and 
+                # Warehouse allocation will make Agency allocation as PENDING
+                # This worker is not applicable to DIGITAL CASH
+                disbursement_batch_control.warehouse_allocation_status = (
+                    ProcessStatus.PENDING.value
+                )
             disbursement_batch_control.geo_resolution_timestamp = datetime.now()
             disbursement_batch_control.geo_resolution_latest_error_code = None
             disbursement_batch_control.geo_resolution_attempts = (
@@ -243,40 +248,37 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             )
 
         except Exception as e:
-            if "session" in locals() and session.is_active:
-                session.rollback()
+            session.rollback()
             _logger.error(
                 f"Error in geo resolution for batch {disbursement_batch_control_id}: {e}",
                 exc_info=True,
             )
-            with session_maker() as error_session:
-                # Use a new session for update to avoid issues with the failed session
-                disbursement_batch_control_to_update = (
-                    error_session.query(DisbursementBatchControl)
-                    .filter_by(
-                        id=disbursement_batch_control_id
-                    )
-                    .first()
+            disbursement_batch_control = (
+                session.query(DisbursementBatchControl)
+                .filter_by(
+                    id=disbursement_batch_control_id
                 )
-                if disbursement_batch_control_to_update:
-                    disbursement_batch_control_to_update.geo_resolution_status = (
-                        ProcessStatus.PENDING.value
+                .first()
+            )
+            if disbursement_batch_control:
+                disbursement_batch_control.geo_resolution_status = (
+                    ProcessStatus.PENDING.value
+                )
+                disbursement_batch_control.geo_resolution_latest_error_code = str(
+                    e
+                )
+                disbursement_batch_control.geo_resolution_attempts = (
+                    disbursement_batch_control.geo_resolution_attempts
+                    or 0
+                ) + 1
+                if (
+                    disbursement_batch_control.geo_resolution_attempts
+                    >= _config.geo_resolution_max_attempts
+                ):
+                    disbursement_batch_control.geo_resolution_status = (
+                        ProcessStatus.ERROR.value
                     )
-                    disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(
+                    disbursement_batch_control.geo_resolution_latest_error_code = str(
                         e
                     )
-                    disbursement_batch_control_to_update.geo_resolution_attempts = (
-                        disbursement_batch_control_to_update.geo_resolution_attempts
-                        or 0
-                    ) + 1
-                    if (
-                        disbursement_batch_control_to_update.geo_resolution_attempts
-                        >= _config.geo_resolution_max_attempts
-                    ):
-                        disbursement_batch_control_to_update.geo_resolution_status = (
-                            ProcessStatus.ERROR.value
-                        )
-                        disbursement_batch_control_to_update.geo_resolution_latest_error_code = str(
-                            e
-                        )
-                    error_session.commit()
+                session.commit()

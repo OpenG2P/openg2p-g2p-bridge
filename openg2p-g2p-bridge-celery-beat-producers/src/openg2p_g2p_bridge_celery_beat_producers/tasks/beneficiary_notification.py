@@ -24,6 +24,7 @@ def beneficiary_notification_beat_producer():
                 DisbursementResolutionGeoAddress.beneficiary_notification_status
                 == ProcessStatus.PENDING.value
             )
+            .limit(_config.no_of_tasks_to_process)
         )
         disbursement_resolution_geo_addresses = result.scalars().all()
         for (
@@ -32,6 +33,9 @@ def beneficiary_notification_beat_producer():
             _logger.info(
                 f"Sending beneficiary_notification_worker task for disbursement_id: {disbursement_resolution_geo_address.disbursement_id}"
             )
+            disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.IN_PROGRESS.value
+            session.add(disbursement_resolution_geo_address)
+            session.commit()
             celery_app.send_task(
                 "beneficiary_notification_worker",
                 args=[disbursement_resolution_geo_address.disbursement_id],

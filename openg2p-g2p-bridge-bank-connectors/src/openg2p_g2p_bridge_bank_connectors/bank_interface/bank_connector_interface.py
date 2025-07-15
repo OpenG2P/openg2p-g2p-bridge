@@ -24,6 +24,8 @@ class BlockFundsResponse(BaseModel):
 class DisbursementPaymentPayload(BaseModel):
     disbursement_id: str
     remitting_account: str
+    remitting_account_type: Optional[str] = None
+    remitting_account_branch_code: Optional[str] = None
     remitting_account_currency: str
     payment_amount: float
     funds_blocked_reference_number: str

@@ -86,7 +86,7 @@ class EnvelopeControl(BaseORMModelWithId):
     )
 
 
-class EnvelopeBatchStatusForDigitalCash(BaseORMModelWithId):
+class EnvelopeBatchStatusForCash(BaseORMModelWithId):
     __tablename__ = "envelope_batch_status_for_digital_cash"
     disbursement_envelope_id: Mapped[str] = mapped_column(String, unique=True)
     funds_available_with_bank: Mapped[FundsAvailableWithBankEnum] = mapped_column(

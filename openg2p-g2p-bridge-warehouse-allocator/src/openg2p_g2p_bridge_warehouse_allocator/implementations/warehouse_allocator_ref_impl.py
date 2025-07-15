@@ -15,13 +15,12 @@ session_maker = sessionmaker(
     bind=_engine.get("db_engine_pbms"), expire_on_commit=False
 )
 
-
 class WarehouseAllocatorRefImpl(WarehouseAllocator):
     def allocate_warehouse(
         self,
         large_geo_list: List[Dict],
-        benefit_code: Dict,
-        program: Dict,
+        benefit_code_id: str,
+        program_id: str,
     ) -> List[Dict]:
         results = []
         with session_maker() as pbms_session:
@@ -45,13 +44,11 @@ class WarehouseAllocatorRefImpl(WarehouseAllocator):
                             "administrative_zone_mnemonic_large": geo[
                                 "administrative_zone_mnemonic_large"
                             ],
-                            "benefit_code_id": benefit_code.get("id"),
-                            "benefit_code_mnemonic": benefit_code.get("mnemonic"),
-                            "program_id": program.get("id"),
-                            "program_mnemonic": program.get("mnemonic"),
+                            "benefit_code_id": benefit_code_id,
+                            "program_id": program_id,
                             "warehouse_id": g2p_warehouse.id,
                             "warehouse_mnemonic": g2p_warehouse.mnemonic,
-                            "warehouse_additional_attributes": None,
+                            "warehouse_additional_attributes": g2p_warehouse.warehouse_additional_attributes,
                             "warehouse_admin_name": g2p_warehouse.admin_name,
                             "warehouse_admin_email": g2p_warehouse.admin_email,
                             "warehouse_admin_phone": g2p_warehouse.contact_phone,

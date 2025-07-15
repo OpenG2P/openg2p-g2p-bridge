@@ -1,1 +1,1 @@
-from .geo_resolver_impl import GeoResolverImpl
+from .farmer_resolver_impl import FarmerGeoResolverImpl

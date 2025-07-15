@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     agency_allocation_max_attempts: int = 3
     warehouse_allocation_max_attempts: int = 3
     geo_resolution_max_attempts: int = 3
+    mapper_resolution_max_attempts: int = 3
+    check_funds_with_bank_max_attempts: int = 3
+    block_funds_with_bank_max_attempts: int = 3
 
     agency_notification_max_attempts: int = 3
     warehouse_notification_max_attempts: int = 3

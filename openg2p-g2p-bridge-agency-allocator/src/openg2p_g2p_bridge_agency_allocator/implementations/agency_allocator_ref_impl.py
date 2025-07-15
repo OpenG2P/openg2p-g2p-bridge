@@ -23,8 +23,8 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
     def allocate_agency(
         self,
         small_geo_list: List[Dict],
-        benefit_code: Dict,
-        program: Dict,
+        benefit_code_id: str,
+        program_id: str,
     ) -> List[Dict]:
 
         results = []
@@ -50,13 +50,11 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                             "administrative_zone_mnemonic_small": geo[
                                 "administrative_zone_mnemonic_small"
                             ],
-                            "benefit_code_id": benefit_code.get("id"),
-                            "benefit_code_mnemonic": benefit_code.get("mnemonic"),
-                            "program_id": program.get("id"),
-                            "program_mnemonic": program.get("mnemonic"),
+                            "benefit_code_id": benefit_code_id,
+                            "program_id": program_id,
                             "agency_id": g2p_agency.id,
                             "agency_mnemonic": g2p_agency.mnemonic,
-                            "agency_additional_attributes": None,
+                            "agency_additional_attributes": g2p_agencies.agency_additional_attributes,
                             "agency_admin_name": g2p_agency.admin_name,
                             "agency_admin_email": g2p_agency.admin_email,
                             "agency_admin_phone": g2p_agency.admin_phone,

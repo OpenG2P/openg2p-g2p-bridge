@@ -12,6 +12,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementStatusRequest,
     DisbursementStatusResponse,
     DisbursementBatchControlRequest,
+    DisbursementBatchControlPayload,
     DisbursementBatchControlResponse,
 )
 from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
@@ -88,7 +89,7 @@ class DisbursementStatusController(BaseController):
             RequestValidation.get_component().validate_request(
                 disbursement_batch_control_request
             )
-            disbursement_batch_control_payloads = await self.disbursement_service.get_disbursement_batch_control_payloads(
+            disbursement_batch_control_payloads: List[DisbursementBatchControlPayload] = await self.disbursement_service.get_disbursement_batch_control_payloads(
                 disbursement_batch_control_request
             )
             disbursement_batch_control_response = DisbursementBatchControlResponse(

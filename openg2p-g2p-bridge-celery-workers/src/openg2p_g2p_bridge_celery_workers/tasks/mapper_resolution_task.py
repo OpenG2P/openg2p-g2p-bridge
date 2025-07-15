@@ -10,7 +10,7 @@ from openg2p_g2p_bridge_models.models import (
 )
 from openg2p_g2pconnect_mapper_lib.client import MapperResolveClient
 from openg2p_g2pconnect_mapper_lib.schemas import ResolveRequest
-from sqlalchemy import select
+from sqlalchemy import select, exists
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app, get_engine
@@ -31,72 +31,104 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
     )
 
     with session_maker() as session:
-        batch_control = (
-            session.execute(
-                select(DisbursementBatchControl).filter(
-                    DisbursementBatchControl.disbursement_batch_control_id
-                    == disbursement_batch_control_id
-                )
-            )
-            .scalars()
-            .first()
-        )
-        if not batch_control:
-            _logger.error(
-                f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
-            )
-            return
-
-        disbursements = (
-            session.execute(
-                select(Disbursement).filter(
-                    Disbursement.disbursement_batch_control_id
-                    == disbursement_batch_control_id
-                )
-            )
-            .scalars()
-            .all()
-        )
-        _logger.info(
-            f"Found {len(disbursements)} disbursements for batch control {disbursement_batch_control_id}"
-        )
-
-        beneficiary_disbursement_map = {
-            d.beneficiary_id: d.disbursement_id for d in disbursements
-        }
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         try:
-            resolve_response, error_msg = loop.run_until_complete(
-                make_resolve_request(disbursements)
+            disbursement_batch_control = (
+                session.execute(
+                    select(DisbursementBatchControl).filter(
+                        DisbursementBatchControl.disbursement_batch_control_id
+                        == disbursement_batch_control_id
+                    )
+                )
+                .scalars()
+                .first()
             )
-        finally:
-            loop.close()
+            if not disbursement_batch_control:
+                _logger.error(
+                    f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
+                )
+                raise ValueError(
+                    f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
+                )
 
-        if not resolve_response:
-            _logger.error(
-                f"Failed to resolve the request for batch {disbursement_batch_control_id}: {error_msg}"
+            dfa_exists = (
+                select(1)
+                .where(DisbursementResolutionFinancialAddress.disbursement_id == Disbursement.disbursement_id)
             )
-            session.query(DisbursementBatchControl).filter(
-                DisbursementBatchControl.disbursement_batch_control_id
-                == disbursement_batch_control_id
-            ).update(
-                {
-                    DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING.value,
-                    DisbursementBatchControl.fa_resolution_latest_error_code: error_msg,
-                    DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
-                    + 1,
-                }
+
+            disbursements = (
+                session.execute(
+                    select(Disbursement)
+                    .filter(
+                        Disbursement.disbursement_batch_control_id == disbursement_batch_control_id,
+                        ~exists(dfa_exists)
+                    )
+                )
+                .scalars()
+                .all()
             )
+            _logger.info(
+                f"Found {len(disbursements)} disbursements for batch control {disbursement_batch_control_id}"
+            )
+
+            beneficiary_disbursement_map = {
+                d.beneficiary_id: d.disbursement_id for d in disbursements
+            }
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                resolve_response, error_msg = loop.run_until_complete(
+                    make_resolve_request(disbursements)
+                )
+            finally:
+                loop.close()
+
+            if not resolve_response:
+                _logger.error(
+                    f"Failed to resolve the request for batch {disbursement_batch_control_id}: {error_msg}"
+                )
+                raise ValueError(
+                    f"Failed to resolve the request for batch {disbursement_batch_control_id}: {error_msg}"
+                )
+
+            process_and_store_resolution(
+                disbursement_batch_control_id,
+                resolve_response,
+                beneficiary_disbursement_map,
+                session,
+            )
+
+
+        
+        except Exception as e:
+            disbursement_batch_control = (
+                session.execute(
+                    select(DisbursementBatchControl).filter(
+                        DisbursementBatchControl.disbursement_batch_control_id
+                        == disbursement_batch_control_id
+                    )
+                )
+                .scalars()
+                .first()
+            )
+            disbursement_batch_control.fa_resolution_status = (
+                ProcessStatus.PENDING.value
+            )
+            disbursement_batch_control.fa_resolution_latest_error_code = (
+                str(e)
+            )
+            disbursement_batch_control.fa_resolution_timestamp = (
+                datetime.now()
+            )
+            disbursement_batch_control.fa_resolution_attempts += 1
+            if (
+                disbursement_batch_control.fa_resolution_attempts
+                >= _config.mapper_resolution_max_attempts
+            ):
+                disbursement_batch_control.fa_resolution_status = (
+                    ProcessStatus.ERROR.value
+                )
+            session.add(disbursement_batch_control)
             session.commit()
-            return
-
-        process_and_store_resolution(
-            disbursement_batch_control_id,
-            resolve_response,
-            beneficiary_disbursement_map,
-            session,
-        )
 
 
 async def make_resolve_request(disbursements):
@@ -135,7 +167,7 @@ def process_and_store_resolution(
 ):
     _logger.info("Processing and storing resolution")
     resolve_helper = ResolveHelper.get_component()
-    details_list = []
+    disbursement_resolution_financial_address_list = []
     batch_has_error = False
     for single_response in resolve_response.message.resolve_response:
         _logger.info(f"Processing the response for beneficiary: {single_response.id}")
@@ -155,14 +187,14 @@ def process_and_store_resolution(
                     **deconstructed_fa,
                 )
             )
-            details_list.append(disbursement_resolution_financial_address)
+            disbursement_resolution_financial_address_list.append(disbursement_resolution_financial_address)
         else:
             _logger.error(
                 f"Failed to resolve the request for beneficiary: {single_response.id}"
             )
             batch_has_error = True
 
-    session.add_all(details_list)
+    session.add_all(disbursement_resolution_financial_address_list)
     if not batch_has_error:
         _logger.info("Batch has no error")
         session.query(DisbursementBatchControl).filter(
@@ -171,6 +203,7 @@ def process_and_store_resolution(
         ).update(
             {
                 DisbursementBatchControl.fa_resolution_status: ProcessStatus.PROCESSED.value,
+                DisbursementBatchControl.sponsor_bank_dispatch_status: ProcessStatus.PENDING.value,
                 DisbursementBatchControl.fa_resolution_timestamp: datetime.now(),
                 DisbursementBatchControl.fa_resolution_latest_error_code: None,
                 DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
@@ -179,16 +212,8 @@ def process_and_store_resolution(
         )
     else:
         _logger.info("Batch has error")
-        session.query(DisbursementBatchControl).filter(
-            DisbursementBatchControl.disbursement_batch_control_id
-            == disbursement_batch_control_id
-        ).update(
-            {
-                DisbursementBatchControl.fa_resolution_status: ProcessStatus.PENDING.value,
-                DisbursementBatchControl.fa_resolution_latest_error_code: "Failed to resolve the request for a beneficiary id",
-                DisbursementBatchControl.fa_resolution_attempts: DisbursementBatchControl.fa_resolution_attempts
-                + 1,
-            }
+        raise ValueError(
+            f"Batch {disbursement_batch_control_id} has errors in mapper resolution"
         )
     _logger.info("Stored the resolution")
     session.flush()

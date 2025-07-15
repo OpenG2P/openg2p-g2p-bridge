@@ -16,14 +16,13 @@ from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     AccountStatementLob,
-    BenefitProgramConfiguration,
     BenefitType,
     Disbursement,
     DisbursementBatchControl,
     DisbursementEnvelope,
     DisbursementFrequency,
     DisbursementRecon,
-    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeBatchStatusForCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
     ProcessStatus,
@@ -83,7 +82,7 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForCash(
             disbursement_envelope_id="test_envelope_id",
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
@@ -124,7 +123,7 @@ class MockSession:
             return self.benefit_program_configuration
         elif self.query_args[0] is Disbursement:
             return self.disbursement
-        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
+        elif self.query_args[0] is EnvelopeBatchStatusForCash:
             return self.disbursement_envelope_batch_status
         elif self.query_args[0] is DisbursementRecon:
             return self.disbursement_recon

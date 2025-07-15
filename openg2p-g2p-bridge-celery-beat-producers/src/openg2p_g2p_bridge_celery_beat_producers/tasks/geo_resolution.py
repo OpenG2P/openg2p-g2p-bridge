@@ -37,13 +37,13 @@ def geo_resolution_beat_producer():
             )
 
             disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSING.value
-
+            session.commit()
             celery_app.send_task(
                 "geo_resolution_worker",
                 args=(disbursement_batch_control.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            session.commit()
+            
 
         _logger.info(
             "Completed checking for disbursement batches to perform geo resolution"

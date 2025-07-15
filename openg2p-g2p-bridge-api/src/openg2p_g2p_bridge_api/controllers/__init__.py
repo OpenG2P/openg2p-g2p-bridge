@@ -1,5 +1,4 @@
 from .account_statement import AccountStatementController
-from .benefit_program_configuration import BenefitProgramConfigurationController
 from .disbursement import DisbursementController
 from .disbursement_envelope import DisbursementEnvelopeController
 from .disbursement_envelope_status import DisbursementEnvelopeStatusController

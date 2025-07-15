@@ -11,14 +11,13 @@ from openg2p_g2p_bridge_celery_workers.tasks.disburse_funds_from_bank import (
     disburse_funds_from_bank_worker,
 )
 from openg2p_g2p_bridge_models.models import (
-    BenefitProgramConfiguration,
     BenefitType,
     Disbursement,
     DisbursementBatchControl,
     DisbursementEnvelope,
     DisbursementFrequency,
     DisbursementResolutionFinancialAddress,
-    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeBatchStatusForCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
     ProcessStatus,
@@ -43,14 +42,14 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForCash(
             disbursement_envelope_id="test_envelope_id",
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
             funds_blocked_reference_number="test_block_ref",
             number_of_disbursements_shipped=0,
         )
-        self.bank_disbursement_batch_status = EnvelopeBatchStatusForDigitalCash(
+        self.bank_disbursement_batch_status = EnvelopeBatchStatusForCash(
             disbursement_envelope_id="test_envelope_id",
             funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
@@ -114,7 +113,7 @@ class MockSession:
     def first(self):
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
-        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
+        elif self.query_args[0] is EnvelopeBatchStatusForCash:
             if (
                 hasattr(self.filter_args[0], "right")
                 and self.filter_args[0].right.value == "test_batch_id"

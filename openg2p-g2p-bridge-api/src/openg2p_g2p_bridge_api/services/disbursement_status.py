@@ -138,17 +138,17 @@ class DisbursementStatusService(BaseService):
 
         return disbursement_recon_records
 
-    async def get_disbursement_batch_status_payloads(
-        self, disbursement_batch_status_request: DisbursementBatchControlRequest
+    async def get_disbursement_batch_control_payloads(
+        self, disbursement_batch_control_request: DisbursementBatchControlRequest
     ) -> DisbursementBatchControlPayload:
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
-            disbursement_batch_status_payloads = []
+            disbursement_batch_control_payloads = []
             disbursement_batch_control = (
                 (
                     await session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id == DisbursementBatchControlRequest.disbursement_batch_control_id
+                            DisbursementBatchControl.id == disbursement_batch_control_request.disbursement_batch_control_id
                         )
                     )
                 )
@@ -195,7 +195,7 @@ class DisbursementStatusService(BaseService):
                 )
                 for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
-            disbursement_batch_status_payloads.append(
+            disbursement_batch_control_payloads.append(
                 DisbursementBatchControlPayload(
                     disbursement_batch_control_id=disbursement_batch_control.id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
@@ -223,7 +223,7 @@ class DisbursementStatusService(BaseService):
                     disbursement_batch_control_geos=disbursement_batch_control_geo_payloads,
                 )
             )
-        return disbursement_batch_status_payloads
+        return disbursement_batch_control_payloads
 
     async def construct_disbursement_status_error_response(
         self,

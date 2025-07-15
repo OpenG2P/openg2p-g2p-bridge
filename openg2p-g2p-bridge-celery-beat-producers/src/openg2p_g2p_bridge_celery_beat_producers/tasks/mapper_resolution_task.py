@@ -42,9 +42,8 @@ def mapper_resolution_beat_producer():
         disbursement_batch_controls = session.scalars(
             select(DisbursementBatchControl).where(
                 DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING.value,
-                DisbursementBatchControl.fa_resolution_attempts
-                < _config.mapper_resolution_max_attempts,
             )
+            .limit(_config.no_of_tasks_to_process)
         ).all()
 
         if not disbursement_batch_controls:

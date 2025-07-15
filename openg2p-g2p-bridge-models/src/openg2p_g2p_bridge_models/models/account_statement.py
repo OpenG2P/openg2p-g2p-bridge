@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from ..errors.codes import G2PBridgeErrorCodes
 from .common_enums import ProcessStatus
+from .disbursement_envelope import BenefitType
 
 
 class AccountStatement(BaseORMModelWithId):
@@ -42,6 +43,9 @@ class DisbursementRecon(BaseORMModelWithId):
     __tablename__ = "disbursement_recons"
     disbursement_batch_control_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_id: Mapped[str] = mapped_column(String, index=True, unique=True)
+    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
+        String, nullable=True, index=True
+    )
     disbursement_envelope_id: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_name_from_bank: Mapped[str] = mapped_column(String, nullable=True)
 
@@ -78,4 +82,7 @@ class DisbursementErrorRecon(BaseORMModelWithId):
         String, nullable=True
     )
     disbursement_id: Mapped[str] = mapped_column(String, index=True)
+    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
+        String, nullable=True, index=True
+    )
     bank_reference_number: Mapped[str] = mapped_column(String, nullable=True)

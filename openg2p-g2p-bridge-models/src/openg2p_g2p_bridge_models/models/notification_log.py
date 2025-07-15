@@ -11,7 +11,6 @@ class NotificationLog(BaseORMModelWithId):
     notification_type: Mapped[str] = mapped_column(String, index=True)
     recipient: Mapped[str] = mapped_column(String, index=True)
     payload: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String, default="PENDING")
     response: Mapped[str] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
     sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

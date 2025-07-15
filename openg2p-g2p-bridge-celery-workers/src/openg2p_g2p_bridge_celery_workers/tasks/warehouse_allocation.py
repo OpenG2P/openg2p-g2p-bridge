@@ -90,20 +90,14 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 }
                 for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
-            benefit_code = {
-                "id": disbursement_envelope.benefit_code_id,
-                "mnemonic": disbursement_envelope.benefit_code_mnemonic,
-            }
-            program = {
-                "id": disbursement_envelope.benefit_program_id,
-                "mnemonic": disbursement_envelope.benefit_program_mnemonic,
-            }
+            benefit_code_id = disbursement_envelope.benefit_code_id
+            program_id = disbursement_envelope.benefit_program_id
 
-            warehouse_allocator = WarehouseAllocatorFactory.get_warehouse_allocator()
+            warehouse_allocator = WarehouseAllocatorFactory.get_component().get_warehouse_allocator()
             allocation_results: List[
                 Dict[str, Any]
             ] = warehouse_allocator.allocate_warehouse(
-                large_geo_list, benefit_code, program
+                large_geo_list, benefit_code_id, program_id
             )
 
             for disbursement_batch_control_geo, allocation in zip(
@@ -157,7 +151,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                             "warehouse_admin_email", None
                         ),
                         warehouse_admin_phone=allocation.get(
-                        "warehouse_admin_phone", None
+                            "warehouse_admin_phone", None
                         )
                     )
                 )

@@ -3,15 +3,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from openg2p_g2p_bridge_bank_connectors.bank_interface import CheckFundsResponse
-from openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank_task import (
+from openg2p_g2p_bridge_celery_workers.tasks import (
     check_funds_with_bank_worker,
 )
 from openg2p_g2p_bridge_models.models import (
-    BenefitProgramConfiguration,
     BenefitType,
     DisbursementEnvelope,
     DisbursementFrequency,
-    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeBatchStatusForCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
 )
@@ -34,7 +33,7 @@ class MockSession:
             measurement_unit="KES",
             disbursement_schedule_date=date.today(),
         )
-        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForDigitalCash(
+        self.disbursement_envelope_batch_status = EnvelopeBatchStatusForCash(
             disbursement_envelope_id="test_envelope_id",
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
@@ -65,7 +64,7 @@ class MockSession:
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
 
-        elif self.query_args[0] is EnvelopeBatchStatusForDigitalCash:
+        elif self.query_args[0] is EnvelopeBatchStatusForCash:
             return self.disbursement_envelope_batch_status
 
         elif self.query_args[0] is BenefitProgramConfiguration:

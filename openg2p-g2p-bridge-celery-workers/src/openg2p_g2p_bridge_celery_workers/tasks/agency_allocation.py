@@ -6,6 +6,7 @@ from openg2p_g2p_bridge_agency_allocator.factory.agency_allocator_factory import
     AgencyAllocatorFactory,
 )
 from openg2p_g2p_bridge_models.models import (
+    BenefitType,
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
     DisbursementEnvelope,
@@ -92,18 +93,12 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 }
                 for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
-            benefit_code = {
-                "id": disbursement_envelope.benefit_code_id,
-                "mnemonic": disbursement_envelope.benefit_code_mnemonic,
-            }
-            program = {
-                "id": disbursement_envelope.benefit_program_mnemonic,
-                "mnemonic": disbursement_envelope.benefit_program_mnemonic,
-            }
+            benefit_code_id = disbursement_envelope.benefit_code_id
+            program_id = disbursement_envelope.benefit_program_id
 
-            agency_allocator = AgencyAllocatorFactory.get_agency_allocator()
+            agency_allocator = AgencyAllocatorFactory.get_component().get_agency_allocator()
             allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency(
-                small_geo_list, benefit_code, program
+                small_geo_list, benefit_code_id, program_id
             )
 
             for disbursement_batch_control_geo, allocation in zip(
@@ -160,7 +155,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                             "agency_admin_email", None
                         ),
                         agency_admin_phone=allocation.get(
-                        "agency_admin_phone", None
+                            "agency_admin_phone", None
                         )
                     )
                 )
@@ -169,6 +164,12 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_batch_control.agency_allocation_status = (
                 ProcessStatus.PROCESSED.value
             )
+
+            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+                disbursement_batch_control.sponsor_bank_dispatch_status = (
+                    ProcessStatus.PENDING.value
+                )
+
             disbursement_batch_control.agency_allocation_attempts += 1
             disbursement_batch_control.agency_allocation_latest_error_code = None
             disbursement_batch_control.agency_allocation_timestamp = datetime.now()

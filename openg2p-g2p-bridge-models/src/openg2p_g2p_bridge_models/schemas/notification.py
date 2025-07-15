@@ -65,6 +65,9 @@ class AgencyNotificationPayload(NotificationPayload):
 
 
 class BeneficiaryNotificationPayload(NotificationPayload):
+    beneficiary_id: Optional[str] = None
+    beneficiary_name: Optional[str] = None
+    total_quantity: Optional[float] = None
     program_mnemonic: Optional[str] = None
     program_description: Optional[str] = None
     target_registry: Optional[str] = None
@@ -85,7 +88,6 @@ class BeneficiaryNotificationPayload(NotificationPayload):
     administrative_zone_mnemonic_large: Optional[str] = None
     administrative_zone_id_small: Optional[str] = None
     administrative_zone_mnemonic_small: Optional[str] = None
-    beneficiary_entitlement: Optional[BeneficiaryEntitlement] = None
 
 class NotificationRequest(BaseModel):
     notification_type: str

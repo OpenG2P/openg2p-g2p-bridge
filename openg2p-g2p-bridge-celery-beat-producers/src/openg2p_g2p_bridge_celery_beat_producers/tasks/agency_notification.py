@@ -24,6 +24,7 @@ def agency_notification_beat_producer():
                 DisbursementBatchControlGeo.agency_notification_status
                 == ProcessStatus.PENDING.value
             )
+            .limit(_config.no_of_tasks_to_process)
         )
         disbursement_batch_control_geos = result.scalars().all()
         for disbursement_batch_control_geo in disbursement_batch_control_geos:
@@ -33,10 +34,11 @@ def agency_notification_beat_producer():
             disbursement_batch_control_geo.agency_notification_status = (
                 ProcessStatus.PROCESSING.value
             )
+            session.commit()
             celery_app.send_task(
                 "agency_notification_worker",
                 args=[disbursement_batch_control_geo.id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            session.commit()
+            
         _logger.info("Finished agency_notification_beat_producer")

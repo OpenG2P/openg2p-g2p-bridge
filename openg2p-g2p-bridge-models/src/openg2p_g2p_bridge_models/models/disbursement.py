@@ -29,7 +29,7 @@ class Disbursement(BaseORMModelWithId):
     disbursement_quantity: Mapped[float] = mapped_column(Float)
     narrative: Mapped[str] = mapped_column(String)
     receipt_time_stamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=datetime.now
     )
     cancellation_status: Mapped[DisbursementCancellationStatus] = mapped_column(
         String,

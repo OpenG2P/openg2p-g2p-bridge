@@ -151,7 +151,6 @@ class DisbursementService(BaseService):
         _logger.info("Constructing Disbursements")
         disbursements: List[Disbursement] = []
         for disbursement_payload in disbursement_payloads:
-            # generated_id: str = generate(size=16)
             disbursement = Disbursement(
                 id=disbursement_payload.disbursement_id,
                 disbursement_envelope_id=str(
@@ -181,6 +180,14 @@ class DisbursementService(BaseService):
             geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE.value
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE.value
             agency_allocation_status = ProcessStatus.NOT_APPLICABLE.value
+
+        elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+            fa_resolution_status = ProcessStatus.NOT_APPLICABLE.value
+            sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value
+            geo_resolutuon_status = ProcessStatus.PENDING.value
+            warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE.value
+            agency_allocation_status = ProcessStatus.NOT_APPLICABLE.value
+
         else:
             fa_resolution_status = ProcessStatus.NOT_APPLICABLE.value
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value

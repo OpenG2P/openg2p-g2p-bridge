@@ -24,6 +24,7 @@ def agency_allocation_beat_producer():
                 DisbursementBatchControl.agency_allocation_status
                 == ProcessStatus.PENDING.value,
             )
+            .limit(_config.no_of_tasks_to_process)
         )
         disbursement_batch_controls = result.scalars().all()
         for disbursement_batch_control in disbursement_batch_controls:
@@ -36,10 +37,11 @@ def agency_allocation_beat_producer():
             disbursement_batch_control.agency_allocation_status = (
                 ProcessStatus.PROCESSING.value
             )
+            session.commit()
             celery_app.send_task(
                 "agency_allocation_worker",
                 args=[disbursement_batch_control.id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            session.commit()
+            
         _logger.info("Finished agency_allocation_beat_producer")
