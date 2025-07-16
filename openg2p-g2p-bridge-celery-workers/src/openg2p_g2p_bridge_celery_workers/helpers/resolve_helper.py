@@ -92,9 +92,7 @@ class ResolveHelper(BaseService):
         if regex_res:
             regex_res = regex_res.groupdict()
             try:
-                deconstructed_list = [
-                    KeyValuePair(key=k, value=v) for k, v in regex_res.items()
-                ]
+                deconstructed_list = [KeyValuePair(key=k, value=v) for k, v in regex_res.items()]
             except Exception as e:
                 _logger.error(f"Error while deconstructing ID/FA: {e}")
                 raise ValueError("Error while deconstructing ID/FA") from e
@@ -106,9 +104,7 @@ class ResolveHelper(BaseService):
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
-            deconstructed_fa = {
-                pair.key.value: pair.value for pair in deconstructed_pairs
-            }
+            deconstructed_fa = {pair.key.value: pair.value for pair in deconstructed_pairs}
             return deconstructed_fa
         return {}
 
@@ -177,14 +173,10 @@ class ResolveHelper(BaseService):
             "grant_type": "client_credentials",
         }
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url, data=payload, timeout=_config.keymanager_api_timeout
-            )
+            response = await client.post(url, data=payload, timeout=_config.keymanager_api_timeout)
         response_data = response.json()
         expires_in = response_data.get("expires_in", 900)
-        self._keymanager_auth_token_expiry = datetime.now(timezone.utc) + timedelta(
-            seconds=expires_in
-        )
+        self._keymanager_auth_token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         self._keymanager_auth_token = response_data["access_token"]
         return self._keymanager_auth_token
 

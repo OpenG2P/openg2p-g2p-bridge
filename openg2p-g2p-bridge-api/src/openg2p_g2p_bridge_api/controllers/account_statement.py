@@ -48,22 +48,26 @@ class AccountStatementController(BaseController):
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(statement_file)
             RequestValidation.get_component().validate_mt940_file(statement_file)
-            account_statement_id: str = (
-                await self.account_statement_service.upload_mt940(statement_file)
-            )
-            account_statement_response: AccountStatementResponse = await self.account_statement_service.construct_account_statement_success_response(
-                account_statement_id
+            account_statement_id: str = await self.account_statement_service.upload_mt940(statement_file)
+            account_statement_response: AccountStatementResponse = (
+                await self.account_statement_service.construct_account_statement_success_response(
+                    account_statement_id
+                )
             )
         except RequestValidationException:
             _logger.error("Request validation failed")
-            account_statement_response: AccountStatementResponse = await self.account_statement_service.construct_account_statement_error_response(
-                G2PBridgeErrorCodes.REQUEST_VALIDATION_ERROR
+            account_statement_response: AccountStatementResponse = (
+                await self.account_statement_service.construct_account_statement_error_response(
+                    G2PBridgeErrorCodes.REQUEST_VALIDATION_ERROR
+                )
             )
             return account_statement_response
         except AccountStatementException:
             _logger.error("Error uploading statement file")
-            account_statement_response: AccountStatementResponse = await self.account_statement_service.construct_account_statement_error_response(
-                G2PBridgeErrorCodes.STATEMENT_UPLOAD_ERROR
+            account_statement_response: AccountStatementResponse = (
+                await self.account_statement_service.construct_account_statement_error_response(
+                    G2PBridgeErrorCodes.STATEMENT_UPLOAD_ERROR
+                )
             )
             return account_statement_response
         _logger.info("Statement file uploaded successfully")

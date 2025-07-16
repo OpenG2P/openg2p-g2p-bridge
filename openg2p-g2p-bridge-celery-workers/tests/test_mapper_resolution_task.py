@@ -120,9 +120,7 @@ def mock_resolve_client():
         yield mock_mapper_resolve_client
 
 
-def test_mapper_resolution_worker_success(
-    mock_session_maker, mock_resolve_helper, mock_resolve_client
-):
+def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helper, mock_resolve_client):
     mock_response = MagicMock()
     mock_response.message.resolve_response = [
         MagicMock(
@@ -148,15 +146,10 @@ def test_mapper_resolution_worker_success(
         == ProcessStatus.PROCESSED
     )
     assert isinstance(
-        mock_session_maker.updates[0].get(
-            MapperResolutionBatchStatus.resolution_time_stamp
-        ),
+        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.resolution_time_stamp),
         datetime,
     )
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.latest_error_code)
-        is None
-    )
+    assert mock_session_maker.updates[0].get(MapperResolutionBatchStatus.latest_error_code) is None
 
     assert (
         mock_session_maker.updates[1].get(DisbursementBatchControl.mapper_status)
@@ -167,9 +160,7 @@ def test_mapper_resolution_worker_success(
     assert mock_session_maker.committed
 
 
-def test_mapper_resolution_worker_failure(
-    mock_session_maker, mock_resolve_helper, mock_resolve_client
-):
+def test_mapper_resolution_worker_failure(mock_session_maker, mock_resolve_helper, mock_resolve_client):
     mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
 
     mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
@@ -190,9 +181,7 @@ def test_mapper_resolution_worker_failure(
 
 @pytest.mark.asyncio
 async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_client):
-    disbursement_controls = [
-        DisbursementBatchControl(beneficiary_id="test_beneficiary_id")
-    ]
+    disbursement_controls = [DisbursementBatchControl(beneficiary_id="test_beneficiary_id")]
     mock_response = "RESOLVE_RESPONSE"
     mock_resolve_client.resolve_request.return_value = mock_response
 
@@ -207,9 +196,7 @@ async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_cl
 
 @pytest.mark.asyncio
 async def test_make_resolve_request_failure(mock_resolve_helper, mock_resolve_client):
-    disbursement_controls = [
-        DisbursementBatchControl(beneficiary_id="test_beneficiary_id")
-    ]
+    disbursement_controls = [DisbursementBatchControl(beneficiary_id="test_beneficiary_id")]
     mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
 
     mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
@@ -247,9 +234,7 @@ def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_h
 
 def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_helper):
     mock_response = MagicMock()
-    mock_response.message.resolve_response = [
-        MagicMock(id="test_beneficiary_id", fa=None)
-    ]
+    mock_response.message.resolve_response = [MagicMock(id="test_beneficiary_id", fa=None)]
     beneficiary_map = {"test_beneficiary_id": "test_disbursement_id"}
 
     process_and_store_resolution("test_batch_id", mock_response, beneficiary_map)
@@ -264,8 +249,7 @@ def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_h
     )
 
     assert (
-        mock_session_maker.updates[1].get(DisbursementBatchControl.mapper_status)
-        == ProcessStatus.ERROR.value
+        mock_session_maker.updates[1].get(DisbursementBatchControl.mapper_status) == ProcessStatus.ERROR.value
     )
 
     assert mock_session_maker.flushed

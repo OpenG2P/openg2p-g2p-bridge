@@ -50,9 +50,7 @@ class DisbursementErrorReconPayload(BaseModel):
 
 class DisbursementReconRecords(BaseModel):
     disbursement_recon_payloads: Optional[List[DisbursementReconPayload]] = None
-    disbursement_error_recon_payloads: Optional[
-        List[DisbursementErrorReconPayload]
-    ] = None
+    disbursement_error_recon_payloads: Optional[List[DisbursementErrorReconPayload]] = None
 
 
 class DisbursementStatusPayload(BaseModel):

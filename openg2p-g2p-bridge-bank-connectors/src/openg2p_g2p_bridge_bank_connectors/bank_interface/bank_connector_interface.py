@@ -66,14 +66,10 @@ class BankConnectorInterface(BaseService):
     def block_funds(self, account_number, currency, amount) -> BlockFundsResponse:
         raise NotImplementedError()
 
-    def initiate_payment(
-        self, payment_payloads: List[DisbursementPaymentPayload]
-    ) -> PaymentResponse:
+    def initiate_payment(self, payment_payloads: List[DisbursementPaymentPayload]) -> PaymentResponse:
         raise NotImplementedError()
 
-    def retrieve_disbursement_id(
-        self, bank_reference: str, customer_reference: str, narratives: str
-    ) -> str:
+    def retrieve_disbursement_id(self, bank_reference: str, customer_reference: str, narratives: str) -> str:
         raise NotImplementedError()
 
     def retrieve_beneficiary_name(self, narratives: str) -> str:

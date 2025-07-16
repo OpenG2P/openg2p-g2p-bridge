@@ -31,21 +31,17 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
         disbursement_batch_controls = (
             session.execute(
                 select(DisbursementBatchControl).filter(
-                    DisbursementBatchControl.mapper_resolution_batch_id
-                    == mapper_resolution_batch_id
+                    DisbursementBatchControl.mapper_resolution_batch_id == mapper_resolution_batch_id
                 )
             )
             .scalars()
             .all()
         )
 
-        _logger.info(
-            f"Found {len(disbursement_batch_controls)} disbursement batch controls"
-        )
+        _logger.info(f"Found {len(disbursement_batch_controls)} disbursement batch controls")
 
         beneficiary_disbursement_map = {
-            control.beneficiary_id: control.disbursement_id
-            for control in disbursement_batch_controls
+            control.beneficiary_id: control.disbursement_id for control in disbursement_batch_controls
         }
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -61,8 +57,7 @@ def mapper_resolution_worker(mapper_resolution_batch_id: str):
                 f"Failed to resolve the request for batch {mapper_resolution_batch_id}: {error_msg}"
             )
             session.query(MapperResolutionBatchStatus).filter(
-                MapperResolutionBatchStatus.mapper_resolution_batch_id
-                == mapper_resolution_batch_id
+                MapperResolutionBatchStatus.mapper_resolution_batch_id == mapper_resolution_batch_id
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PENDING,
@@ -89,12 +84,8 @@ async def make_resolve_request(disbursement_batch_controls):
         resolve_helper.construct_single_resolve_request(control.beneficiary_id)
         for control in disbursement_batch_controls
     ]
-    resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
-        single_resolve_requests
-    )
-    jwt_token = await resolve_helper.create_jwt_token(
-        resolve_request.model_dump(mode="json")
-    )
+    resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(single_resolve_requests)
+    jwt_token = await resolve_helper.create_jwt_token(resolve_request.model_dump(mode="json"))
     headers = {"content-type": "application/json", "Signature": jwt_token}
 
     resolve_client = MapperResolveClient()
@@ -123,14 +114,10 @@ def process_and_store_resolution(
         update_processed = []
         update_error = []
         for single_response in resolve_response.message.resolve_response:
-            _logger.info(
-                f"Processing the response for beneficiary: {single_response.id}"
-            )
+            _logger.info(f"Processing the response for beneficiary: {single_response.id}")
             disbursement_id = beneficiary_disbursement_map.get(single_response.id)
             if disbursement_id and single_response.fa:
-                _logger.info(
-                    f"Resolved the request for beneficiary: {single_response.id}"
-                )
+                _logger.info(f"Resolved the request for beneficiary: {single_response.id}")
                 deconstructed_fa = resolve_helper.deconstruct_fa(single_response.fa)
                 details = MapperResolutionDetails(
                     mapper_resolution_batch_id=mapper_resolution_batch_id,
@@ -145,9 +132,7 @@ def process_and_store_resolution(
                     bank_code=deconstructed_fa.get("bank_code"),
                     branch_code=deconstructed_fa.get("branch_code"),
                     mobile_number=deconstructed_fa.get("mobile_number"),
-                    mobile_wallet_provider=deconstructed_fa.get(
-                        "mobile_wallet_provider"
-                    ),
+                    mobile_wallet_provider=deconstructed_fa.get("mobile_wallet_provider"),
                     email_address=deconstructed_fa.get("email_address"),
                     email_wallet_provider=deconstructed_fa.get("email_wallet_provider"),
                     active=True,
@@ -156,9 +141,7 @@ def process_and_store_resolution(
                 update_processed.append(disbursement_id)
                 details_list.append(details)
             else:
-                _logger.error(
-                    f"Failed to resolve the request for beneficiary: {single_response.id}"
-                )
+                _logger.error(f"Failed to resolve the request for beneficiary: {single_response.id}")
                 # Update corresponding disbursement control to failed
                 update_error.append(disbursement_id)
                 batch_has_error = True
@@ -167,8 +150,7 @@ def process_and_store_resolution(
         if not batch_has_error:
             _logger.info("Batch has no error")
             session.query(MapperResolutionBatchStatus).filter(
-                MapperResolutionBatchStatus.mapper_resolution_batch_id
-                == mapper_resolution_batch_id
+                MapperResolutionBatchStatus.mapper_resolution_batch_id == mapper_resolution_batch_id
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PROCESSED,
@@ -181,8 +163,7 @@ def process_and_store_resolution(
         else:
             _logger.info("Batch has error")
             session.query(MapperResolutionBatchStatus).filter(
-                MapperResolutionBatchStatus.mapper_resolution_batch_id
-                == mapper_resolution_batch_id
+                MapperResolutionBatchStatus.mapper_resolution_batch_id == mapper_resolution_batch_id
             ).update(
                 {
                     MapperResolutionBatchStatus.resolution_status: ProcessStatus.PENDING,

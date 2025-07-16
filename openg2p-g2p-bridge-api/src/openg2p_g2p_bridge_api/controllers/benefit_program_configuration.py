@@ -25,9 +25,7 @@ class BenefitProgramConfigurationController(BaseController):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.benefit_program_configuration_service = (
-            BenefitProgramConfigurationService.get_component()
-        )
+        self.benefit_program_configuration_service = BenefitProgramConfigurationService.get_component()
         self.router.tags += ["G2P Bridge Benefit Program Configuration"]
 
         self.router.add_api_route(
@@ -45,12 +43,12 @@ class BenefitProgramConfigurationController(BaseController):
         _logger.info("Creating benefit program configuration")
         try:
             RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(
-                benefit_program_configuration_request
-            )
+            RequestValidation.get_component().validate_request(benefit_program_configuration_request)
 
-            benefit_program_configuration_payload: BenefitProgramConfigurationPayload = await self.benefit_program_configuration_service.create_benefit_program_configuration(
-                benefit_program_configuration_request
+            benefit_program_configuration_payload: BenefitProgramConfigurationPayload = (
+                await self.benefit_program_configuration_service.create_benefit_program_configuration(
+                    benefit_program_configuration_request
+                )
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")

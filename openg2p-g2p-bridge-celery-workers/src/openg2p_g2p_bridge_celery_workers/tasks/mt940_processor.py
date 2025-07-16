@@ -39,9 +39,7 @@ def mt940_processor_worker(statement_id: str):
 
     with session_maker() as session:
         account_statement = (
-            session.query(AccountStatement)
-            .filter(AccountStatement.statement_id == statement_id)
-            .first()
+            session.query(AccountStatement).filter(AccountStatement.statement_id == statement_id).first()
         )
 
         if not account_statement:
@@ -77,18 +75,10 @@ def mt940_processor_worker(statement_id: str):
 
             mt940_statement.parse(lob.statement_lob)
 
-            account_statement.account_number = mt940_statement.data.get(
-                "account_identification", ""
-            )
-            account_statement.reference_number = mt940_statement.data.get(
-                "transaction_reference", ""
-            )
-            account_statement.statement_number = mt940_statement.data.get(
-                "statement_number", ""
-            )
-            account_statement.sequence_number = mt940_statement.data.get(
-                "sequence_number", ""
-            )
+            account_statement.account_number = mt940_statement.data.get("account_identification", "")
+            account_statement.reference_number = mt940_statement.data.get("transaction_reference", "")
+            account_statement.statement_number = mt940_statement.data.get("statement_number", "")
+            account_statement.sequence_number = mt940_statement.data.get("sequence_number", "")
             _logger.info("Parsed account statement header")
             # Get the benefit program configuration
             benefit_program_configuration = (
@@ -112,10 +102,8 @@ def mt940_processor_worker(statement_id: str):
                 session.commit()
                 return
 
-            bank_connector: BankConnectorInterface = (
-                BankConnectorFactory.get_component().get_bank_connector(
-                    benefit_program_configuration.sponsor_bank_code
-                )
+            bank_connector: BankConnectorInterface = BankConnectorFactory.get_component().get_bank_connector(
+                benefit_program_configuration.sponsor_bank_code
             )
 
             # Parsing transactions
@@ -302,9 +290,7 @@ def process_debit_transactions(
 def get_disbursement_recon(parsed_transaction, session):
     disbursement_recon = (
         session.query(DisbursementRecon)
-        .filter(
-            DisbursementRecon.disbursement_id == parsed_transaction["disbursement_id"]
-        )
+        .filter(DisbursementRecon.disbursement_id == parsed_transaction["disbursement_id"])
         .first()
     )
     return disbursement_recon
@@ -313,10 +299,7 @@ def get_disbursement_recon(parsed_transaction, session):
 def get_bank_batch_id(parsed_transaction, session):
     bank_disbursement_batch_id = (
         session.query(DisbursementBatchControl)
-        .filter(
-            DisbursementBatchControl.disbursement_id
-            == parsed_transaction["disbursement_id"]
-        )
+        .filter(DisbursementBatchControl.disbursement_id == parsed_transaction["disbursement_id"])
         .first()
     )
     if not bank_disbursement_batch_id:
@@ -356,9 +339,7 @@ def update_existing_disbursement_recon(
     disbursement_recon.reversal_statement_id = statement_id
     disbursement_recon.reversal_statement_number = statement_number
     disbursement_recon.reversal_statement_sequence = statement_sequence
-    disbursement_recon.reversal_entry_sequence = parsed_transaction[
-        "reversal_entry_sequence"
-    ]
+    disbursement_recon.reversal_entry_sequence = parsed_transaction["reversal_entry_sequence"]
     disbursement_recon.reversal_entry_date = parsed_transaction["reversal_entry_date"]
     disbursement_recon.reversal_value_date = parsed_transaction["reversal_value_date"]
     disbursement_recon.reversal_reason = parsed_transaction["reversal_reason"]
@@ -413,9 +394,7 @@ def construct_parsed_transaction(
 
     if debit_credit_indicator == "D":
         reversal_found = False
-        beneficiary_name_from_bank = bank_connector.retrieve_beneficiary_name(
-            narratives
-        )
+        beneficiary_name_from_bank = bank_connector.retrieve_beneficiary_name(narratives)
         remittance_entry_sequence = entry_sequence
         remittance_entry_date = transaction.data["entry_date"]
         remittance_value_date = transaction.data["date"]
@@ -449,11 +428,7 @@ def construct_parsed_transaction(
 
 
 def get_disbursement_envelope_id(disbursement_id, session):
-    disbursement = (
-        session.query(Disbursement)
-        .filter(Disbursement.disbursement_id == disbursement_id)
-        .first()
-    )
+    disbursement = session.query(Disbursement).filter(Disbursement.disbursement_id == disbursement_id).first()
 
     if not disbursement:
         return None
@@ -461,16 +436,12 @@ def get_disbursement_envelope_id(disbursement_id, session):
     return disbursement.disbursement_envelope_id
 
 
-def update_envelope_batch_status_reconciled(
-    disbursement_recons: List[DisbursementRecon], session
-):
+def update_envelope_batch_status_reconciled(disbursement_recons: List[DisbursementRecon], session):
     # Count how many reversals per envelope
     disbursement_envelope_id_count = {}
     for recon in disbursement_recons:
         eid = recon.disbursement_envelope_id
-        disbursement_envelope_id_count[eid] = (
-            disbursement_envelope_id_count.get(eid, 0) + 1
-        )
+        disbursement_envelope_id_count[eid] = disbursement_envelope_id_count.get(eid, 0) + 1
 
     # Update each envelope, retrying on lock conflicts
     for envelope_id, count in disbursement_envelope_id_count.items():
@@ -481,10 +452,7 @@ def update_envelope_batch_status_reconciled(
             try:
                 status = (
                     session.query(DisbursementEnvelopeBatchStatus)
-                    .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                        == envelope_id
-                    )
+                    .filter(DisbursementEnvelopeBatchStatus.disbursement_envelope_id == envelope_id)
                     .with_for_update(nowait=True)
                     .populate_existing()
                     .first()
@@ -503,9 +471,7 @@ def update_envelope_batch_status_reconciled(
                 max_retries -= 1
 
         else:
-            _logger.error(
-                f"Could not acquire lock for envelope {envelope_id} after retries"
-            )
+            _logger.error(f"Could not acquire lock for envelope {envelope_id} after retries")
             raise last_exc
 
         status.number_of_disbursements_reconciled += count
@@ -513,29 +479,18 @@ def update_envelope_batch_status_reconciled(
         session.commit()
 
 
-def update_envelope_batch_status_reversed(
-    disbursement_recons: List[DisbursementRecon], session
-):
+def update_envelope_batch_status_reversed(disbursement_recons: List[DisbursementRecon], session):
     # Get the unique disbursement envelope ids and count of disbursements
     disbursement_envelope_id_count = {}
     for disbursement_recon in disbursement_recons:
-        if (
-            disbursement_recon.disbursement_envelope_id
-            in disbursement_envelope_id_count
-        ):
-            disbursement_envelope_id_count[
-                disbursement_recon.disbursement_envelope_id
-            ] += 1
+        if disbursement_recon.disbursement_envelope_id in disbursement_envelope_id_count:
+            disbursement_envelope_id_count[disbursement_recon.disbursement_envelope_id] += 1
         else:
-            disbursement_envelope_id_count[
-                disbursement_recon.disbursement_envelope_id
-            ] = 1
+            disbursement_envelope_id_count[disbursement_recon.disbursement_envelope_id] = 1
 
     # Update the disbursement envelope batch status
     for disbursement_envelope_id, count in disbursement_envelope_id_count.items():
-        _logger.info(
-            f"Disbursement envelope id: {disbursement_envelope_id}, count: {count}"
-        )
+        _logger.info(f"Disbursement envelope id: {disbursement_envelope_id}, count: {count}")
 
         max_retries = 5
         last_exc = None
@@ -545,8 +500,7 @@ def update_envelope_batch_status_reversed(
                 disbursement_envelope_batch_status = (
                     session.query(DisbursementEnvelopeBatchStatus)
                     .filter(
-                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                        == disbursement_envelope_id
+                        DisbursementEnvelopeBatchStatus.disbursement_envelope_id == disbursement_envelope_id
                     )
                     .with_for_update(nowait=True)
                     .populate_existing()
@@ -566,9 +520,7 @@ def update_envelope_batch_status_reversed(
                 max_retries -= 1
 
         else:
-            _logger.error(
-                f"Could not acquire lock for envelope {disbursement_envelope_id} after retries"
-            )
+            _logger.error(f"Could not acquire lock for envelope {disbursement_envelope_id} after retries")
             raise last_exc
 
         disbursement_envelope_batch_status.number_of_disbursements_reversed += count

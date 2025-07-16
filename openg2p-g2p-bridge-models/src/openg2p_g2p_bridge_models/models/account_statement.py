@@ -17,18 +17,12 @@ class AccountStatement(BaseORMModelWithTimes):
     reference_number: Mapped[str] = mapped_column(String, nullable=True)
     statement_number: Mapped[str] = mapped_column(String, nullable=True)
     sequence_number: Mapped[str] = mapped_column(String, nullable=True)
-    statement_upload_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
+    statement_upload_timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     statement_process_status: Mapped[ProcessStatus] = mapped_column(
         SqlEnum(ProcessStatus), default=ProcessStatus.PENDING
     )
-    statement_process_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, default=None
-    )
-    statement_process_error_code: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    statement_process_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=None)
+    statement_process_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     statement_process_attempts: Mapped[int] = mapped_column(Integer, default=0)
 
 
@@ -45,9 +39,7 @@ class DisbursementRecon(BaseORMModelWithTimes):
     disbursement_envelope_id: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_name_from_bank: Mapped[str] = mapped_column(String, nullable=True)
 
-    remittance_reference_number: Mapped[str] = mapped_column(
-        String, nullable=True, unique=True
-    )
+    remittance_reference_number: Mapped[str] = mapped_column(String, nullable=True, unique=True)
     remittance_statement_id: Mapped[str] = mapped_column(String, nullable=True)
     remittance_statement_number: Mapped[str] = mapped_column(String, nullable=True)
     remittance_statement_sequence: Mapped[str] = mapped_column(String, nullable=True)
@@ -74,8 +66,6 @@ class DisbursementErrorRecon(BaseORMModelWithTimes):
     entry_sequence: Mapped[str] = mapped_column(String, nullable=True)
     entry_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     value_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(
-        SqlEnum(G2PBridgeErrorCodes), nullable=True
-    )
+    error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(SqlEnum(G2PBridgeErrorCodes), nullable=True)
     disbursement_id: Mapped[str] = mapped_column(String, index=True)
     bank_reference_number: Mapped[str] = mapped_column(String, nullable=True)

@@ -40,8 +40,10 @@ class BenefitProgramConfigurationService(BaseService):
             except BenefitProgramConfigurationException as e:
                 raise e
 
-            benefit_program_configuration: BenefitProgramConfiguration = await self.construct_benefit_program_configuration(
-                benefit_program_configuration_payload=benefit_program_configuration_request.message
+            benefit_program_configuration: BenefitProgramConfiguration = (
+                await self.construct_benefit_program_configuration(
+                    benefit_program_configuration_payload=benefit_program_configuration_request.message
+                )
             )
             _logger.info(f"BENF:{benefit_program_configuration}")
             session.add(benefit_program_configuration)
@@ -58,12 +60,10 @@ class BenefitProgramConfigurationService(BaseService):
         benefit_program_configuration_payload: BenefitProgramConfigurationPayload = (
             benefit_program_configuration_request.message
         )
-        benefit_program_configuration: BenefitProgramConfiguration = (
-            await session.execute(
-                select(BenefitProgramConfiguration).where(
-                    BenefitProgramConfiguration.benefit_program_mnemonic
-                    == benefit_program_configuration_payload.benefit_program_mnemonic
-                )
+        benefit_program_configuration: BenefitProgramConfiguration = await session.execute(
+            select(BenefitProgramConfiguration).where(
+                BenefitProgramConfiguration.benefit_program_mnemonic
+                == benefit_program_configuration_payload.benefit_program_mnemonic
             )
         )
         benefit_program_configuration = benefit_program_configuration.scalars().first()
@@ -94,9 +94,7 @@ class BenefitProgramConfigurationService(BaseService):
             id_mapper_resolution_required=benefit_program_configuration_payload.id_mapper_resolution_required,
             active=True,
         )
-        _logger.info(
-            f"Benefit Program Configuration Constructed{benefit_program_configuration}"
-        )
+        _logger.info(f"Benefit Program Configuration Constructed{benefit_program_configuration}")
         return benefit_program_configuration
 
     async def construct_benefit_program_configuration_success_response(

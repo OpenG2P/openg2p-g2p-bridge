@@ -28,25 +28,17 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
     with session_maker() as session:
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter(
-                DisbursementEnvelope.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
         if not envelope:
-            _logger.error(
-                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
-            )
+            _logger.error(f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}")
             return
 
         disbursement_envelope_batch_status = (
             session.query(DisbursementEnvelopeBatchStatus)
-            .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelopeBatchStatus.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
@@ -58,10 +50,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
 
         benefit_program_configuration = (
             session.query(BenefitProgramConfiguration)
-            .filter(
-                BenefitProgramConfiguration.benefit_program_mnemonic
-                == envelope.benefit_program_mnemonic
-            )
+            .filter(BenefitProgramConfiguration.benefit_program_mnemonic == envelope.benefit_program_mnemonic)
             .first()
         )
 
@@ -89,27 +78,17 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                     FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
                 )
 
-            disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.now()
-            )
+            disbursement_envelope_batch_status.funds_available_latest_timestamp = datetime.now()
             disbursement_envelope_batch_status.funds_available_latest_error_code = None
             disbursement_envelope_batch_status.funds_available_attempts += 1
 
         except Exception as e:
-            _logger.error(
-                f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}"
-            )
+            _logger.error(f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}")
             disbursement_envelope_batch_status.funds_available_with_bank = (
                 FundsAvailableWithBankEnum.PENDING_CHECK.value
             )
-            disbursement_envelope_batch_status.funds_available_latest_timestamp = (
-                datetime.now()
-            )
-            disbursement_envelope_batch_status.funds_available_latest_error_code = str(
-                e
-            )
+            disbursement_envelope_batch_status.funds_available_latest_timestamp = datetime.now()
+            disbursement_envelope_batch_status.funds_available_latest_error_code = str(e)
             disbursement_envelope_batch_status.funds_available_attempts += 1
-        _logger.info(
-            f"Checked funds with bank for envelope: {disbursement_envelope_id}"
-        )
+        _logger.info(f"Checked funds with bank for envelope: {disbursement_envelope_id}")
         session.commit()

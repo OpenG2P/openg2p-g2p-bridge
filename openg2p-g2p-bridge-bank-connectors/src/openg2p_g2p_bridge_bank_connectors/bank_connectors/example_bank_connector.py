@@ -64,9 +64,7 @@ class ExampleBankConnector(BankConnectorInterface):
                     "account_currency": currency,
                     "total_funds_needed": amount,
                 }
-                response = client.post(
-                    _config.funds_available_check_url_example_bank, json=request_data
-                )
+                response = client.post(_config.funds_available_check_url_example_bank, json=request_data)
                 response.raise_for_status()
 
                 data = response.json()
@@ -87,9 +85,7 @@ class ExampleBankConnector(BankConnectorInterface):
             _logger.error(
                 f"Error checking funds availability for account_number: {account_number}, currency: {currency}, amount: {amount}"
             )
-            return CheckFundsResponse(
-                status=FundsAvailableWithBankEnum.PENDING_CHECK, error_code=str(e)
-            )
+            return CheckFundsResponse(status=FundsAvailableWithBankEnum.PENDING_CHECK, error_code=str(e))
 
     def block_funds(self, account_number, currency, amount) -> BlockFundsResponse:
         _logger.info(
@@ -102,9 +98,7 @@ class ExampleBankConnector(BankConnectorInterface):
                     "currency": currency,
                     "amount": amount,
                 }
-                response = client.post(
-                    _config.funds_block_url_example_bank, json=request_data
-                )
+                response = client.post(_config.funds_block_url_example_bank, json=request_data)
                 response.raise_for_status()
 
                 data = response.json()
@@ -138,9 +132,7 @@ class ExampleBankConnector(BankConnectorInterface):
     def initiate_payment(
         self, disbursement_payment_payloads: List[DisbursementPaymentPayload]
     ) -> PaymentResponse:
-        _logger.info(
-            f"Initiating payment for {len(disbursement_payment_payloads)} disbursements"
-        )
+        _logger.info(f"Initiating payment for {len(disbursement_payment_payloads)} disbursements")
         try:
             with httpx.Client() as client:
                 bank_payment_payloads = []
@@ -177,9 +169,7 @@ class ExampleBankConnector(BankConnectorInterface):
                 _logger.info("Total payments to be initiated: %s", len(request_data))
                 _logger.info("Initiating payment with Example Bank")
 
-                response = client.post(
-                    _config.funds_disbursement_url_example_bank, json=request_data
-                )
+                response = client.post(_config.funds_disbursement_url_example_bank, json=request_data)
                 response.raise_for_status()
 
                 data = response.json()
@@ -187,16 +177,12 @@ class ExampleBankConnector(BankConnectorInterface):
                     _logger.info("Payment initiated successfully")
                     return PaymentResponse(status=PaymentStatus.SUCCESS, error_code="")
                 _logger.error("Payment initiation failed")
-                return PaymentResponse(
-                    status=PaymentStatus.ERROR, error_code=data.get("error_message", "")
-                )
+                return PaymentResponse(status=PaymentStatus.ERROR, error_code=data.get("error_message", ""))
         except httpx.HTTPStatusError as e:
             _logger.error(f"Error initiating payment: {e}")
             return PaymentResponse(status=PaymentStatus.ERROR, error_code=str(e))
 
-    def retrieve_disbursement_id(
-        self, bank_reference: str, customer_reference: str, narratives: str
-    ) -> str:
+    def retrieve_disbursement_id(self, bank_reference: str, customer_reference: str, narratives: str) -> str:
         _logger.info(
             f"Retrieving disbursement id for bank_reference: {bank_reference}, customer_reference: {customer_reference}"
         )

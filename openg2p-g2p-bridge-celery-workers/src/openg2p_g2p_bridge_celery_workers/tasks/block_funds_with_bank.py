@@ -30,25 +30,17 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
     with session_maker() as session:
         envelope = (
             session.query(DisbursementEnvelope)
-            .filter(
-                DisbursementEnvelope.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelope.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
         if not envelope:
-            _logger.error(
-                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
-            )
+            _logger.error(f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}")
             return
 
         batch_status = (
             session.query(DisbursementEnvelopeBatchStatus)
-            .filter(
-                DisbursementEnvelopeBatchStatus.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelopeBatchStatus.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
@@ -60,18 +52,13 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
 
         benefit_program_configuration = (
             session.query(BenefitProgramConfiguration)
-            .filter(
-                BenefitProgramConfiguration.benefit_program_mnemonic
-                == envelope.benefit_program_mnemonic
-            )
+            .filter(BenefitProgramConfiguration.benefit_program_mnemonic == envelope.benefit_program_mnemonic)
             .first()
         )
 
         total_funds_needed = envelope.total_disbursement_amount
-        bank_connector: BankConnectorInterface = (
-            BankConnectorFactory.get_component().get_bank_connector(
-                benefit_program_configuration.sponsor_bank_code
-            )
+        bank_connector: BankConnectorInterface = BankConnectorFactory.get_component().get_bank_connector(
+            benefit_program_configuration.sponsor_bank_code
         )
 
         try:
@@ -82,17 +69,11 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
 
             if funds_blocked.status == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS:
-                batch_status.funds_blocked_with_bank = (
-                    FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
-                )
-                batch_status.funds_blocked_reference_number = (
-                    funds_blocked.block_reference_no
-                )
+                batch_status.funds_blocked_with_bank = FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
+                batch_status.funds_blocked_reference_number = funds_blocked.block_reference_no
                 batch_status.funds_blocked_latest_error_code = None
             else:
-                batch_status.funds_blocked_with_bank = (
-                    FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
-                )
+                batch_status.funds_blocked_with_bank = FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 batch_status.funds_blocked_reference_number = ""
                 batch_status.funds_blocked_latest_error_code = funds_blocked.error_code
 
@@ -101,12 +82,8 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             batch_status.funds_blocked_attempts += 1
 
         except Exception as e:
-            _logger.error(
-                f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
-            )
-            batch_status.funds_blocked_with_bank = (
-                FundsBlockedWithBankEnum.PENDING_CHECK.value
-            )
+            _logger.error(f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}")
+            batch_status.funds_blocked_with_bank = FundsBlockedWithBankEnum.PENDING_CHECK.value
             batch_status.funds_blocked_latest_timestamp = datetime.now()
             batch_status.funds_blocked_latest_error_code = str(e)
             batch_status.funds_blocked_attempts += 1
@@ -114,6 +91,4 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             session.commit()
 
         session.commit()
-        _logger.info(
-            f"Completed blocking funds with bank for envelope: {disbursement_envelope_id}"
-        )
+        _logger.info(f"Completed blocking funds with bank for envelope: {disbursement_envelope_id}")

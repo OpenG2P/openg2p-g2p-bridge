@@ -43,28 +43,30 @@ class DisbursementStatusController(BaseController):
         _logger.info("Retrieving disbursement envelope status")
         try:
             RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(
-                disbursement_status_request
-            )
+            RequestValidation.get_component().validate_request(disbursement_status_request)
 
             disbursement_status_payloads: List[
                 DisbursementStatusPayload
-            ] = await self.disbursement_service.get_disbursement_status_payloads(
-                disbursement_status_request
-            )
-            disbursement_status_response: DisbursementStatusResponse = await self.disbursement_service.construct_disbursement_status_success_response(
-                disbursement_status_request, disbursement_status_payloads
+            ] = await self.disbursement_service.get_disbursement_status_payloads(disbursement_status_request)
+            disbursement_status_response: DisbursementStatusResponse = (
+                await self.disbursement_service.construct_disbursement_status_success_response(
+                    disbursement_status_request, disbursement_status_payloads
+                )
             )
             _logger.info("Disbursements cancelled successfully")
             return disbursement_status_response
         except RequestValidationException as e:
             _logger.error("Error validating request")
-            error_response: DisbursementStatusResponse = await self.disbursement_envelope_service.construct_disbursement_envelope_error_response(
-                disbursement_status_request, e.code
+            error_response: DisbursementStatusResponse = (
+                await self.disbursement_envelope_service.construct_disbursement_envelope_error_response(
+                    disbursement_status_request, e.code
+                )
             )
             return error_response
         except DisbursementException as e:
-            error_response: DisbursementStatusResponse = await self.disbursement_service.construct_disbursement_status_error_response(
-                disbursement_status_request, e.code
+            error_response: DisbursementStatusResponse = (
+                await self.disbursement_service.construct_disbursement_status_error_response(
+                    disbursement_status_request, e.code
+                )
             )
             return error_response

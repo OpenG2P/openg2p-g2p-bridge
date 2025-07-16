@@ -20,9 +20,7 @@ from openg2p_g2pconnect_common_lib.schemas import (
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementStatusService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_get_disbursement_status_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_get_disbursement_status_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -76,9 +74,7 @@ async def test_get_disbursement_status_success(
         message=["disb123"],
     )
 
-    actual_response = await controller.get_disbursement_status(
-        request_payload, is_signature_valid=True
-    )
+    actual_response = await controller.get_disbursement_status(request_payload, is_signature_valid=True)
     assert actual_response == expected_response
 
 
@@ -97,8 +93,8 @@ async def test_get_disbursement_status_failure(
     mock_service_get_component.return_value = mock_service_instance
 
     # Mock the method to raise an error
-    mock_service_instance.get_disbursement_status_payloads.side_effect = (
-        DisbursementStatusException(code=error_code.value, message=error_code.value)
+    mock_service_instance.get_disbursement_status_payloads.side_effect = DisbursementStatusException(
+        code=error_code.value, message=error_code.value
     )
 
     error_response = DisbursementStatusResponse(
@@ -134,23 +130,16 @@ async def test_get_disbursement_status_failure(
 
     # Try to get disbursement status and catch any raised exception
     try:
-        actual_response = await controller.get_disbursement_status(
-            request_payload, is_signature_valid=True
-        )
+        actual_response = await controller.get_disbursement_status(request_payload, is_signature_valid=True)
     except DisbursementStatusException:
         # If an exception is raised, assert that it matches the expected mock response
-        actual_response = (
-            await mock_service_instance.construct_disbursement_status_error_response(
-                request_payload
-            )
+        actual_response = await mock_service_instance.construct_disbursement_status_error_response(
+            request_payload
         )
 
     # Assert individual fields to handle mock object comparison issues
     assert actual_response.header.status == error_response.header.status
-    assert (
-        actual_response.header.status_reason_message
-        == error_response.header.status_reason_message
-    )
+    assert actual_response.header.status_reason_message == error_response.header.status_reason_message
     assert actual_response.message == error_response.message
 
     # Assert overall response equality

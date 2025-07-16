@@ -30,9 +30,7 @@ def mock_create_disbursements(is_valid, disbursement_request):
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_create_disbursements_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_create_disbursements_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -78,9 +76,7 @@ async def test_create_disbursements_success(
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.create_disbursements(
-        request_payload, is_signature_valid=True
-    )
+    response = await controller.create_disbursements(request_payload, is_signature_valid=True)
 
     assert response.message == disbursement_payloads
 
@@ -88,9 +84,7 @@ async def test_create_disbursements_success(
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_create_disbursements_failure(
-    mock_request_validation, mock_service_get_component
-):
+async def test_create_disbursements_failure(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -136,14 +130,9 @@ async def test_create_disbursements_failure(
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.create_disbursements(
-        request_payload, is_signature_valid=True
-    )
+    response = await controller.create_disbursements(request_payload, is_signature_valid=True)
 
-    assert (
-        response.header.status_reason_message
-        == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
-    )
+    assert response.header.status_reason_message == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
 
 
 def mock_cancel_disbursements(is_valid, disbursement_request):
@@ -161,9 +150,7 @@ def mock_cancel_disbursements(is_valid, disbursement_request):
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_cancel_disbursements_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_cancel_disbursements_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -210,23 +197,16 @@ async def test_cancel_disbursements_success(
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.cancel_disbursements(
-        request_payload, is_signature_valid=True
-    )
+    response = await controller.cancel_disbursements(request_payload, is_signature_valid=True)
 
     assert response.header.status == StatusEnum.succ
-    assert all(
-        payload.cancellation_status == CancellationStatus.Cancelled
-        for payload in response.message
-    )
+    assert all(payload.cancellation_status == CancellationStatus.Cancelled for payload in response.message)
 
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_cancel_disbursements_failure(
-    mock_request_validation, mock_service_get_component
-):
+async def test_cancel_disbursements_failure(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -273,12 +253,7 @@ async def test_cancel_disbursements_failure(
     controller = DisbursementController()
     request_payload = disbursement_request
 
-    response = await controller.cancel_disbursements(
-        request_payload, is_signature_valid=True
-    )
+    response = await controller.cancel_disbursements(request_payload, is_signature_valid=True)
 
     assert response.header.status == StatusEnum.rjct
-    assert (
-        response.header.status_reason_message
-        == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value
-    )
+    assert response.header.status_reason_message == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value
