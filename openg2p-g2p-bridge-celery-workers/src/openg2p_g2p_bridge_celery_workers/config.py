@@ -28,13 +28,3 @@ class Settings(BaseSettings):
     email_wallet_deconstruct_strategy: str = r"^email_address:(?P<email_address>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
 
     mapper_request_sender_id: str = "openg2p-g2p-bridge"
-
-    sign_key_keymanager_app_id: str = "G2PBRIDGE"
-    sign_key_keymanager_ref_id: str = ""
-
-    keymanager_api_timeout: int = 10
-    keymanager_api_base_url: str = ""
-    keymanager_auth_enabled: bool = True
-    keymanager_auth_url: str = ""
-    keymanager_auth_client_id: str = "openg2p-g2p-bridge"
-    keymanager_auth_client_secret: str = ""

@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 from typing import Annotated, List
 
 from fastapi import Depends
@@ -25,7 +26,6 @@ class DisbursementStatusController(BaseController):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.disbursement_service = DisbursementStatusService.get_component()
         self.router.tags += ["G2P Bridge Disbursement Status"]
 
         self.router.add_api_route(
@@ -35,6 +35,14 @@ class DisbursementStatusController(BaseController):
             methods=["POST"],
         )
 
+    @cached_property
+    def disbursement_service(self) -> DisbursementStatusService:
+        return DisbursementStatusService.get_component()
+
+    @cached_property
+    def request_validation(self) -> RequestValidation:
+        return RequestValidation.get_component()
+
     async def get_disbursement_status(
         self,
         disbursement_status_request: DisbursementStatusRequest,
@@ -42,8 +50,8 @@ class DisbursementStatusController(BaseController):
     ) -> DisbursementStatusResponse:
         _logger.info("Retrieving disbursement envelope status")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(disbursement_status_request)
+            self.request_validation.validate_signature(is_signature_valid)
+            self.request_validation.validate_request(disbursement_status_request)
 
             disbursement_status_payloads: List[
                 DisbursementStatusPayload

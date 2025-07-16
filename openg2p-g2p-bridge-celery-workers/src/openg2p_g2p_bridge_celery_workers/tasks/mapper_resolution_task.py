@@ -9,7 +9,6 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from openg2p_g2pconnect_mapper_lib.client import MapperResolveClient
-from openg2p_g2pconnect_mapper_lib.schemas import ResolveRequest
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
@@ -84,15 +83,11 @@ async def make_resolve_request(disbursement_batch_controls):
         resolve_helper.construct_single_resolve_request(control.beneficiary_id)
         for control in disbursement_batch_controls
     ]
-    resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(single_resolve_requests)
-    jwt_token = await resolve_helper.create_jwt_token(resolve_request.model_dump(mode="json"))
-    headers = {"content-type": "application/json", "Signature": jwt_token}
+    resolve_request = resolve_helper.construct_resolve_request(single_resolve_requests)
 
-    resolve_client = MapperResolveClient()
+    resolve_client = MapperResolveClient.get_component()
     try:
-        resolve_response = await resolve_client.resolve_request(
-            resolve_request, headers, _config.mapper_resolve_api_url
-        )
+        resolve_response = await resolve_client.resolve_request(resolve_request)
         return resolve_response, None
     except Exception as e:
         _logger.error(f"Failed to resolve the request: {e}")
