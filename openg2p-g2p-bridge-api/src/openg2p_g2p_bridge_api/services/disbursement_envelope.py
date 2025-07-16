@@ -179,12 +179,12 @@ class DisbursementEnvelopeService(BaseService):
     ) -> bool:
         _logger.info("Validating disbursement envelope payload")
         if (
-            disbursement_envelope_payload.benefit_program_mnemonic is None
-            or disbursement_envelope_payload.benefit_program_mnemonic == ""
+            disbursement_envelope_payload.benefit_program_id is None
+            or disbursement_envelope_payload.benefit_program_id == ""
         ):
-            _logger.error("Invalid benefit program mnemonic")
+            _logger.error("Invalid benefit program id")
             raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
+                G2PBridgeErrorCodes.INVALID_PROGRAM_ID
             )
         if (
             disbursement_envelope_payload.disbursement_frequency
@@ -252,12 +252,12 @@ class DisbursementEnvelopeService(BaseService):
                 G2PBridgeErrorCodes.INVALID_TARGET_REGISTRY
             )
         if (
-            disbursement_envelope_payload.benefit_code_mnemonic is None
-            or disbursement_envelope_payload.benefit_code_mnemonic == ""
+            disbursement_envelope_payload.benefit_code_id is None
+            or disbursement_envelope_payload.benefit_code_id == ""
         ):
-            _logger.error("Invalid benefit code mnemonic")
+            _logger.error("Invalid benefit code id")
             raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_MNEMONIC
+                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID
             )
         _logger.info("Disbursement envelope payload validated!")
         return True
