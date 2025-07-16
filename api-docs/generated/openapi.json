@@ -11,7 +11,7 @@
       "name": "Mozilla Public License 2.0",
       "url": "https://www.mozilla.org/en-US/MPL/2.0/"
     },
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/create_disbursement_envelope": {
@@ -37,7 +37,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementEnvelopeResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementEnvelopeResponse"
                 }
               }
             }
@@ -92,7 +92,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/cancel_disbursement_envelope": {
@@ -118,7 +123,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementEnvelopeResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementEnvelopeResponse"
                 }
               }
             }
@@ -173,7 +178,98 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
+      }
+    },
+    "/amend_disbursement_envelope": {
+      "post": {
+        "tags": [
+          "G2P Bridge Disbursement Envelope"
+        ],
+        "summary": "Amend Disbursement Envelope",
+        "operationId": "amend_disbursement_envelope_amend_disbursement_envelope_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisbursementEnvelopeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisbursementEnvelopeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/create_disbursements": {
@@ -199,7 +295,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementResponse"
                 }
               }
             }
@@ -254,7 +350,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/cancel_disbursements": {
@@ -280,7 +381,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementResponse"
                 }
               }
             }
@@ -335,7 +436,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/upload_mt940": {
@@ -361,7 +467,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountStatementResponse-Input"
+                  "$ref": "#/components/schemas/AccountStatementResponse"
                 }
               }
             }
@@ -416,7 +522,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/get_disbursement_status": {
@@ -442,7 +553,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementStatusResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementStatusResponse"
                 }
               }
             }
@@ -497,7 +608,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/get_disbursement_envelope_status": {
@@ -523,7 +639,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DisbursementEnvelopeStatusResponse-Input"
+                  "$ref": "#/components/schemas/DisbursementEnvelopeStatusResponse"
                 }
               }
             }
@@ -578,7 +694,98 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
+      }
+    },
+    "/create_benefit_program_configuration": {
+      "post": {
+        "tags": [
+          "G2P Bridge Benefit Program Configuration"
+        ],
+        "summary": "Create Benefit Program Configuration",
+        "operationId": "create_benefit_program_configuration_create_benefit_program_configuration_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenefitProgramConfigurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenefitProgramConfigurationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTSignatureValidator": []
+          }
+        ]
       }
     },
     "/ping": {
@@ -644,19 +851,8 @@
   },
   "components": {
     "schemas": {
-      "AccountStatementResponse-Input": {
+      "AccountStatementResponse": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/SyncResponseHeader"
           },
@@ -693,9 +889,9 @@
         ],
         "title": "AccountStatementResponse"
       },
-      "AccountStatementResponse-Output": {
+      "BenefitProgramConfigurationPayload": {
         "properties": {
-          "signature": {
+          "benefit_program_mnemonic": {
             "anyOf": [
               {
                 "type": "string"
@@ -704,35 +900,108 @@
                 "type": "null"
               }
             ],
-            "title": "Signature"
+            "title": "Benefit Program Mnemonic"
           },
+          "benefit_program_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benefit Program Name"
+          },
+          "funding_org_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Org Code"
+          },
+          "funding_org_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Org Name"
+          },
+          "sponsor_bank_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsor Bank Code"
+          },
+          "sponsor_bank_account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsor Bank Account Number"
+          },
+          "sponsor_bank_branch_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsor Bank Branch Code"
+          },
+          "sponsor_bank_account_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsor Bank Account Currency"
+          },
+          "id_mapper_resolution_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Mapper Resolution Required",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "BenefitProgramConfigurationPayload"
+      },
+      "BenefitProgramConfigurationRequest": {
+        "properties": {
           "header": {
-            "$ref": "#/components/schemas/SyncResponseHeader"
+            "$ref": "#/components/schemas/RequestHeader"
           },
           "message": {
-            "title": "Message"
-          },
-          "statement_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Statement Id"
-          },
-          "response_error_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Response Error Code"
+            "$ref": "#/components/schemas/BenefitProgramConfigurationPayload"
           }
         },
         "type": "object",
@@ -740,7 +1009,29 @@
           "header",
           "message"
         ],
-        "title": "AccountStatementResponse"
+        "title": "BenefitProgramConfigurationRequest"
+      },
+      "BenefitProgramConfigurationResponse": {
+        "properties": {
+          "header": {
+            "$ref": "#/components/schemas/SyncResponseHeader"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenefitProgramConfigurationPayload"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "header"
+        ],
+        "title": "BenefitProgramConfigurationResponse"
       },
       "Body_upload_mt940_upload_mt940_post": {
         "properties": {
@@ -1006,17 +1297,6 @@
       },
       "DisbursementEnvelopeRequest": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/RequestHeader"
           },
@@ -1031,52 +1311,8 @@
         ],
         "title": "DisbursementEnvelopeRequest"
       },
-      "DisbursementEnvelopeResponse-Input": {
+      "DisbursementEnvelopeResponse": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
-          "header": {
-            "$ref": "#/components/schemas/SyncResponseHeader"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DisbursementEnvelopePayload"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "header"
-        ],
-        "title": "DisbursementEnvelopeResponse"
-      },
-      "DisbursementEnvelopeResponse-Output": {
-        "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/SyncResponseHeader"
           },
@@ -1099,17 +1335,6 @@
       },
       "DisbursementEnvelopeStatusRequest": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/RequestHeader"
           },
@@ -1125,52 +1350,8 @@
         ],
         "title": "DisbursementEnvelopeStatusRequest"
       },
-      "DisbursementEnvelopeStatusResponse-Input": {
+      "DisbursementEnvelopeStatusResponse": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
-          "header": {
-            "$ref": "#/components/schemas/SyncResponseHeader"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DisbursementEnvelopeBatchStatusPayload"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "header"
-        ],
-        "title": "DisbursementEnvelopeStatusResponse"
-      },
-      "DisbursementEnvelopeStatusResponse-Output": {
-        "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/SyncResponseHeader"
           },
@@ -1659,41 +1840,7 @@
         ],
         "title": "DisbursementReconPayload"
       },
-      "DisbursementReconRecords-Input": {
-        "properties": {
-          "disbursement_recon_payloads": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DisbursementReconPayload"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Disbursement Recon Payloads"
-          },
-          "disbursement_error_recon_payloads": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DisbursementErrorReconPayload"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Disbursement Error Recon Payloads"
-          }
-        },
-        "type": "object",
-        "title": "DisbursementReconRecords"
-      },
-      "DisbursementReconRecords-Output": {
+      "DisbursementReconRecords": {
         "properties": {
           "disbursement_recon_payloads": {
             "anyOf": [
@@ -1729,17 +1876,6 @@
       },
       "DisbursementRequest": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/RequestHeader"
           },
@@ -1758,19 +1894,8 @@
         ],
         "title": "DisbursementRequest"
       },
-      "DisbursementResponse-Input": {
+      "DisbursementResponse": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/SyncResponseHeader"
           },
@@ -1795,44 +1920,7 @@
         ],
         "title": "DisbursementResponse"
       },
-      "DisbursementResponse-Output": {
-        "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
-          "header": {
-            "$ref": "#/components/schemas/SyncResponseHeader"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DisbursementPayload"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "header"
-        ],
-        "title": "DisbursementResponse"
-      },
-      "DisbursementStatusPayload-Input": {
+      "DisbursementStatusPayload": {
         "properties": {
           "disbursement_id": {
             "type": "string",
@@ -1841,30 +1929,7 @@
           "disbursement_recon_records": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DisbursementReconRecords-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "disbursement_id"
-        ],
-        "title": "DisbursementStatusPayload"
-      },
-      "DisbursementStatusPayload-Output": {
-        "properties": {
-          "disbursement_id": {
-            "type": "string",
-            "title": "Disbursement Id"
-          },
-          "disbursement_recon_records": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DisbursementReconRecords-Output"
+                "$ref": "#/components/schemas/DisbursementReconRecords"
               },
               {
                 "type": "null"
@@ -1880,17 +1945,6 @@
       },
       "DisbursementStatusRequest": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/RequestHeader"
           },
@@ -1909,19 +1963,8 @@
         ],
         "title": "DisbursementStatusRequest"
       },
-      "DisbursementStatusResponse-Input": {
+      "DisbursementStatusResponse": {
         "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
           "header": {
             "$ref": "#/components/schemas/SyncResponseHeader"
           },
@@ -1929,44 +1972,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/DisbursementStatusPayload-Input"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "header"
-        ],
-        "title": "DisbursementStatusResponse"
-      },
-      "DisbursementStatusResponse-Output": {
-        "properties": {
-          "signature": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Signature"
-          },
-          "header": {
-            "$ref": "#/components/schemas/SyncResponseHeader"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/DisbursementStatusPayload-Output"
+                  "$ref": "#/components/schemas/DisbursementStatusPayload"
                 },
                 "type": "array"
               },
@@ -2019,6 +2025,7 @@
         "type": "string",
         "enum": [
           "PENDING_CHECK",
+          "CHECK_IN_PROGRESS",
           "FUNDS_AVAILABLE",
           "FUNDS_NOT_AVAILABLE",
           "ERROR"
@@ -2029,6 +2036,7 @@
         "type": "string",
         "enum": [
           "PENDING_CHECK",
+          "CHECK_IN_PROGRESS",
           "FUNDS_BLOCK_SUCCESS",
           "FUNDS_BLOCK_FAILURE",
           "ERROR"
@@ -2038,6 +2046,7 @@
       "G2PBridgeErrorCodes": {
         "type": "string",
         "enum": [
+          "REQUEST_VALIDATION_ERROR",
           "INVALID_PROGRAM_MNEMONIC",
           "INVALID_DISBURSEMENT_FREQUENCY",
           "INVALID_CYCLE_CODE_MNEMONIC",
@@ -2054,6 +2063,7 @@
           "INVALID_BENEFICIARY_NAME",
           "INVALID_NARRATIVE",
           "INVALID_RECEIPT_TIME_STAMP",
+          "DISBURSEMENT_ENVELOPE_DATE_PASSED",
           "INVALID_DISBURSEMENT_ID",
           "INVALID_DISBURSEMENT_PAYLOAD",
           "ENVELOPE_ALREADY_CANCELLED",
@@ -2067,7 +2077,10 @@
           "STATEMENT_UPLOAD_ERROR",
           "DUPLICATE_DISBURSEMENT",
           "INVALID_REVERSAL",
-          "INVALID_ACCOUNT_NUMBER"
+          "INVALID_ACCOUNT_NUMBER",
+          "BENEFIT_PROGRAM_CONFIGURATION_NOT_FOUND",
+          "BENEFIT_PROGRAM_CONFIGURATION_ALREADY_EXISTS",
+          "BENEFIT_PROGRAM_CONFIGURATION_INVALID"
         ],
         "title": "G2PBridgeErrorCodes"
       },
@@ -2294,6 +2307,7 @@
           "meta": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -2323,7 +2337,11 @@
           "rjct.action.not_supported",
           "rjct.total_count.invalid",
           "rjct.total_count.limit_exceeded",
-          "rjct.errors.too_many"
+          "rjct.errors.too_many",
+          "rjct.jwt.invalid",
+          "rjct.file.size.exceeded",
+          "rjct.file.type.invalid",
+          "rjct.virus.check.failed"
         ],
         "title": "SyncResponseStatusReasonCodeEnum"
       },
@@ -2359,6 +2377,12 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "JWTSignatureValidator": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

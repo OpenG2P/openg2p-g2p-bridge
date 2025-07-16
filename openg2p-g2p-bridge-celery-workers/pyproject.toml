@@ -16,19 +16,13 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "openg2p-fastapi-common",
-  "openg2p-fastapi-auth",
-  "openg2p-g2pconnect-mapper-lib",
-  "python-jose",
-  "celery",
+  "openg2p-g2pconnect-mapper-lib >=1.1.0",
+  "openg2p-g2p-bridge-models",
+  "openg2p-g2p-bridge-bank-connectors",
+  "celery[redis]",
   "mt-940",
   "psycopg2",
   "asyncpg",
-  "python-dotenv",
-  "redis",
-  "hiredis",
-  "python-jose",
-  "parse",
 ]
 dynamic = ["version"]
 

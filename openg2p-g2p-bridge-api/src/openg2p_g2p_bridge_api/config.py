@@ -26,3 +26,6 @@ class Settings(BaseSettings):
         "application/vnd.swift.mt940",
         "text/plain",
     ]
+
+    jwt_validate_keymanager_app_id: str = "G2PBRIDGE"
+    keymanager_auth_client_id: str = "openg2p-g2p-bridge"
