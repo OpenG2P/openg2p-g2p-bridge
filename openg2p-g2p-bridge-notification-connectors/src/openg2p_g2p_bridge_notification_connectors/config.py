@@ -1,0 +1,15 @@
+import os
+from openg2p_fastapi_common.config import Settings as BaseSettings
+from pydantic_settings import SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="g2p_bridge_notification_", env_file=".env", extra="allow"
+    )
+
+    novu_url: str = "https://api.novu.co"
+    novu_api_key: str = ""
+    novu_warehouse_workflow_id: str = "warehouse-notification"
+    novu_agency_workflow_id: str = "agency-notification"
+    novu_beneficiary_workflow_id: str = "beneficiary-notification"

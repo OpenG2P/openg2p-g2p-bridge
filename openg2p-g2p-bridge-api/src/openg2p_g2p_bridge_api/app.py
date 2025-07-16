@@ -10,12 +10,10 @@ from openg2p_fastapi_common.app import Initializer as BaseInitializer
 from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     DisbursementEnvelope,
-    DisbursementEnvelopeBatchStatus,
 )
 
 from .controllers import (
     AccountStatementController,
-    BenefitProgramConfigurationController,
     DisbursementController,
     DisbursementEnvelopeController,
     DisbursementEnvelopeStatusController,
@@ -23,7 +21,6 @@ from .controllers import (
 )
 from .services import (
     AccountStatementService,
-    BenefitProgramConfigurationService,
     DisbursementEnvelopeService,
     DisbursementEnvelopeStatusService,
     DisbursementService,
@@ -43,13 +40,11 @@ class Initializer(BaseInitializer):
         AccountStatementService()
         DisbursementStatusService()
         DisbursementEnvelopeStatusService()
-        BenefitProgramConfigurationService()
         DisbursementEnvelopeController().post_init()
         DisbursementController().post_init()
         AccountStatementController().post_init()
         DisbursementStatusController().post_init()
         DisbursementEnvelopeStatusController().post_init()
-        BenefitProgramConfigurationController().post_init()
 
     def migrate_database(self, args):
         super().migrate_database(args)
@@ -57,7 +52,6 @@ class Initializer(BaseInitializer):
         async def migrate():
             _logger.info("Migrating database")
             await DisbursementEnvelope.create_migrate()
-            await DisbursementEnvelopeBatchStatus.create_migrate()
             await AccountStatement.create_migrate()
 
         asyncio.run(migrate())

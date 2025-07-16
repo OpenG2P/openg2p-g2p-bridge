@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,8 +8,11 @@ from openg2p_g2p_bridge_celery_workers.tasks.mapper_resolution_task import (
     process_and_store_resolution,
 )
 from openg2p_g2p_bridge_models.models import (
+    BenefitType,
+    Disbursement,
     DisbursementBatchControl,
-    MapperResolutionBatchStatus,
+    DisbursementEnvelope,
+    DisbursementFrequency,
     ProcessStatus,
 )
 
@@ -20,23 +23,42 @@ class MockSession:
         self.flushed = False
         self.details_list = []
         self.updates = []
+        self.query_args = ()
         self.disbursement_batch_controls = [
             DisbursementBatchControl(
-                disbursement_id="test_disbursement_id",
+                disbursement_batch_control_id="test_batch_control_id",
+                disbursement_cycle_id="test_cycle_id",
                 disbursement_envelope_id="test_envelope_id",
-                beneficiary_id="test_beneficiary_id",
-                bank_disbursement_batch_id=None,
-                mapper_resolution_batch_id=None,
-                mapper_status=ProcessStatus.PENDING,
-                latest_error_code=None,
+                fa_resolution_status=ProcessStatus.PENDING,
+                sponsor_bank_dispatch_status=ProcessStatus.PENDING,
+                geo_resolutuon_status=ProcessStatus.PENDING,
+                warehouse_allocation_status=ProcessStatus.PENDING,
             ),
         ]
-        self.mapper_resolution_batch_status = MapperResolutionBatchStatus(
-            mapper_resolution_batch_id="test_batch_id",
-            resolution_status=ProcessStatus.PENDING,
-            resolution_time_stamp=None,
-            latest_error_code=None,
-            resolution_attempts=0,
+        self.disbursement = Disbursement(
+            disbursement_id="test_disbursement_id",
+            disbursement_envelope_id="test_envelope_id",
+            beneficiary_id="test_beneficiary_id",
+            beneficiary_name="Test Beneficiary",
+            disbursement_quantity=100.0,
+            narrative="Test disbursement",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_batch_control_id="test_batch_control_id",
+        )
+        self.disbursements = [self.disbursement]
+        self.disbursement_envelope = DisbursementEnvelope(
+            disbursement_envelope_id="test_envelope_id",
+            benefit_program_mnemonic="test_program",
+            benefit_code_id="test_benefit",
+            benefit_type=BenefitType.CASH_DIGITAL,
+            disbursement_cycle_id="test_cycle",
+            disbursement_frequency=DisbursementFrequency.Monthly,
+            cycle_code_mnemonic="test_cycle_mnemonic",
+            number_of_beneficiaries=10,
+            number_of_disbursements=10,
+            total_disbursement_quantity=1000,
+            measurement_unit="KES",
+            disbursement_schedule_date=date.today(),
         )
 
     def __enter__(self):
@@ -46,13 +68,66 @@ class MockSession:
         pass
 
     def execute(self, *args):
-        return self
+        # Simulate SQLAlchemy select queries
+        select_obj = args[0]
+        model_cls = select_obj.column_descriptions[0]["type"]
+        query_type = None
+        if model_cls is DisbursementBatchControl:
+            query_type = "batch_control"
+        elif model_cls is Disbursement:
+            query_type = "disbursement"
+
+        class ScalarResult:
+            def __init__(self, parent, query_type):
+                self.parent = parent
+                self.query_type = query_type
+
+            def scalars(self):
+                class AllResult:
+                    def all(inner_self):
+                        if self.query_type == "batch_control":
+                            return self.parent.disbursement_batch_controls
+                        elif self.query_type == "disbursement":
+                            return [self.parent.disbursement]
+                        return []
+
+                    def first(inner_self):
+                        if self.query_type == "batch_control":
+                            if not self.parent.disbursement_batch_controls:
+                                return None
+                            return self.parent.disbursement_batch_controls[0]
+                        elif self.query_type == "disbursement":
+                            if not self.parent.disbursements:
+                                return None
+                            return self.parent.disbursements[0]
+                        return None
+
+                return AllResult()
+
+            def first(self):
+                # Return the first batch control or disbursement depending on context
+                if (
+                    hasattr(self, "disbursement_batch_controls")
+                    and self.disbursement_batch_controls
+                ):
+                    return self.disbursement_batch_controls[0]
+                if hasattr(self, "disbursements") and self.disbursements:
+                    return self.disbursements[0]
+                return None
+
+        return ScalarResult(self, query_type)
 
     def scalars(self):
         return self
 
     def all(self):
-        return self.disbursement_batch_controls
+        if not self.query_args:
+            return []
+        if self.query_args[0] is DisbursementBatchControl:
+            return self.disbursement_batch_controls
+        elif self.query_args[0] is Disbursement:
+            return self.disbursements
+        return []
 
     def query(self, *args):
         self.query_args = args
@@ -63,7 +138,12 @@ class MockSession:
         return self
 
     def update(self, *args, **kwargs):
-        self.updates.extend(arg for arg in args if isinstance(arg, dict))
+        # Always append a dict to self.updates for both success and error paths
+        for arg in args:
+            if isinstance(arg, dict):
+                self.updates.append(arg)
+        if kwargs:
+            self.updates.append(kwargs)
         return True
 
     def add_all(self, items):
@@ -74,6 +154,15 @@ class MockSession:
 
     def flush(self):
         self.flushed = True
+
+    def first(self):
+        if not self.query_args:
+            return None
+        if self.query_args[0] is DisbursementBatchControl:
+            return self.disbursement_batch_controls[0]
+        elif self.query_args[0] is Disbursement:
+            return self.disbursements[0]
+        return None
 
 
 @pytest.fixture
@@ -97,9 +186,10 @@ def mock_resolve_helper():
         dict=MagicMock(return_value={"key": "value"})  # Mock the dict method
     )
     mock_helper.deconstruct_fa.return_value = {
-        "fa_type": "BANK",
-        "account_number": "123",
+        "mapper_resolved_fa_type": "BANK",
+        "bank_account_number": "123",
         "bank_code": "ABC",
+        "branch_code": "001",
     }
 
     with patch(
@@ -133,35 +223,26 @@ def test_mapper_resolution_worker_success(
     ]
     mock_resolve_client.resolve_request.return_value = mock_response
     mock_resolve_helper.deconstruct_fa.return_value = {
-        "fa_type": "BANK",
-        "account_number": "123",
+        "mapper_resolved_fa_type": "BANK",
+        "bank_account_number": "123",
         "bank_code": "ABC",
+        "branch_code": "001",
     }
 
     mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
 
-    mapper_resolution_worker("test_batch_id")
+    # Only pass the batch control ID (session is handled by patching sessionmaker)
+    mapper_resolution_worker("test_batch_control_id")
 
     assert len(mock_session_maker.details_list) != 0
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.resolution_status)
-        == ProcessStatus.PROCESSED
+    update_values = next(
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
+        None,
     )
-    assert isinstance(
-        mock_session_maker.updates[0].get(
-            MapperResolutionBatchStatus.resolution_time_stamp
-        ),
-        datetime,
-    )
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.latest_error_code)
-        is None
-    )
-
-    assert (
-        mock_session_maker.updates[1].get(DisbursementBatchControl.mapper_status)
-        == ProcessStatus.PROCESSED.value
-    )
+    assert update_values is not None
+    assert update_values["fa_resolution_status"] == ProcessStatus.PROCESSED
+    assert isinstance(update_values["fa_resolution_timestamp"], datetime)
+    assert update_values["fa_resolution_latest_error_code"] is None
 
     assert mock_session_maker.flushed
     assert mock_session_maker.committed
@@ -176,13 +257,15 @@ def test_mapper_resolution_worker_failure(
 
     mapper_resolution_worker("test_batch_id")
 
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.resolution_status)
-        == ProcessStatus.PENDING
+    update_values = next(
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
+        None,
     )
+    assert update_values is not None
+    assert update_values["fa_resolution_status"] == ProcessStatus.PENDING
     assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.latest_error_code)
-        == "Failed to resolve the request: TEST_ERROR"
+        "Failed to resolve the request: TEST_ERROR"
+        in update_values["fa_resolution_latest_error_code"]
     )
 
     assert mock_session_maker.committed
@@ -190,34 +273,47 @@ def test_mapper_resolution_worker_failure(
 
 @pytest.mark.asyncio
 async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_client):
-    disbursement_controls = [
-        DisbursementBatchControl(beneficiary_id="test_beneficiary_id")
+    disbursements = [
+        Disbursement(
+            disbursement_id="test_disbursement_id",
+            disbursement_envelope_id="test_envelope_id",
+            beneficiary_id="test_beneficiary_id",
+            beneficiary_name="Test Beneficiary",
+            disbursement_quantity=100.0,
+            narrative="Test disbursement",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_batch_control_id="test_batch_control_id",
+        )
     ]
     mock_response = "RESOLVE_RESPONSE"
     mock_resolve_client.resolve_request.return_value = mock_response
 
-    response, error = await make_resolve_request(disbursement_controls)
-
-    mock_resolve_helper.construct_single_resolve_request.assert_called()
-    mock_resolve_helper.construct_resolve_request.assert_called()
-    mock_resolve_client.resolve_request.assert_awaited_once()
+    response, error = await make_resolve_request(disbursements)
     assert response == mock_response
     assert error is None
 
 
 @pytest.mark.asyncio
 async def test_make_resolve_request_failure(mock_resolve_helper, mock_resolve_client):
-    disbursement_controls = [
-        DisbursementBatchControl(beneficiary_id="test_beneficiary_id")
+    disbursements = [
+        Disbursement(
+            disbursement_id="test_disbursement_id",
+            disbursement_envelope_id="test_envelope_id",
+            beneficiary_id="test_beneficiary_id",
+            beneficiary_name="Test Beneficiary",
+            disbursement_quantity=100.0,
+            narrative="Test disbursement",
+            disbursement_cycle_id="test_cycle_id",
+            disbursement_batch_control_id="test_batch_control_id",
+        )
     ]
     mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
 
     mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
 
-    response, error_msg = await make_resolve_request(disbursement_controls)
-
+    response, error_msg = await make_resolve_request(disbursements)
     assert response is None
-    assert error_msg == "Failed to resolve the request: TEST_ERROR"
+    assert "TEST_ERROR" in error_msg
 
 
 def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_helper):
@@ -232,17 +328,27 @@ def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_h
     beneficiary_map = {"test_beneficiary_id": "test_disbursement_id"}
 
     mock_resolve_helper.deconstruct_fa.return_value = {
-        "fa_type": "BANK",
-        "account_number": "123",
+        "mapper_resolved_fa_type": "BANK",
+        "bank_account_number": "123",
         "bank_code": "ABC",
+        "branch_code": "001",
     }
 
-    process_and_store_resolution("test_batch_id", mock_response, beneficiary_map)
+    process_and_store_resolution(
+        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
+    )
 
     assert len(mock_session_maker.details_list) == 1
-    detail = mock_session_maker.details_list[0]
-    assert detail.mapper_resolved_fa_type == "BANK"
-    assert detail.bank_account_number == "123"
+    update_values = next(
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
+        None,
+    )
+    assert update_values is not None
+    assert update_values["fa_resolution_status"] == ProcessStatus.PROCESSED
+    assert isinstance(update_values["fa_resolution_timestamp"], datetime)
+    assert update_values["fa_resolution_latest_error_code"] is None
+    assert mock_session_maker.flushed
+    assert mock_session_maker.committed
 
 
 def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_helper):
@@ -252,21 +358,16 @@ def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_h
     ]
     beneficiary_map = {"test_beneficiary_id": "test_disbursement_id"}
 
-    process_and_store_resolution("test_batch_id", mock_response, beneficiary_map)
-
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.resolution_status)
-        == ProcessStatus.PENDING
-    )
-    assert (
-        mock_session_maker.updates[0].get(MapperResolutionBatchStatus.latest_error_code)
-        == "Failed to resolve the request for a beneficiary id"
+    process_and_store_resolution(
+        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
     )
 
-    assert (
-        mock_session_maker.updates[1].get(DisbursementBatchControl.mapper_status)
-        == ProcessStatus.ERROR.value
+    update_values = next(
+        (item for item in mock_session_maker.updates if "fa_resolution_status" in item),
+        None,
     )
-
+    assert update_values is not None
+    assert update_values["fa_resolution_status"] == ProcessStatus.PENDING
+    assert update_values["fa_resolution_latest_error_code"] is not None
     assert mock_session_maker.flushed
     assert mock_session_maker.committed

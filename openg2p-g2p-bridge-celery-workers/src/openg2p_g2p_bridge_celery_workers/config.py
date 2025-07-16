@@ -40,3 +40,21 @@ class Settings(BaseSettings):
     keymanager_auth_url: str = ""
     keymanager_auth_client_id: str = "openg2p-g2p-bridge"
     keymanager_auth_client_secret: str = ""
+
+    agency_allocation_max_attempts: int = 3
+    warehouse_allocation_max_attempts: int = 3
+    geo_resolution_max_attempts: int = 3
+    mapper_resolution_max_attempts: int = 3
+    check_funds_with_bank_max_attempts: int = 3
+    block_funds_with_bank_max_attempts: int = 3
+
+    agency_notification_max_attempts: int = 3
+    warehouse_notification_max_attempts: int = 3
+    beneficiary_notification_max_attempts: int = 3
+
+    # Other DB connection settings
+    db_datasource_farmer_registry: str = (
+        "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
+    )
+    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbms"
+

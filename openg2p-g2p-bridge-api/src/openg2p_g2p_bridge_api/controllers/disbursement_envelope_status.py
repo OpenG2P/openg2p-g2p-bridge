@@ -8,7 +8,7 @@ from openg2p_g2p_bridge_models.errors.exceptions import (
     RequestValidationException,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    DisbursementEnvelopeBatchStatusPayload,
+    DisbursementEnvelopeStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
 )
@@ -48,12 +48,12 @@ class DisbursementEnvelopeStatusController(BaseController):
             RequestValidation.get_component().validate_request(
                 disbursement_envelope_status_request
             )
-            disbursement_envelope_batch_status_payload: DisbursementEnvelopeBatchStatusPayload = await self.disbursement_envelope_status_service.get_disbursement_envelope_batch_status(
+            disbursement_envelope_status_payload: DisbursementEnvelopeStatusPayload = await self.disbursement_envelope_status_service.get_disbursement_envelope_status(
                 disbursement_envelope_status_request
             )
             disbursement_status_response: DisbursementEnvelopeStatusResponse = await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_success_response(
                 disbursement_envelope_status_request,
-                disbursement_envelope_batch_status_payload,
+                disbursement_envelope_status_payload,
             )
             return disbursement_status_response
 

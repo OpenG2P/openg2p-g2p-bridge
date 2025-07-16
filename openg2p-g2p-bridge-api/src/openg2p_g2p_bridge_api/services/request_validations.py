@@ -20,7 +20,7 @@ class RequestValidation(BaseService):
         return None
 
     def validate_create_disbursement_envelope_request_header(self, request) -> None:
-        if request.header.action != "create_disbursement_envelope":
+        if request.header.action != "create_disbursement_envelopes":
             raise RequestValidationException(
                 code=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,
                 message=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,

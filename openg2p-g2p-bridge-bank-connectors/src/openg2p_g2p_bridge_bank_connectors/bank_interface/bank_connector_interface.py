@@ -24,6 +24,8 @@ class BlockFundsResponse(BaseModel):
 class DisbursementPaymentPayload(BaseModel):
     disbursement_id: str
     remitting_account: str
+    remitting_account_type: Optional[str] = None
+    remitting_account_branch_code: Optional[str] = None
     remitting_account_currency: str
     payment_amount: float
     funds_blocked_reference_number: str
@@ -71,7 +73,7 @@ class BankConnectorInterface(BaseService):
     ) -> PaymentResponse:
         raise NotImplementedError()
 
-    def retrieve_disbursement_id(
+    def retrieve_reconciliation_id(
         self, bank_reference: str, customer_reference: str, narratives: str
     ) -> str:
         raise NotImplementedError()
