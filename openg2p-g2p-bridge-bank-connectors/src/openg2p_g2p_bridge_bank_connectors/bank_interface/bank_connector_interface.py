@@ -73,7 +73,7 @@ class BankConnectorInterface(BaseService):
     ) -> PaymentResponse:
         raise NotImplementedError()
 
-    def retrieve_disbursement_id(
+    def retrieve_reconciliation_id(
         self, bank_reference: str, customer_reference: str, narratives: str
     ) -> str:
         raise NotImplementedError()

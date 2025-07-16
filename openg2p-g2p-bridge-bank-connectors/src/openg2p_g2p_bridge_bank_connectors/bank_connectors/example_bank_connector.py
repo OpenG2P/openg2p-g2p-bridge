@@ -193,11 +193,11 @@ class ExampleBankConnector(BankConnectorInterface):
             _logger.error(f"Error initiating payment: {e}")
             return PaymentResponse(status=PaymentStatus.ERROR, error_code=str(e))
 
-    def retrieve_disbursement_id(
+    def retrieve_reconciliation_id(
         self, bank_reference: str, customer_reference: str, narratives: str
     ) -> str:
         _logger.info(
-            f"Retrieving disbursement id for bank_reference: {bank_reference}, customer_reference: {customer_reference}"
+            f"Retrieving reconciliation id for bank_reference: {bank_reference}, customer_reference: {customer_reference}"
         )
         return customer_reference
 

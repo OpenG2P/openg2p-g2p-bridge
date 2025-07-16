@@ -14,7 +14,6 @@ from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     AccountStatementLob,
     Disbursement,
-    BenefitType,
     DisbursementBatchControlGeo,
     DisbursementErrorRecon,
     DisbursementRecon,
@@ -218,18 +217,21 @@ def process_reversal_of_debits(
 ):
     for parsed_transaction in parsed_transactions_rd:
         disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
+        disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
 
         if not disbursement:
-            disbursement_error_recons.append(
-                construct_disbursement_error_recon(
-                    statement_id,
-                    account_statement.statement_number,
-                    account_statement.sequence_number,
-                    parsed_transaction,
-                    G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID,
+            disbursement_batch_control_geo = check_valid_disbursement_batch_control_geo_id(parsed_transaction, session)
+            if not disbursement_batch_control_geo:
+                disbursement_error_recons.append(
+                    construct_disbursement_error_recon(
+                        statement_id,
+                        account_statement.statement_number,
+                        account_statement.sequence_number,
+                        parsed_transaction,
+                        G2PBridgeErrorCodes.INVALID_RECONCILIATION_ID,
+                    )
                 )
-            )
-            continue
+                continue
 
         disbursement_recon = get_disbursement_recon(parsed_transaction, session)
 
@@ -275,15 +277,11 @@ def process_debit_transactions(
                         account_statement.statement_number,
                         account_statement.sequence_number,
                         parsed_transaction,
-                        G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID,
+                        G2PBridgeErrorCodes.INVALID_RECONCILIATION_ID,
                     )
                 )
                 continue
-        benefit_type:BenefitType 
-        if disbursement:
-            benefit_type = BenefitType.CASH_DIGITAL
-        elif disbursement_batch_control_geo:
-            benefit_type = BenefitType.CASH_PHYSICAL
+
         disbursement_recon = get_disbursement_recon(parsed_transaction, session)
 
         if disbursement_recon:
@@ -299,13 +297,13 @@ def process_debit_transactions(
             continue
 
         disbursement_recon = construct_new_disbursement_recon(
-            benefit_type,
             disbursement,
             disbursement_batch_control_geo,
             parsed_transaction,
             statement_id,
             account_statement.statement_number,
             account_statement.sequence_number,
+            session
         )
         disbursement_recons_d.append(disbursement_recon)
 
@@ -314,7 +312,7 @@ def get_disbursement_recon(parsed_transaction, session):
     disbursement_recon = (
         session.query(DisbursementRecon)
         .filter(
-            DisbursementRecon.disbursement_id == parsed_transaction["disbursement_id"]
+            DisbursementRecon.disbursement_id == parsed_transaction["reconciliation_id"]
         )
         .first()
     )
@@ -323,7 +321,7 @@ def get_disbursement_recon(parsed_transaction, session):
             session.query(DisbursementRecon)
             .filter(
                 DisbursementRecon.disbursement_batch_control_geo_id
-                == parsed_transaction["disbursement_id"]
+                == parsed_transaction["reconciliation_id"]
             )
             .first()
         )
@@ -336,7 +334,7 @@ def check_valid_disbursement_id(parsed_transaction, session) -> Disbursement | N
         session.query(Disbursement)
         .filter(
             Disbursement.id
-            == parsed_transaction["disbursement_id"]
+            == parsed_transaction["reconciliation_id"]
         )
         .first()
     )
@@ -350,7 +348,7 @@ def check_valid_disbursement_batch_control_geo_id(parsed_transaction, session) -
         session.query(DisbursementBatchControlGeo)
         .filter(
             DisbursementBatchControlGeo.id
-            == parsed_transaction["disbursement_id"]
+            == parsed_transaction["reconciliation_id"]
         )
         .first()
     )
@@ -373,7 +371,7 @@ def construct_disbursement_error_recon(
         entry_date=parsed_transaction["remittance_entry_date"],
         value_date=parsed_transaction["remittance_value_date"],
         error_reason=g2p_bridge_error_code,
-        disbursement_id=parsed_transaction["disbursement_id"],
+        reconciliation_id=parsed_transaction["reconciliation_id"],
         bank_reference_number=parsed_transaction["remittance_reference_number"],
     )
 
@@ -404,12 +402,18 @@ def construct_new_disbursement_recon(
     statement_id,
     statement_number,
     statement_sequence,
+    session
 ):
     disbursement_recon = DisbursementRecon(
+        # If disbursement is present, then it is for DIGITAL CASH
         disbursement_batch_control_id=disbursement.disbursement_batch_control_id if disbursement else None,
         disbursement_id=disbursement.id if disbursement else None,
+        
+        # If disbursement_batch_control_geo is present, then it is for PHYSICAL CASH 
+        # PHYSICAL CASH means transfer for agency accounts
         disbursement_batch_control_geo_id=disbursement_batch_control_geo.id if disbursement_batch_control_geo else None,
-        disbursement_envelope_id=parsed_transaction["disbursement_envelope_id"],
+
+        disbursement_envelope_id=get_disbursement_envelope_id(parsed_transaction["reconciliation_id"], session),
         beneficiary_name_from_bank=parsed_transaction["beneficiary_name_from_bank"],
         remittance_reference_number=parsed_transaction["remittance_reference_number"],
         remittance_statement_id=statement_id,
@@ -430,10 +434,10 @@ def construct_parsed_transaction(
     customer_reference = transaction.data["customer_reference"]
     remittance_reference_number = transaction.data["bank_reference"]
     narratives = transaction.data["transaction_details"].split("\n")
-    disbursement_id = bank_connector.retrieve_disbursement_id(
+    reconciliation_id = bank_connector.retrieve_disbursement_id(
         remittance_reference_number, customer_reference, narratives
     )
-    disbursement_envelope_id = get_disbursement_envelope_id(disbursement_id, session)
+    # disbursement_envelope_id = get_disbursement_envelope_id(reconciliation_id, session) # TODO: 
     beneficiary_name_from_bank = None
     remittance_entry_sequence = None
     remittance_entry_date = None
@@ -463,8 +467,8 @@ def construct_parsed_transaction(
 
     parsed_transaction.update(
         {
-            "disbursement_id": disbursement_id,
-            "disbursement_envelope_id": disbursement_envelope_id,
+            "reconciliation_id": reconciliation_id,
+            # "disbursement_envelope_id": disbursement_envelope_id,
             "transaction_amount": transaction_amount,
             "debit_credit_indicator": debit_credit_indicator,
             "beneficiary_name_from_bank": beneficiary_name_from_bank,
@@ -507,8 +511,8 @@ def update_envelope_batch_status_reconciled(
 ):
     # Count how many reversals per envelope
     disbursement_envelope_id_count = {}
-    for recon in disbursement_recons:
-        eid = recon.disbursement_envelope_id
+    for disbursement_recon in disbursement_recons:
+        eid = disbursement_recon.disbursement_envelope_id
         disbursement_envelope_id_count[eid] = (
             disbursement_envelope_id_count.get(eid, 0) + 1
         )
@@ -520,7 +524,7 @@ def update_envelope_batch_status_reconciled(
 
         while max_retries:
             try:
-                envelope_batch_status_for_digital_cash = (
+                envelope_batch_status_for_cash = (
                     session.query(EnvelopeBatchStatusForCash)
                     .filter(
                         EnvelopeBatchStatusForCash.disbursement_envelope_id
@@ -549,10 +553,10 @@ def update_envelope_batch_status_reconciled(
             )
             raise last_exc
 
-        envelope_batch_status_for_digital_cash.number_of_disbursements_reconciled += (
+        envelope_batch_status_for_cash.number_of_disbursements_reconciled += (
             count
         )
-        session.add(envelope_batch_status_for_digital_cash)
+        session.add(envelope_batch_status_for_cash)
         session.commit()
 
 
@@ -585,7 +589,7 @@ def update_envelope_batch_status_reversed(
 
         while max_retries:
             try:
-                envelope_batch_status_for_digital_cash = (
+                envelope_batch_status_for_cash = (
                     session.query(EnvelopeBatchStatusForCash)
                     .filter(
                         EnvelopeBatchStatusForCash.disbursement_envelope_id
@@ -614,6 +618,6 @@ def update_envelope_batch_status_reversed(
             )
             raise last_exc
 
-        envelope_batch_status_for_digital_cash.number_of_disbursements_reversed += count
-        session.add(envelope_batch_status_for_digital_cash)
+        envelope_batch_status_for_cash.number_of_disbursements_reversed += count
+        session.add(envelope_batch_status_for_cash)
         session.commit()

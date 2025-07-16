@@ -81,7 +81,7 @@ class DisbursementErrorRecon(BaseORMModelWithId):
     error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(
         String, nullable=True
     )
-    disbursement_id: Mapped[str] = mapped_column(String, index=True)
+    reconciliation_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
         String, nullable=True, index=True
     )
