@@ -10,10 +10,13 @@ from openg2p_fastapi_common.exception import BaseExceptionHandler
 from openg2p_g2p_bridge_bank_connectors.app import (
     Initializer as BankConnectorInitializer,
 )
-from openg2p_g2pconnect_mapper_lib.app import Initializer as MapperInitializer
-from sqlalchemy import create_engine
+from openg2p_g2p_bridge_geo_resolver.app import Initializer as GeoResolversInitializer
+from openg2p_g2p_bridge_agency_allocator.app import Initializer as AgencyAllocatorInitializer
+from openg2p_g2p_bridge_warehouse_allocator.app import Initializer as WarehouseAllocatorInitializer
+from openg2p_g2p_bridge_notification_connectors.app import Initializer as NotificationConnectorInitializer
 
-from .helpers import ResolveHelper
+from openg2p_g2pconnect_mapper_lib.app import Initializer as MapperInitializer
+from .helpers import ResolveHelper, WarehouseHelper, AgencyHelper
 
 
 class Initializer(BaseInitializer):
@@ -23,21 +26,14 @@ class Initializer(BaseInitializer):
         BaseExceptionHandler()
 
         BankConnectorInitializer()
+        GeoResolversInitializer()
+        AgencyAllocatorInitializer()
+        WarehouseAllocatorInitializer()
+        NotificationConnectorInitializer()
         MapperInitializer()
         ResolveHelper()
-
-
-def get_engine():
-    if _config.db_datasource:
-        db_engine_bridge = create_engine(_config.db_datasource)
-        db_engine_farmer_registry = create_engine(_config.db_datasource_farmer_registry)
-        db_engine_pbms = create_engine(_config.db_datasource_pbms)
-        return {
-            "db_engine_bridge": db_engine_bridge,
-            "db_engine_farmer_registry": db_engine_farmer_registry,
-            "db_engine_pbms": db_engine_pbms,
-        }
-
+        WarehouseHelper()
+        AgencyHelper()
 
 celery_app = Celery(
     "g2p_bridge_celery_worker",

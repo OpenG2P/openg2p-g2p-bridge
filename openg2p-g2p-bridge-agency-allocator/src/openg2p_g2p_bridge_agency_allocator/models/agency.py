@@ -4,7 +4,7 @@ from sqlalchemy.orm import mapped_column
 
 
 class G2PAgency(BaseORMModel):
-    __tablename__ = "g2p_agencies"
+    __tablename__ = "g2p_agency"
 
     id = mapped_column(Integer, primary_key=True, autoincrement=True)
     name = mapped_column(String, nullable=True)

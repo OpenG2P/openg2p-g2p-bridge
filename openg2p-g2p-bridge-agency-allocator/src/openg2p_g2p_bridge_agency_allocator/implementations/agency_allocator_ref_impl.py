@@ -29,16 +29,18 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
 
         results = []
         with session_maker() as pbms_session:
+            # 1. Get agency_ids with program_id and benefit_code_id
+            program_benefit_agency_ids = set([
+                row.agency_id for row in pbms_session.query(G2PAgencyProgramBenefitCode)
+                .filter(
+                    G2PAgencyProgramBenefitCode.program_id == program_id,
+                    G2PAgencyProgramBenefitCode.benefit_code_id == benefit_code_id
+                ).all()
+            ])
             # Fetch G2P agencies based on the small geo list
+
             for geo in small_geo_list:
-                # 1. Get agency_ids with program_id and benefit_code_id
-                program_benefit_agency_ids = set([
-                    row.agency_id for row in pbms_session.query(G2PAgencyProgramBenefitCode)
-                    .filter(
-                        G2PAgencyProgramBenefitCode.program_id == program_id,
-                        G2PAgencyProgramBenefitCode.benefit_code_id == benefit_code_id
-                    ).all()
-                ])
+               
                 # 2. Get agency_ids under geo["administrative_zone_id_small"]
                 geo_agency_ids = set([
                     row.g2p_agency_id for row in pbms_session.query(G2PAdministrativeAreaSmallAgencyRel)
@@ -47,10 +49,10 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                     ).all()
                 ])
                 # 3. Intersect both sets
-                agency_ids = list(program_benefit_agency_ids & geo_agency_ids)
+                agency_ids_intersected = list(program_benefit_agency_ids & geo_agency_ids)
                 g2p_agencies = (
                     pbms_session.query(G2PAgency)
-                    .filter(G2PAgency.id.in_(agency_ids))
+                    .filter(G2PAgency.id.in_(agency_ids_intersected))
                     .all()
                 )
                 g2p_agency = random.choice(g2p_agencies) if g2p_agencies else None
@@ -78,5 +80,12 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                             "agency_admin_phone": g2p_agency.admin_mobile,
                             "agency_additional_attributes": agency_additional_attributes,
                         }
+                    )
+                else:
+                    _logger.warning(
+                        f"No agency found for geo {geo['administrative_zone_id_small']} with benefit_code_id={benefit_code_id} and program_id={program_id}"
+                    )
+                    raise Exception(
+                        f"No agency found for geo {geo['administrative_zone_id_small']} with benefit_code_id={benefit_code_id} and program_id={program_id}"
                     )
         return results

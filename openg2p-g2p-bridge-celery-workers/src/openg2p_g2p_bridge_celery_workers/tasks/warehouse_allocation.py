@@ -15,7 +15,8 @@ from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _logger = logging.getLogger("warehouse_allocation_worker")
@@ -123,12 +124,8 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
-                        DisbursementResolutionGeoAddress.disbursement_batch_control_id
-                        == disbursement_batch_control_geo.disbursement_batch_control_id,
-                        DisbursementResolutionGeoAddress.administrative_zone_id_large
-                        == disbursement_batch_control_geo.administrative_zone_id_large,
-                        DisbursementResolutionGeoAddress.administrative_zone_id_small
-                        == disbursement_batch_control_geo.administrative_zone_id_small,
+                        DisbursementResolutionGeoAddress.disbursement_batch_control_geo_id
+                        == disbursement_batch_control_geo.id,
                     )
                     .values(
                         warehouse_id=allocation["warehouse_id"],
@@ -144,7 +141,8 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                         == disbursement_batch_control_geo.id
                     )
                     .values(
-                       warehouse_admin_name=allocation.get(
+                        warehouse_name=allocation.get("warehouse_name", None),
+                        warehouse_admin_name=allocation.get(
                             "warehouse_admin_name", None
                         ),
                         warehouse_admin_email=allocation.get(
@@ -166,6 +164,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING.value
             session.commit()
         except Exception as e:
+            session.rollback()
             _logger.error(f"Warehouse allocation failed: {e}")
             # Update error code and attempts
             if disbursement_batch_control:
@@ -179,5 +178,9 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 ):
                     disbursement_batch_control.warehouse_allocation_status = (
                         ProcessStatus.ERROR.value
+                    )
+                else:
+                    disbursement_batch_control.warehouse_allocation_status = (
+                        ProcessStatus.PENDING.value
                     )
                 session.commit()

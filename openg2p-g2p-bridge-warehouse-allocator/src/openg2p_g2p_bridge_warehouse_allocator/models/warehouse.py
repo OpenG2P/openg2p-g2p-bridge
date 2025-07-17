@@ -4,7 +4,7 @@ from sqlalchemy.orm import mapped_column
 
 
 class G2PWarehouse(BaseORMModel):
-    __tablename__ = "g2p_warehouses"
+    __tablename__ = "g2p_warehouse"
 
     id = mapped_column(Integer, primary_key=True, autoincrement=True)
     name = mapped_column(String, nullable=True)
@@ -12,7 +12,6 @@ class G2PWarehouse(BaseORMModel):
     admin_name = mapped_column(String, nullable=True)
     admin_email = mapped_column(String, nullable=True)
     admin_mobile = mapped_column(String, nullable=True)
-
 
 
 class G2PWarehouseProgramBenefitCode(BaseORMModel):

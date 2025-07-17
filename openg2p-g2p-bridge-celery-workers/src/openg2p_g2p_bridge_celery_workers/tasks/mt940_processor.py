@@ -25,7 +25,8 @@ from openg2p_g2p_bridge_models.schemas import SponsorBankConfiguration
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 from ..helpers import WarehouseHelper
 
@@ -200,10 +201,13 @@ def mt940_processor_worker(statement_id: str):
                 f"Error processing account statement for statement id: {statement_id}"
                 f" with error: {str(e)}",
             )
-            account_statement.statement_process_status = ProcessStatus.PENDING.value
             account_statement.statement_process_error_code = str(e)
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
+            if account_statement.statement_process_attempts > _config.mt940_processor_max_attempts:
+                account_statement.statement_process_status = ProcessStatus.ERROR.value
+            else:
+                account_statement.statement_process_status = ProcessStatus.PENDING.value
             session.commit()
 
 
@@ -437,7 +441,6 @@ def construct_parsed_transaction(
     reconciliation_id = bank_connector.retrieve_disbursement_id(
         remittance_reference_number, customer_reference, narratives
     )
-    # disbursement_envelope_id = get_disbursement_envelope_id(reconciliation_id, session) # TODO: 
     beneficiary_name_from_bank = None
     remittance_entry_sequence = None
     remittance_entry_date = None

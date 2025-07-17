@@ -7,7 +7,7 @@ from openg2p_g2p_bridge_agency_allocator.models.agency import G2PAgencyProgramBe
 import re
 from openg2p_g2p_bridge_models.models.disbursement_geo import DisbursementBatchControlGeoAttributes
 
-from ..app import get_engine
+from ..engine import get_engine
 _logger = logging.getLogger("openg2p_g2p_bridge")
 _engine = get_engine()
 

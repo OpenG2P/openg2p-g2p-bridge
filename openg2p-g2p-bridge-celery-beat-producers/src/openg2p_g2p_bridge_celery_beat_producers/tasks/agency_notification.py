@@ -7,7 +7,8 @@ from openg2p_g2p_bridge_models.models import (
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _engine = get_engine()
@@ -29,7 +30,7 @@ def agency_notification_beat_producer():
         disbursement_batch_control_geos = result.scalars().all()
         for disbursement_batch_control_geo in disbursement_batch_control_geos:
             _logger.info(
-                f"Sending agency_notification_worker task for disbursement_control_geo_id: {disbursement_batch_control_geo.disbursement_control_geo_id}"
+                f"Sending agency_notification_worker task for disbursement_control_geo_id: {disbursement_batch_control_geo.id}"
             )
             disbursement_batch_control_geo.agency_notification_status = (
                 ProcessStatus.PROCESSING.value

@@ -1,7 +1,6 @@
 from typing import Dict, List
 import logging
 
-
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
@@ -13,7 +12,7 @@ _logger = logging.getLogger("farmer_geo_resolver_impl")
 _engine = get_engine()
 
 session_maker = sessionmaker(
-    bind=_engine.get("db_engine_farmer"), expire_on_commit=False
+    bind=_engine.get("db_engine_registry"), expire_on_commit=False
 )
 
 class FarmerGeoResolverImpl(GeoResolver):
@@ -29,14 +28,20 @@ class FarmerGeoResolverImpl(GeoResolver):
             beneficiary_ids = [item["beneficiary_id"] for item in batch_beneficiary_list]
             farmer_details = registry_session.execute(
                 select(
-                    G2PFarmerRegistry.beneficiary_id,
-                    G2PFarmerRegistry.administrative_zone_id_large,
-                    G2PFarmerRegistry.administrative_zone_mnemonic_large,
-                    G2PFarmerRegistry.administrative_zone_id_small,
-                    G2PFarmerRegistry.administrative_zone_mnemonic_small,
-                ).where(G2PFarmerRegistry.beneficiary_id.in_(beneficiary_ids))
+                    G2PFarmerRegistry.unique_id,
+                    G2PFarmerRegistry.large_area_id,
+                    G2PFarmerRegistry.large_area_code,
+                    G2PFarmerRegistry.small_area_id,
+                    G2PFarmerRegistry.small_area_code,
+                ).where(G2PFarmerRegistry.unique_id.in_(beneficiary_ids))
             ).fetchall()
-            farmer_map = {row.beneficiary_id: row for row in farmer_details}
+            _logger.info(
+                f"Fetched {len(farmer_details)} farmer details for the provided beneficiary IDs"
+            )
+            if not farmer_details:
+                _logger.warning(f"No farmer details found for the provided beneficiary IDs {beneficiary_ids}")
+                return results
+            farmer_map = {row.unique_id: row for row in farmer_details}
             for item in batch_beneficiary_list:
                 row = farmer_map.get(item["beneficiary_id"])
                 if row:
@@ -44,10 +49,10 @@ class FarmerGeoResolverImpl(GeoResolver):
                         {
                             "disbursement_id": item["disbursement_id"],
                             "beneficiary_id": item["beneficiary_id"],
-                            "administrative_zone_id_large": row.administrative_zone_id_large,
-                            "administrative_zone_mnemonic_large": row.administrative_zone_mnemonic_large,
-                            "administrative_zone_id_small": row.administrative_zone_id_small,
-                            "administrative_zone_mnemonic_small": row.administrative_zone_mnemonic_small,
+                            "administrative_zone_id_large": row.large_area_id,
+                            "administrative_zone_mnemonic_large": row.large_area_code,
+                            "administrative_zone_id_small": row.small_area_id,
+                            "administrative_zone_mnemonic_small": row.small_area_code,
                         }
                     )
             return results

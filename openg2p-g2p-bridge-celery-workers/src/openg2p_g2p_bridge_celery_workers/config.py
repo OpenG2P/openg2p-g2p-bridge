@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     mapper_resolution_max_attempts: int = 3
     check_funds_with_bank_max_attempts: int = 3
     block_funds_with_bank_max_attempts: int = 3
+    mt940_processor_max_attempts: int = 3
 
     agency_notification_max_attempts: int = 3
     warehouse_notification_max_attempts: int = 3
@@ -56,5 +57,5 @@ class Settings(BaseSettings):
     db_datasource_farmer_registry: str = (
         "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
     )
-    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbms"
+    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"
 

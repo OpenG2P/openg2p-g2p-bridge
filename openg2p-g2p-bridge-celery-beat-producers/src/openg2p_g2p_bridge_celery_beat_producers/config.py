@@ -50,8 +50,6 @@ class Settings(BaseSettings):
     disbursement_retry_threshold_minutes: int = (
         30  # Will reset stuck processing batches older than threshold
     )
-    batch_fetch_size: int = 100
-    pending_batch_fetch_size: int = 50
 
     process_future_disbursement_schedules: bool = False
     task_stale_threshold_minutes: int = 60  # Threshold for stale tasks

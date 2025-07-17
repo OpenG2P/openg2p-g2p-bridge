@@ -18,7 +18,8 @@ from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _logger = logging.getLogger("agency_allocation_worker")
@@ -47,11 +48,6 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 .scalars()
                 .first()
             )
-            if not disbursement_batch_control:
-                _logger.error(
-                    f"No batch control found for id {disbursement_batch_control_id}"
-                )
-                return
 
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
@@ -82,7 +78,9 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 _logger.error(
                     f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}"
                 )
-                return
+                raise Exception(
+                    f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}"
+                )
 
             # Prepare small_geo_list
             small_geo_list = [
@@ -126,12 +124,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 session.execute(
                     update(DisbursementResolutionGeoAddress)
                     .where(
-                        DisbursementResolutionGeoAddress.disbursement_batch_control_id
-                        == disbursement_batch_control_geo.disbursement_batch_control_id,
-                        DisbursementResolutionGeoAddress.administrative_zone_id_large
-                        == disbursement_batch_control_geo.administrative_zone_id_large,
-                        DisbursementResolutionGeoAddress.administrative_zone_id_small
-                        == disbursement_batch_control_geo.administrative_zone_id_small,
+                        DisbursementResolutionGeoAddress.disbursement_batch_control_geo_id
+                        == disbursement_batch_control_geo.id,
                     )
                     .values(
                         agency_id=allocation["agency_id"],
@@ -148,7 +142,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                         == disbursement_batch_control_geo.id
                     )
                     .values(
-                       agency_admin_name=allocation.get(
+                        agency_name=allocation.get("agency_name", None),
+                        agency_admin_name=allocation.get(
                             "agency_admin_name", None
                         ),
                         agency_admin_email=allocation.get(
@@ -176,27 +171,19 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
 
             session.commit()
         except Exception as e:
+            session.rollback()
             _logger.error(f"Agency allocation failed: {e}")
-            disbursement_batch_control: Optional[DisbursementBatchControl] = (
-                (
-                    session.execute(
-                        select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.disbursement_batch_control_id
-                            == disbursement_batch_control_id
-                        )
-                    )
+            disbursement_batch_control.agency_allocation_latest_error_code = str(e)
+            disbursement_batch_control.agency_allocation_attempts += 1
+            if (
+                disbursement_batch_control.agency_allocation_attempts
+                >= _config.agency_allocation_max_attempts
+            ):
+                disbursement_batch_control.agency_allocation_status = (
+                    ProcessStatus.ERROR.value
                 )
-                .scalars()
-                .first()
-            )
-            if disbursement_batch_control:
-                disbursement_batch_control.agency_allocation_latest_error_code = str(e)
-                disbursement_batch_control.agency_allocation_attempts += 1
-                if (
-                    disbursement_batch_control.agency_allocation_attempts
-                    >= _config.agency_allocation_max_attempts
-                ):
-                    disbursement_batch_control.agency_allocation_status = (
-                        ProcessStatus.ERROR.value
-                    )
-                session.commit()
+            else:
+                disbursement_batch_control.agency_allocation_status = (
+                    ProcessStatus.PENDING.value
+                )
+            session.commit()

@@ -13,7 +13,8 @@ from openg2p_g2pconnect_mapper_lib.schemas import ResolveRequest
 from sqlalchemy import select, exists
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 from ..helpers import ResolveHelper
 
@@ -110,9 +111,6 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
                 .scalars()
                 .first()
             )
-            disbursement_batch_control.fa_resolution_status = (
-                ProcessStatus.PENDING.value
-            )
             disbursement_batch_control.fa_resolution_latest_error_code = (
                 str(e)
             )
@@ -126,6 +124,10 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
             ):
                 disbursement_batch_control.fa_resolution_status = (
                     ProcessStatus.ERROR.value
+                )
+            else:
+                disbursement_batch_control.fa_resolution_status = (
+                    ProcessStatus.PENDING.value
                 )
             session.add(disbursement_batch_control)
             session.commit()

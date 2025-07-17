@@ -51,9 +51,11 @@ class DisbursementBatchControlGeoAttributes(BaseORMModelWithId):
     __tablename__ = "disbursement_batch_control_geo_attributes"
 
     disbursement_batch_control_id: Mapped[str] = mapped_column(String, index=True)
+    warehouse_name: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_admin_name: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_admin_email: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_admin_phone: Mapped[str] = mapped_column(String, nullable=True)
+    agency_name: Mapped[str] = mapped_column(String, nullable=True)
     agency_admin_name: Mapped[str] = mapped_column(String, nullable=True)
     agency_admin_email: Mapped[str] = mapped_column(String, nullable=True)
     agency_admin_phone: Mapped[str] = mapped_column(String, nullable=True)

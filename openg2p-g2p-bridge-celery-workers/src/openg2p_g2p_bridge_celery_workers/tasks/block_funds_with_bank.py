@@ -20,7 +20,8 @@ from ..helpers import WarehouseHelper
 
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _config = Settings.get_config()
@@ -120,9 +121,6 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             _logger.error(
                 f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
             )
-            envelope_batch_status_for_cash.funds_blocked_with_bank = (
-                FundsBlockedWithBankEnum.PENDING_CHECK.value
-            )
             envelope_batch_status_for_cash.funds_blocked_latest_timestamp = (
                 datetime.now()
             )
@@ -137,6 +135,10 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             ):
                 envelope_batch_status_for_cash.funds_blocked_with_bank = (
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
+                )
+            else:
+                envelope_batch_status_for_cash.funds_blocked_with_bank = (
+                    FundsBlockedWithBankEnum.PENDING_BLOCK.value
                 )
             session.commit()
 

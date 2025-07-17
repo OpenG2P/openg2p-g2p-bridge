@@ -2,14 +2,13 @@
 
 from .config import Settings
 
-_config = Settings.get_config()
-
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
 
-from .factory import GeoResolutionFactory
-from .implementations import FarmerGeoResolverImpl
+from .factory import NotificationFactory
+from .implementations import NovuNotifier
+
 
 class Initializer(BaseInitializer):
     def initialize(self, **kwargs):
-        GeoResolutionFactory()
-        FarmerGeoResolverImpl()
+        NotificationFactory()
+        NovuNotifier()

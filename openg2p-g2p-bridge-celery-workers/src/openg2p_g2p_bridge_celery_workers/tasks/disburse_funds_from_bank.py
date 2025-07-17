@@ -28,7 +28,8 @@ from openg2p_g2p_bridge_models.schemas import (
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 from ..helpers import WarehouseHelper, AgencyHelper
 
@@ -172,9 +173,6 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                 _logger.error(
                     f"Unexpected error during disbursement for envelope {disbursement_envelope.id}: {e}"
                 )
-                disbursement_batch_control.sponsor_bank_dispatch_status = (
-                    ProcessStatus.PENDING.value
-                )
                 disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = (
                     str(e)
                 )
@@ -189,8 +187,9 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control.sponsor_bank_dispatch_status = (
                         ProcessStatus.ERROR.value
                     )
-                    _logger.error(
-                        f"Max attempts reached for disbursement for envelope"
+                else:
+                    disbursement_batch_control.sponsor_bank_dispatch_status = (
+                        ProcessStatus.PENDING.value
                     )
                 session.commit()
                 break

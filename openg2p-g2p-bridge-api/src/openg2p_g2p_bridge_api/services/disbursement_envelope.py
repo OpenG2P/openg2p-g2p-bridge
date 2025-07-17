@@ -227,15 +227,6 @@ class DisbursementEnvelopeService(BaseService):
                 G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
             )
         if (
-            disbursement_envelope_payload.disbursement_schedule_date is None
-            or disbursement_envelope_payload.disbursement_schedule_date
-            < datetime.date(datetime.now())  # TODO: Add a delta of x days
-        ):
-            _logger.error("Invalid disbursement schedule date")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_SCHEDULE_DATE
-            )
-        if (
             disbursement_envelope_payload.benefit_code_id is None
             or disbursement_envelope_payload.benefit_code_id == ""
         ):
@@ -269,11 +260,13 @@ class DisbursementEnvelopeService(BaseService):
         _logger.info("Constructing disbursement envelope")
         disbursement_envelope: DisbursementEnvelope = DisbursementEnvelope(
             id=disbursement_envelope_payload.id,
-            benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
             benefit_program_id=disbursement_envelope_payload.benefit_program_id,
+            benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
+            benefit_program_description=disbursement_envelope_payload.benefit_program_description,
             target_registry=disbursement_envelope_payload.target_registry,
             benefit_code_id=disbursement_envelope_payload.benefit_code_id,
             benefit_code_mnemonic=disbursement_envelope_payload.benefit_code_mnemonic,
+            benefit_code_description=disbursement_envelope_payload.benefit_code_description,
             benefit_type=disbursement_envelope_payload.benefit_type.value,
             disbursement_cycle_id=disbursement_envelope_payload.disbursement_cycle_id,
             disbursement_frequency=disbursement_envelope_payload.disbursement_frequency.value,
@@ -327,6 +320,22 @@ class DisbursementEnvelopeService(BaseService):
             _logger.error("Invalid disbursement envelope ID")
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ENVELOPE_ID
+            )
+        if (
+            disbursement_envelope_payload.benefir_program_id is None
+            or disbursement_envelope_payload.benefit_program_id == ""
+        ):
+            _logger.error("Invalid benefit program ID")
+            raise DisbursementEnvelopeException(
+                G2PBridgeErrorCodes.INVALID_PROGRAM_ID
+            )
+        if (
+            disbursement_envelope_payload.benefit_program_mnemonic is None
+            or disbursement_envelope_payload.benefit_program_mnemonic == ""
+        ):
+            _logger.error("Invalid benefit program mnemonic")
+            raise DisbursementEnvelopeException(
+                G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
             )
         if (
             disbursement_envelope_payload.number_of_beneficiaries is None

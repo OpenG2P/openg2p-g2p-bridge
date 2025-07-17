@@ -21,13 +21,6 @@ class Initializer(BaseInitializer):
 
         BankConnectorInitializer()
 
-
-def get_engine():
-    if _config.db_datasource:
-        db_engine = create_engine(_config.db_datasource)
-        return db_engine
-
-
 celery_app = Celery(
     "g2p_bridge_celery_beat_producer",
     broker=_config.celery_broker_url,

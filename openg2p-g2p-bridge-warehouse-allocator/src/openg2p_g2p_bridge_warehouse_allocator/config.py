@@ -10,6 +10,6 @@ class Settings(BaseSettings):
     db_dbname: str = "openg2p_g2p_bridge_db"
 
     # PBMS/MIS database connection settings
-    db_datasource_pbms: str = "postgresql://user:password@localhost:5432/pbms_db"
+    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"
 
     # Add warehouse allocator specific config fields here

@@ -19,7 +19,8 @@ from openg2p_g2p_bridge_models.models import (
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _config = Settings.get_config()
@@ -187,6 +188,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 )
                 disbursement_batch_control_geo_id = batch_control_geo_id_map.get(key)
                 disbursement_resolution_geo_address = DisbursementResolutionGeoAddress(
+                    id=geo_resolution_item.get("disbursement_id", None),
                     disbursement_id=geo_resolution_item.get("disbursement_id", None),
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                     disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
@@ -261,9 +263,6 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 .first()
             )
             if disbursement_batch_control:
-                disbursement_batch_control.geo_resolution_status = (
-                    ProcessStatus.PENDING.value
-                )
                 disbursement_batch_control.geo_resolution_latest_error_code = str(
                     e
                 )
@@ -278,7 +277,8 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control.geo_resolution_status = (
                         ProcessStatus.ERROR.value
                     )
-                    disbursement_batch_control.geo_resolution_latest_error_code = str(
-                        e
+                else:
+                    disbursement_batch_control.geo_resolution_status = (
+                        ProcessStatus.PENDING.value
                     )
                 session.commit()

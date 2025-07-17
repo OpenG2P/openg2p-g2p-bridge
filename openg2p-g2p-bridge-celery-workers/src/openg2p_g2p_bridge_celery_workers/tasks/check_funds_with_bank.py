@@ -15,7 +15,8 @@ from openg2p_g2p_bridge_models.schemas import (
 from ..helpers import WarehouseHelper
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
+from ..engine import get_engine
 from ..config import Settings
 
 _config = Settings.get_config()
@@ -102,9 +103,6 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             _logger.error(
                 f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}"
             )
-            envelope_batch_status_for_cash.funds_available_with_bank = (
-                FundsAvailableWithBankEnum.PENDING_CHECK.value
-            )
             envelope_batch_status_for_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
@@ -119,8 +117,9 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 envelope_batch_status_for_cash.funds_available_with_bank = (
                     FundsAvailableWithBankEnum.ERROR.value
                 )
-                _logger.error(
-                    f"Max attempts reached for checking funds with bank for envelope {disbursement_envelope_id}"
+            else:
+                envelope_batch_status_for_cash.funds_available_with_bank = (
+                    FundsAvailableWithBankEnum.PENDING_CHECK.value
                 )
         _logger.info(
             f"Checked funds with bank for envelope: {disbursement_envelope_id}"

@@ -5,8 +5,8 @@ from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_warehouse_allocator.models.warehouse import G2PWarehouseProgramBenefitCode
 import re
 
+from ..engine import get_engine
 
-from ..app import get_engine
 _logger = logging.getLogger("openg2p_g2p_bridge")
 _engine = get_engine()
 
