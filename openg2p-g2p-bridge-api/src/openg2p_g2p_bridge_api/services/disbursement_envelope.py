@@ -352,15 +352,6 @@ class DisbursementEnvelopeService(BaseService):
             raise DisbursementEnvelopeException(
                 G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
             )
-        if (
-            disbursement_envelope_payload.disbursement_schedule_date is None
-            or disbursement_envelope_payload.disbursement_schedule_date
-            < datetime.date(datetime.now())
-        ):
-            _logger.error("Invalid disbursement schedule date")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_SCHEDULE_DATE
-            )
         return True
 
     async def update_disbursement_envelope(
