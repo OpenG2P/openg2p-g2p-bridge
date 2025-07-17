@@ -58,6 +58,9 @@ class DisbursementEnvelopeController(BaseController):
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Bulk creating disbursement envelopes")
         try:
+            _logger.info(
+                f"Request to create disbursement envelopes: {disbursement_envelope_request}"
+            )
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(
                 disbursement_envelope_request
@@ -71,7 +74,7 @@ class DisbursementEnvelopeController(BaseController):
                 disbursement_envelope_request
             )
         except RequestValidationException as e:
-            _logger.error("Error validating request")
+            _logger.error(f"Error validating request: {e}")
             error_response: DisbursementEnvelopeResponse = await self.disbursement_envelope_service.construct_disbursement_envelope_error_response(
                 disbursement_envelope_request, e.code
             )
