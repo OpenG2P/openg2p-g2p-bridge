@@ -63,46 +63,53 @@ class DisbursementService(BaseService):
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
                     disbursement_payloads=disbursement_request.message,
                 )
-
-            disbursement_envelope = (
-                (
-                    await session.execute(
-                        select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.id
-                            == str(
-                                disbursement_request.message[0].disbursement_envelope_id
+            try:
+                disbursement_envelope = (
+                    (
+                        await session.execute(
+                            select(DisbursementEnvelope).where(
+                                DisbursementEnvelope.id
+                                == str(
+                                    disbursement_request.message[0].disbursement_envelope_id
+                                )
                             )
                         )
                     )
+                    .scalars()
+                    .first()
                 )
-                .scalars()
-                .first()
-            )
 
-            disbursement_batch_control: DisbursementBatchControl = (
-                await self.construct_disbursement_batch_control(
-                    disbursement_request.disbursement_batch_control_id,
-                    disbursement_envelope=disbursement_envelope,
+                disbursement_batch_control: DisbursementBatchControl = (
+                    await self.construct_disbursement_batch_control(
+                        disbursement_request.disbursement_batch_control_id,
+                        disbursement_envelope=disbursement_envelope,
+                    )
                 )
-            )
 
-            disbursements: List[Disbursement] = await self.construct_disbursements(
-                disbursement_payloads=disbursement_request.message,
-                disbursement_batch_control_id=disbursement_batch_control.id,
-            )
+                disbursements: List[Disbursement] = await self.construct_disbursements(
+                    disbursement_payloads=disbursement_request.message,
+                    disbursement_batch_control_id=disbursement_batch_control.id,
+                )
+                _logger.info(f"***Length of disbursements before updating: {len(disbursements)}***")
+                # Lock the envelope batch status row for update (nowait)
+                envelope_control = await self.update_envelope_control(
+                    disbursements, session
+                )
+                session.add(disbursement_batch_control)
+                session.add_all(disbursements)
+                session.add(envelope_control)
 
-            # Lock the envelope batch status row for update (nowait)
-            envelope_control = await self.update_envelope_control(
-                disbursements, session
-            )
-            session.add(disbursement_batch_control)
-            session.add_all(disbursements)
-            session.add(envelope_control)
-
-            # No need to create a separate bank disbursement status; this is now handled by DisbursementBatchControl
-            await session.commit()
-            _logger.info("Disbursements Created Successfully!")
-            return disbursement_request.message
+                # No need to create a separate bank disbursement status; this is now handled by DisbursementBatchControl
+                await session.commit()
+                _logger.info("Disbursements Created Successfully!")
+                return disbursement_request.message
+            except Exception as e:
+                _logger.error(f"Disbursement creation failed: {str(e)}")
+                session.rollback()
+                raise DisbursementException(
+                    code=G2PBridgeErrorCodes.DATABASE_TRANSACTION_ERROR,
+                    disbursement_payloads=disbursement_request.message,
+                )
 
     async def update_envelope_control(self, disbursements, session):
         _logger.info("Updating Envelope Control")
@@ -120,11 +127,12 @@ class DisbursementService(BaseService):
                     .with_for_update(nowait=True)
                 )
                 envelope_control = result.scalars().first()
+                await asyncio.sleep(2)
                 break
 
-            except OperationalError as e:
+            except Exception as e:
                 last_exc = e
-                wait = random.randint(8, 15)
+                wait = random.randint(2, 5)
                 _logger.warning(
                     f"Lock attempt failed updating envelope control: {e}. "
                     f"{max_retries} retries left, sleeping {wait}s…"
@@ -135,7 +143,7 @@ class DisbursementService(BaseService):
         else:
             _logger.error("Unable to acquire lock on EnvelopeControl after retries")
             raise last_exc
-
+        _logger.info(f"***Length of disbursements inside: {len(disbursements)}***")
         envelope_control.number_of_disbursements_received += len(disbursements)
         envelope_control.total_disbursement_quantity_received += sum(
             d.disbursement_quantity for d in disbursements

@@ -49,7 +49,6 @@ class DisbursementController(BaseController):
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
-            _logger.info(f"Request: {disbursement_request}")
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
