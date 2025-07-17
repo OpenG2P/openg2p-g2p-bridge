@@ -34,7 +34,7 @@ class DisbursementResponse(SyncResponse):
 
 class DisbursementBatchControlPayload(BaseModel):
     disbursement_batch_control_id: str
-    disbursement_cycle_id: str
+    disbursement_cycle_id: int
     disbursement_envelope_id: str
     fa_resolution_status: str
     fa_resolution_timestamp: Optional[datetime.datetime] = None
