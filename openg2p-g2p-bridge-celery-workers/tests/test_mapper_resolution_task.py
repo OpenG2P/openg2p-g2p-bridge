@@ -12,6 +12,7 @@ from openg2p_g2p_bridge_models.models import (
     MapperResolutionBatchStatus,
     ProcessStatus,
 )
+from openg2p_g2pconnect_mapper_lib.client import MapperResolveClient
 
 
 class MockSession:
@@ -91,7 +92,6 @@ def mock_session_maker():
 def mock_resolve_helper():
     # Use MagicMock for the helper and set async methods with AsyncMock
     mock_helper = MagicMock()
-    mock_helper.create_jwt_token = AsyncMock(return_value="mocked_jwt_token")
     mock_helper.construct_single_resolve_request.return_value = MagicMock()
     mock_helper.construct_resolve_request.return_value = MagicMock(
         dict=MagicMock(return_value={"key": "value"})  # Mock the dict method
@@ -109,18 +109,7 @@ def mock_resolve_helper():
         yield mock_helper
 
 
-@pytest.fixture
-def mock_resolve_client():
-    mock_mapper_resolve_client = AsyncMock()
-
-    with patch(
-        "openg2p_g2p_bridge_celery_workers.tasks.mapper_resolution_task.MapperResolveClient",
-        return_value=mock_mapper_resolve_client,
-    ):
-        yield mock_mapper_resolve_client
-
-
-def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helper, mock_resolve_client):
+def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helper):
     mock_response = MagicMock()
     mock_response.message.resolve_response = [
         MagicMock(
@@ -129,16 +118,19 @@ def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helpe
             account_provider_info=MagicMock(name="TEST_NAME"),
         )
     ]
-    mock_resolve_client.resolve_request.return_value = mock_response
     mock_resolve_helper.deconstruct_fa.return_value = {
         "fa_type": "BANK",
         "account_number": "123",
         "bank_code": "ABC",
     }
 
-    mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
-
-    mapper_resolution_worker("test_batch_id")
+    MapperResolveClient()
+    with patch(
+        "openg2p_g2pconnect_mapper_lib.client.MapperResolveClient.resolve_request",
+        new_callable=AsyncMock,
+        return_value=mock_response,
+    ):
+        mapper_resolution_worker("test_batch_id")
 
     assert len(mock_session_maker.details_list) != 0
     assert (
@@ -160,12 +152,13 @@ def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helpe
     assert mock_session_maker.committed
 
 
-def test_mapper_resolution_worker_failure(mock_session_maker, mock_resolve_helper, mock_resolve_client):
-    mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
-
-    mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
-
-    mapper_resolution_worker("test_batch_id")
+def test_mapper_resolution_worker_failure(mock_session_maker, mock_resolve_helper):
+    MapperResolveClient()
+    with patch(
+        "openg2p_g2pconnect_mapper_lib.client.MapperResolveClient.resolve_request",
+        side_effect=Exception("TEST_ERROR"),
+    ):
+        mapper_resolution_worker("test_batch_id")
 
     assert (
         mock_session_maker.updates[0].get(MapperResolutionBatchStatus.resolution_status)
@@ -180,28 +173,33 @@ def test_mapper_resolution_worker_failure(mock_session_maker, mock_resolve_helpe
 
 
 @pytest.mark.asyncio
-async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_client):
+async def test_make_resolve_request_success(mock_resolve_helper):
     disbursement_controls = [DisbursementBatchControl(beneficiary_id="test_beneficiary_id")]
     mock_response = "RESOLVE_RESPONSE"
-    mock_resolve_client.resolve_request.return_value = mock_response
 
-    response, error = await make_resolve_request(disbursement_controls)
+    MapperResolveClient()
+    with patch(
+        "openg2p_g2pconnect_mapper_lib.client.MapperResolveClient.resolve_request",
+        return_value=mock_response,
+    ) as mock_resolve_client:
+        response, error = await make_resolve_request(disbursement_controls)
 
+        mock_resolve_client.assert_awaited_once()
     mock_resolve_helper.construct_single_resolve_request.assert_called()
     mock_resolve_helper.construct_resolve_request.assert_called()
-    mock_resolve_client.resolve_request.assert_awaited_once()
     assert response == mock_response
     assert error is None
 
 
 @pytest.mark.asyncio
-async def test_make_resolve_request_failure(mock_resolve_helper, mock_resolve_client):
+async def test_make_resolve_request_failure(mock_resolve_helper):
     disbursement_controls = [DisbursementBatchControl(beneficiary_id="test_beneficiary_id")]
-    mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
-
-    mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
-
-    response, error_msg = await make_resolve_request(disbursement_controls)
+    MapperResolveClient()
+    with patch(
+        "openg2p_g2pconnect_mapper_lib.client.MapperResolveClient.resolve_request",
+        side_effect=Exception("TEST_ERROR"),
+    ):
+        response, error_msg = await make_resolve_request(disbursement_controls)
 
     assert response is None
     assert error_msg == "Failed to resolve the request: TEST_ERROR"
