@@ -55,7 +55,7 @@ class DisbursementEnvelope(BaseORMModelWithId):
     benefit_program_id: Mapped[int] = mapped_column(Integer)
     benefit_program_mnemonic: Mapped[str] = mapped_column(String)
     target_registry: Mapped[str] = mapped_column(String, nullable=True)
-    benefit_code_id: Mapped[str] = mapped_column(String)
+    benefit_code_id: Mapped[int] = mapped_column(Integer)
     benefit_code_mnemonic: Mapped[str] = mapped_column(String)
     benefit_type: Mapped[BenefitType] = mapped_column(String)
     disbursement_cycle_id: Mapped[int] = mapped_column(Integer)
