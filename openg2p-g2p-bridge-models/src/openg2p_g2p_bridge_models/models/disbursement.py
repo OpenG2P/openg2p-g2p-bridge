@@ -39,7 +39,7 @@ class Disbursement(BaseORMModelWithId):
         DateTime, nullable=True, default=None
     )
     disbursement_cycle_id: Mapped[int] = mapped_column(Integer)
-    disbursement_batch_control_id: Mapped[str] = mapped_column(String)
+    disbursement_batch_control_id: Mapped[int] = mapped_column(Integer)
 
 
 class DisbursementBatchControl(BaseORMModelWithId):
