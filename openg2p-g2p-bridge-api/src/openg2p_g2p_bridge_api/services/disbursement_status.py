@@ -39,10 +39,8 @@ class DisbursementStatusService(BaseService):
             try:
                 disbursement_status_payloads = []
                 for disbursement_id in disbursement_status_request.message:
-                    disbursement_recon_records = (
-                        await self.get_disbursement_recon_records(
-                            session, disbursement_id
-                        )
+                    disbursement_recon_records = await self.get_disbursement_recon_records(
+                        session, disbursement_id
                     )
                     disbursement_status_payload = DisbursementStatusPayload(
                         disbursement_id=disbursement_id,
@@ -54,18 +52,14 @@ class DisbursementStatusService(BaseService):
                 _logger.error("Error in getting disbursement status")
                 raise e
 
-    async def get_disbursement_recon_records(
-        self, session, disbursement_id: str
-    ) -> DisbursementReconRecords:
+    async def get_disbursement_recon_records(self, session, disbursement_id: str) -> DisbursementReconRecords:
         disbursement_recon_payloads = []
         disbursement_error_recon_payloads = []
 
         disbursement_recon_payloads_from_db = (
             (
                 await session.execute(
-                    select(DisbursementRecon).where(
-                        DisbursementRecon.disbursement_id == disbursement_id
-                    )
+                    select(DisbursementRecon).where(DisbursementRecon.disbursement_id == disbursement_id)
                 )
             )
             .scalars()
@@ -109,9 +103,7 @@ class DisbursementStatusService(BaseService):
             .all()
         )
 
-        for (
-            disbursement_error_recon_payload
-        ) in disbursement_error_recon_payloads_from_db:
+        for disbursement_error_recon_payload in disbursement_error_recon_payloads_from_db:
             disbursement_error_recon_payloads.append(
                 DisbursementErrorReconPayload(
                     statement_id=disbursement_error_recon_payload.statement_id,

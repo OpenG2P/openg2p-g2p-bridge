@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 from typing import Annotated, List
 
 from fastapi import Depends
@@ -25,7 +26,6 @@ class DisbursementController(BaseController):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.disbursement_service = DisbursementService.get_component()
         self.router.tags += ["G2P Bridge Disbursement Envelope"]
 
         self.router.add_api_route(
@@ -41,6 +41,14 @@ class DisbursementController(BaseController):
             methods=["POST"],
         )
 
+    @cached_property
+    def disbursement_service(self) -> DisbursementService:
+        return DisbursementService.get_component()
+
+    @cached_property
+    def request_validation(self) -> RequestValidation:
+        return RequestValidation.get_component()
+
     async def create_disbursements(
         self,
         disbursement_request: DisbursementRequest,
@@ -48,14 +56,12 @@ class DisbursementController(BaseController):
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(disbursement_request)
+            self.request_validation.validate_signature(is_signature_valid)
+            self.request_validation.validate_request(disbursement_request)
 
             disbursement_payloads: List[
                 DisbursementPayload
-            ] = await self.disbursement_service.create_disbursements(
-                disbursement_request
-            )
+            ] = await self.disbursement_service.create_disbursements(disbursement_request)
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: DisbursementResponse = (
@@ -89,14 +95,12 @@ class DisbursementController(BaseController):
     ) -> DisbursementResponse:
         _logger.info("Cancelling disbursements")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(disbursement_request)
+            self.request_validation.validate_signature(is_signature_valid)
+            self.request_validation.validate_request(disbursement_request)
 
             disbursement_payloads: List[
                 DisbursementPayload
-            ] = await self.disbursement_service.cancel_disbursements(
-                disbursement_request
-            )
+            ] = await self.disbursement_service.cancel_disbursements(disbursement_request)
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: DisbursementResponse = (

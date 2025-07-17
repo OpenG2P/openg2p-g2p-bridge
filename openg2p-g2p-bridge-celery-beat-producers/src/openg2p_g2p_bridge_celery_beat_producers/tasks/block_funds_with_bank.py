@@ -43,8 +43,7 @@ def block_funds_with_bank_beat_producer():
                 )
                 .filter(
                     date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    DisbursementEnvelope.cancellation_status == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
                     == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
                     DisbursementEnvelopeBatchStatus.funds_available_with_bank
@@ -71,9 +70,7 @@ def block_funds_with_bank_beat_producer():
         )
 
         for envelope in envelopes:
-            _logger.info(
-                f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
-            )
+            _logger.info(f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}")
             envelope_batch_status = (
                 session.query(DisbursementEnvelopeBatchStatus)
                 .filter(
@@ -83,9 +80,7 @@ def block_funds_with_bank_beat_producer():
                 .first()
             )
 
-            envelope_batch_status.funds_blocked_with_bank = (
-                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
-            )
+            envelope_batch_status.funds_blocked_with_bank = FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
 
             celery_app.send_task(
                 "block_funds_with_bank_worker",

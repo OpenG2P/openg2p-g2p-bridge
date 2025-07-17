@@ -121,9 +121,7 @@ def test_block_funds_with_bank_failure(mock_session_maker, mock_bank_connector_f
     assert mock_session_maker.committed
 
 
-def test_block_funds_with_bank_exception(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_block_funds_with_bank_exception(mock_session_maker, mock_bank_connector_factory):
     mock_bank_connector_factory.block_funds.side_effect = Exception("TEST_EXCEPTION")
 
     block_funds_with_bank_worker("test_envelope_id")
@@ -139,9 +137,7 @@ def test_block_funds_with_bank_exception(
     assert mock_session_maker.committed
 
 
-def test_check_funds_with_bank_envelope_not_found(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_check_funds_with_bank_envelope_not_found(mock_session_maker, mock_bank_connector_factory):
     mock_session_maker.disbursement_envelope = None
 
     block_funds_with_bank_worker("test_envelope_id")

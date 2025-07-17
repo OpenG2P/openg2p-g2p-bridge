@@ -1,13 +1,11 @@
-from openg2p_fastapi_common.config import Settings as BaseSettings
+from openg2p_g2p_bridge_bank_connectors.config import Settings as BaseSettings
 from pydantic_settings import SettingsConfigDict
 
 from . import __version__
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="g2p_bridge_celery_beat_", env_file=".env", extra="allow"
-    )
+    model_config = SettingsConfigDict(env_prefix="g2p_bridge_celery_beat_", env_file=".env", extra="allow")
     openapi_title: str = "OpenG2P G2P Bridge Celery Tasks"
     openapi_description: str = """
         Celery tasks for OpenG2P G2P Bridge API
@@ -36,9 +34,7 @@ class Settings(BaseSettings):
     mt940_processor_frequency: int = 3600
 
     no_of_tasks_to_process: int = 4
-    disbursement_retry_threshold_minutes: int = (
-        30  # Will reset stuck processing batches older than threshold
-    )
+    disbursement_retry_threshold_minutes: int = 30  # Will reset stuck processing batches older than threshold
     batch_fetch_size: int = 100
     pending_batch_fetch_size: int = 50
 

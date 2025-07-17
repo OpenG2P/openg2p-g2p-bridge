@@ -155,14 +155,10 @@ def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory)
     disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
-        == ProcessStatus.PROCESSED.value
+        mock_session_maker.bank_disbursement_batch_status.disbursement_status == ProcessStatus.PROCESSED.value
     )
     assert mock_session_maker.bank_disbursement_batch_status.latest_error_code is None
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped
-        == 1
-    )
+    assert mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped == 1
     assert mock_session_maker.committed
 
 
@@ -175,35 +171,23 @@ def test_disburse_funds_failure(mock_session_maker, mock_bank_connector_factory)
     disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
-        == ProcessStatus.PENDING.value
+        mock_session_maker.bank_disbursement_batch_status.disbursement_status == ProcessStatus.PENDING.value
     )
-    assert (
-        mock_session_maker.bank_disbursement_batch_status.latest_error_code
-        == "TEST_ERROR"
-    )
+    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code == "TEST_ERROR"
     assert mock_session_maker.committed
 
 
-def test_disburse_funds_exception(
-    mock_session_maker, mock_bank_connector_factory, caplog
-):
-    mock_bank_connector_factory.initiate_payment.side_effect = Exception(
-        "TEST_EXCEPTION"
-    )
+def test_disburse_funds_exception(mock_session_maker, mock_bank_connector_factory, caplog):
+    mock_bank_connector_factory.initiate_payment.side_effect = Exception("TEST_EXCEPTION")
 
     with caplog.at_level(logging.ERROR):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert "TEST_EXCEPTION" in caplog.text
     assert (
-        mock_session_maker.bank_disbursement_batch_status.disbursement_status
-        == ProcessStatus.PENDING.value
+        mock_session_maker.bank_disbursement_batch_status.disbursement_status == ProcessStatus.PENDING.value
     )
-    assert (
-        mock_session_maker.bank_disbursement_batch_status.latest_error_code
-        == "TEST_EXCEPTION"
-    )
+    assert mock_session_maker.bank_disbursement_batch_status.latest_error_code == "TEST_EXCEPTION"
     assert mock_session_maker.bank_disbursement_batch_status.disbursement_attempts == 5
     assert mock_session_maker.committed
 

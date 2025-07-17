@@ -23,24 +23,18 @@ class MapperResolvedFaType(Enum):
 class Disbursement(BaseORMModelWithTimes):
     __tablename__ = "disbursements"
     disbursement_id: Mapped[str] = mapped_column(String, unique=True)
-    mis_reference_number: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    mis_reference_number: Mapped[str] = mapped_column(String, nullable=True, default=None)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
     beneficiary_id: Mapped[str] = mapped_column(String)
     beneficiary_name: Mapped[str] = mapped_column(String)
     disbursement_amount: Mapped[float] = mapped_column(Float)
     narrative: Mapped[str] = mapped_column(String)
-    receipt_time_stamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
+    receipt_time_stamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     cancellation_status: Mapped[DisbursementCancellationStatus] = mapped_column(
         SqlEnum(DisbursementCancellationStatus),
         default=DisbursementCancellationStatus.NOT_CANCELLED,
     )
-    cancellation_time_stamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, default=None
-    )
+    cancellation_time_stamp: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=None)
 
 
 class DisbursementBatchControl(BaseORMModelWithTimes):
@@ -49,12 +43,8 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
     disbursement_id: Mapped[str] = mapped_column(String, unique=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
     beneficiary_id: Mapped[str] = mapped_column(String)
-    bank_disbursement_batch_id = mapped_column(
-        UUID, nullable=True, default=None, index=True
-    )
-    mapper_resolution_batch_id = mapped_column(
-        UUID, nullable=True, default=None, index=True
-    )
+    bank_disbursement_batch_id = mapped_column(UUID, nullable=True, default=None, index=True)
+    mapper_resolution_batch_id = mapped_column(UUID, nullable=True, default=None, index=True)
     mapper_status: Mapped[ProcessStatus] = mapped_column(
         SqlEnum(ProcessStatus), default=ProcessStatus.PENDING
     )
@@ -64,15 +54,11 @@ class DisbursementBatchControl(BaseORMModelWithTimes):
 class MapperResolutionBatchStatus(BaseORMModelWithTimes):
     __tablename__ = "mapper_resolution_batch_statuses"
 
-    mapper_resolution_batch_id = mapped_column(
-        UUID, nullable=True, default=None, index=True, unique=True
-    )
+    mapper_resolution_batch_id = mapped_column(UUID, nullable=True, default=None, index=True, unique=True)
     resolution_status: Mapped[ProcessStatus] = mapped_column(
         SqlEnum(ProcessStatus), default=ProcessStatus.PENDING
     )
-    resolution_time_stamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, default=None
-    )
+    resolution_time_stamp: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=None)
     latest_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     resolution_attempts: Mapped[int] = mapped_column(Integer, nullable=True, default=0)
 
@@ -80,31 +66,21 @@ class MapperResolutionBatchStatus(BaseORMModelWithTimes):
 class MapperResolutionDetails(BaseORMModelWithTimes):
     __tablename__ = "mapper_resolution_details"
 
-    mapper_resolution_batch_id = mapped_column(
-        UUID, nullable=True, default=None, index=True
-    )
+    mapper_resolution_batch_id = mapped_column(UUID, nullable=True, default=None, index=True)
     disbursement_id: Mapped[str] = mapped_column(String, index=True, unique=True)
     beneficiary_id: Mapped[str] = mapped_column(String, index=True)
     mapper_resolved_fa: Mapped[str] = mapped_column(String, nullable=True, default=None)
-    mapper_resolved_name: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    mapper_resolved_name: Mapped[str] = mapped_column(String, nullable=True, default=None)
     mapper_resolved_fa_type: Mapped[MapperResolvedFaType] = mapped_column(
         SqlEnum(MapperResolvedFaType), nullable=True, default=None
     )
-    bank_account_number: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    bank_account_number: Mapped[str] = mapped_column(String, nullable=True, default=None)
     bank_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     branch_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     mobile_number: Mapped[str] = mapped_column(String, nullable=True, default=None)
-    mobile_wallet_provider: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    mobile_wallet_provider: Mapped[str] = mapped_column(String, nullable=True, default=None)
     email_address: Mapped[str] = mapped_column(String, nullable=True, default=None)
-    email_wallet_provider: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    email_wallet_provider: Mapped[str] = mapped_column(String, nullable=True, default=None)
 
 
 class BankDisbursementBatchStatus(BaseORMModelWithTimes):
@@ -117,10 +93,6 @@ class BankDisbursementBatchStatus(BaseORMModelWithTimes):
     disbursement_status: Mapped[ProcessStatus] = mapped_column(
         SqlEnum(ProcessStatus), default=ProcessStatus.PENDING
     )
-    disbursement_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, default=None
-    )
+    disbursement_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=None)
     latest_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
-    disbursement_attempts: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
-    )
+    disbursement_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

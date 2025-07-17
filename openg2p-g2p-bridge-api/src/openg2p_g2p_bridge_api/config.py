@@ -5,9 +5,7 @@ from . import __version__
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="g2p_bridge_", env_file=".env", extra="allow"
-    )
+    model_config = SettingsConfigDict(env_prefix="g2p_bridge_", env_file=".env", extra="allow")
 
     openapi_title: str = "OpenG2P G2P Bridge API"
     openapi_description: str = """
@@ -27,5 +25,5 @@ class Settings(BaseSettings):
         "text/plain",
     ]
 
-    jwt_validate_keymanager_app_id: str = "G2PBRIDGE"
+    jwt_validate_keymanager_app_id: str = "OPENG2P_G2P_BRIDGE"
     keymanager_auth_client_id: str = "openg2p-g2p-bridge"

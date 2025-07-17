@@ -70,47 +70,33 @@ class DisbursementService(BaseService):
             )
             disbursement_batch_controls: List[
                 DisbursementBatchControl
-            ] = await self.construct_disbursement_batch_controls(
-                disbursements=disbursements
-            )
+            ] = await self.construct_disbursement_batch_controls(disbursements=disbursements)
 
             # Lock the envelope batch status row for update (nowait)
-            disbursement_envelope_batch_status = (
-                await self.update_disbursement_envelope_batch_status(
-                    disbursements, session
-                )
+            disbursement_envelope_batch_status = await self.update_disbursement_envelope_batch_status(
+                disbursements, session
             )
             session.add_all(disbursements)
             session.add_all(disbursement_batch_controls)
             session.add(disbursement_envelope_batch_status)
 
             if disbursement_envelope_batch_status.id_mapper_resolution_required:
-                mapper_resolution_batch_status: MapperResolutionBatchStatus = (
-                    MapperResolutionBatchStatus(
-                        mapper_resolution_batch_id=disbursement_batch_controls[
-                            0
-                        ].mapper_resolution_batch_id,
-                        resolution_status=ProcessStatus.PENDING,
-                        latest_error_code="",
-                        active=True,
-                    )
+                mapper_resolution_batch_status: MapperResolutionBatchStatus = MapperResolutionBatchStatus(
+                    mapper_resolution_batch_id=disbursement_batch_controls[0].mapper_resolution_batch_id,
+                    resolution_status=ProcessStatus.PENDING,
+                    latest_error_code="",
+                    active=True,
                 )
                 session.add(mapper_resolution_batch_status)
                 _logger.info("ID Mapper Resolution Batch Status Created!")
 
-            bank_disbursement_batch_status: BankDisbursementBatchStatus = (
-                BankDisbursementBatchStatus(
-                    bank_disbursement_batch_id=disbursement_batch_controls[
-                        0
-                    ].bank_disbursement_batch_id,
-                    disbursement_envelope_id=disbursement_batch_controls[
-                        0
-                    ].disbursement_envelope_id,
-                    disbursement_status=ProcessStatus.PENDING,
-                    latest_error_code="",
-                    disbursement_attempts=0,
-                    active=True,
-                )
+            bank_disbursement_batch_status: BankDisbursementBatchStatus = BankDisbursementBatchStatus(
+                bank_disbursement_batch_id=disbursement_batch_controls[0].bank_disbursement_batch_id,
+                disbursement_envelope_id=disbursement_batch_controls[0].disbursement_envelope_id,
+                disbursement_status=ProcessStatus.PENDING,
+                latest_error_code="",
+                disbursement_attempts=0,
+                active=True,
             )
 
             session.add(bank_disbursement_batch_status)
@@ -147,14 +133,10 @@ class DisbursementService(BaseService):
                 max_retries -= 1
 
         else:
-            _logger.error(
-                "Unable to acquire lock on DisbursementEnvelopeBatchStatus after retries"
-            )
+            _logger.error("Unable to acquire lock on DisbursementEnvelopeBatchStatus after retries")
             raise last_exc
 
-        disbursement_envelope_batch_status.number_of_disbursements_received += len(
-            disbursements
-        )
+        disbursement_envelope_batch_status.number_of_disbursements_received += len(disbursements)
         disbursement_envelope_batch_status.total_disbursement_amount_received += sum(
             d.disbursement_amount for d in disbursements
         )
@@ -170,9 +152,7 @@ class DisbursementService(BaseService):
             generated_id: str = generate(size=16)
             disbursement = Disbursement(
                 disbursement_id=generated_id,
-                disbursement_envelope_id=str(
-                    disbursement_payload.disbursement_envelope_id
-                ),
+                disbursement_envelope_id=str(disbursement_payload.disbursement_envelope_id),
                 mis_reference_number=disbursement_payload.mis_reference_number,
                 beneficiary_id=disbursement_payload.beneficiary_id,
                 beneficiary_name=disbursement_payload.beneficiary_name,
@@ -186,9 +166,7 @@ class DisbursementService(BaseService):
         _logger.info("Disbursements Constructed!")
         return disbursements
 
-    async def construct_disbursement_batch_controls(
-        self, disbursements: List[Disbursement]
-    ):
+    async def construct_disbursement_batch_controls(self, disbursements: List[Disbursement]):
         _logger.info("Constructing Disbursement Batch Controls")
         disbursement_batch_controls = []
         mapper_resolution_batch_id = str(uuid.uuid4())
@@ -206,9 +184,7 @@ class DisbursementService(BaseService):
         _logger.info("Disbursement Batch Controls Constructed!")
         return disbursement_batch_controls
 
-    async def validate_disbursement_request(
-        self, disbursement_payloads: List[DisbursementPayload]
-    ):
+    async def validate_disbursement_request(self, disbursement_payloads: List[DisbursementPayload]):
         _logger.info("Validating Disbursement Request")
         absolutely_no_error = True
 
@@ -222,36 +198,19 @@ class DisbursementService(BaseService):
                 disbursement_payload.response_error_codes.append(
                     G2PBridgeErrorCodes.INVALID_DISBURSEMENT_AMOUNT
                 )
-            if (
-                disbursement_payload.beneficiary_id is None
-                or disbursement_payload.beneficiary_id == ""
-            ):
-                disbursement_payload.response_error_codes.append(
-                    G2PBridgeErrorCodes.INVALID_BENEFICIARY_ID
-                )
-            if (
-                disbursement_payload.beneficiary_name is None
-                or disbursement_payload.beneficiary_name == ""
-            ):
-                disbursement_payload.response_error_codes.append(
-                    G2PBridgeErrorCodes.INVALID_BENEFICIARY_NAME
-                )
-            if (
-                disbursement_payload.narrative is None
-                or disbursement_payload.narrative == ""
-            ):
-                disbursement_payload.response_error_codes.append(
-                    G2PBridgeErrorCodes.INVALID_NARRATIVE
-                )
+            if disbursement_payload.beneficiary_id is None or disbursement_payload.beneficiary_id == "":
+                disbursement_payload.response_error_codes.append(G2PBridgeErrorCodes.INVALID_BENEFICIARY_ID)
+            if disbursement_payload.beneficiary_name is None or disbursement_payload.beneficiary_name == "":
+                disbursement_payload.response_error_codes.append(G2PBridgeErrorCodes.INVALID_BENEFICIARY_NAME)
+            if disbursement_payload.narrative is None or disbursement_payload.narrative == "":
+                disbursement_payload.response_error_codes.append(G2PBridgeErrorCodes.INVALID_NARRATIVE)
 
             if len(disbursement_payload.response_error_codes) > 0:
                 absolutely_no_error = False
         _logger.info("Disbursement Request Validated!")
         return absolutely_no_error
 
-    async def validate_disbursement_envelope(
-        self, session, disbursement_payloads: List[DisbursementPayload]
-    ):
+    async def validate_disbursement_envelope(self, session, disbursement_payloads: List[DisbursementPayload]):
         _logger.info("Validating Disbursement Envelope")
         disbursement_envelope_id = disbursement_payloads[0].disbursement_envelope_id
         if not all(
@@ -266,8 +225,7 @@ class DisbursementService(BaseService):
             (
                 await session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.disbursement_envelope_id
-                        == str(disbursement_envelope_id)
+                        DisbursementEnvelope.disbursement_envelope_id == str(disbursement_envelope_id)
                     )
                 )
             )
@@ -302,33 +260,21 @@ class DisbursementService(BaseService):
         )
 
         no_of_disbursements_after_this_request = (
-            len(disbursement_payloads)
-            + disbursement_envelope_batch_status.number_of_disbursements_received
+            len(disbursement_payloads) + disbursement_envelope_batch_status.number_of_disbursements_received
         )
         total_disbursement_amount_after_this_request = (
-            sum(
-                [
-                    disbursement_payload.disbursement_amount
-                    for disbursement_payload in disbursement_payloads
-                ]
-            )
+            sum([disbursement_payload.disbursement_amount for disbursement_payload in disbursement_payloads])
             + disbursement_envelope_batch_status.total_disbursement_amount_received
         )
 
-        if (
-            no_of_disbursements_after_this_request
-            > disbursement_envelope.number_of_disbursements
-        ):
+        if no_of_disbursements_after_this_request > disbursement_envelope.number_of_disbursements:
             _logger.error("Number of Disbursements Exceeds Declared!")
             raise DisbursementException(
                 G2PBridgeErrorCodes.NO_OF_DISBURSEMENTS_EXCEEDS_DECLARED,
                 disbursement_payloads,
             )
 
-        if (
-            total_disbursement_amount_after_this_request
-            > disbursement_envelope.total_disbursement_amount
-        ):
+        if total_disbursement_amount_after_this_request > disbursement_envelope.total_disbursement_amount:
             raise DisbursementException(
                 G2PBridgeErrorCodes.TOTAL_DISBURSEMENT_AMOUNT_EXCEEDS_DECLARED,
                 disbursement_payloads,
@@ -392,9 +338,9 @@ class DisbursementService(BaseService):
                 )
 
             # Fetch and lock disbursements for update (nowait)
-            disbursements_in_db: List[
-                Disbursement
-            ] = await self.fetch_disbursements_from_db(disbursement_request, session)
+            disbursements_in_db: List[Disbursement] = await self.fetch_disbursements_from_db(
+                disbursement_request, session
+            )
             if not disbursements_in_db:
                 _logger.error("Disbursements not found in DB")
                 raise DisbursementException(
@@ -403,9 +349,7 @@ class DisbursementService(BaseService):
                 )
 
             try:
-                await self.check_for_single_envelope(
-                    disbursements_in_db, disbursement_request.message
-                )
+                await self.check_for_single_envelope(disbursements_in_db, disbursement_request.message)
             except DisbursementException as e:
                 _logger.error(f"Error checking for single envelope: {str(e)}")
                 raise e
@@ -417,9 +361,7 @@ class DisbursementService(BaseService):
                     session=session,
                 )
             except DisbursementException as e:
-                _logger.error(
-                    f"Error validating envelope for disbursement cancellation: {str(e)}"
-                )
+                _logger.error(f"Error validating envelope for disbursement cancellation: {str(e)}")
                 raise e
 
             invalid_disbursements_exist = await self.check_for_invalid_disbursements(
@@ -432,9 +374,7 @@ class DisbursementService(BaseService):
                 )
 
             for disbursement in disbursements_in_db:
-                disbursement.cancellation_status = (
-                    DisbursementCancellationStatus.CANCELLED
-                )
+                disbursement.cancellation_status = DisbursementCancellationStatus.CANCELLED
                 disbursement.cancellation_time_stamp = datetime.now()
 
             # Lock the envelope batch status row for update (nowait)
@@ -452,16 +392,9 @@ class DisbursementService(BaseService):
                 .scalars()
                 .first()
             )
-            disbursement_envelope_batch_status.number_of_disbursements_received -= len(
-                disbursements_in_db
-            )
-            disbursement_envelope_batch_status.total_disbursement_amount_received -= (
-                sum(
-                    [
-                        disbursement.disbursement_amount
-                        for disbursement in disbursements_in_db
-                    ]
-                )
+            disbursement_envelope_batch_status.number_of_disbursements_received -= len(disbursements_in_db)
+            disbursement_envelope_batch_status.total_disbursement_amount_received -= sum(
+                [disbursement.disbursement_amount for disbursement in disbursements_in_db]
             )
 
             session.add_all(disbursements_in_db)
@@ -470,13 +403,10 @@ class DisbursementService(BaseService):
             _logger.info("Disbursements Cancelled Successfully!")
             return disbursement_request.message
 
-    async def check_for_single_envelope(
-        self, disbursements_in_db, disbursement_payloads
-    ):
+    async def check_for_single_envelope(self, disbursements_in_db, disbursement_payloads):
         _logger.info("Checking for Single Envelope")
         disbursement_envelope_ids = {
-            disbursement.disbursement_envelope_id
-            for disbursement in disbursements_in_db
+            disbursement.disbursement_envelope_id for disbursement in disbursements_in_db
         }
         if len(disbursement_envelope_ids) > 1:
             _logger.error("Multiple Envelopes Found!")
@@ -487,9 +417,7 @@ class DisbursementService(BaseService):
         _logger.info("Single Envelope Found!")
         return True
 
-    async def check_for_invalid_disbursements(
-        self, disbursement_request, disbursements_in_db
-    ) -> bool:
+    async def check_for_invalid_disbursements(self, disbursement_request, disbursements_in_db) -> bool:
         _logger.info("Checking for Invalid Disbursements")
         invalid_disbursements_exist = False
         for disbursement_payload in disbursement_request.message:
@@ -503,8 +431,7 @@ class DisbursementService(BaseService):
             if disbursement_payload.disbursement_id in [
                 disbursement.disbursement_id
                 for disbursement in disbursements_in_db
-                if disbursement.cancellation_status
-                == DisbursementCancellationStatus.CANCELLED
+                if disbursement.cancellation_status == DisbursementCancellationStatus.CANCELLED
             ]:
                 invalid_disbursements_exist = True
                 disbursement_payload.response_error_codes.append(
@@ -513,9 +440,7 @@ class DisbursementService(BaseService):
         _logger.info("Invalid Disbursements Checked!")
         return invalid_disbursements_exist
 
-    async def fetch_disbursements_from_db(
-        self, disbursement_request, session
-    ) -> List[Disbursement]:
+    async def fetch_disbursements_from_db(self, disbursement_request, session) -> List[Disbursement]:
         _logger.info("Fetching Disbursements from DB")
         max_retries = 5
         last_exc = None
@@ -526,10 +451,7 @@ class DisbursementService(BaseService):
                     select(Disbursement)
                     .where(
                         Disbursement.disbursement_id.in_(
-                            [
-                                str(p.disbursement_id)
-                                for p in disbursement_request.message
-                            ]
+                            [str(p.disbursement_id) for p in disbursement_request.message]
                         )
                     )
                     .with_for_update(nowait=True)
@@ -626,9 +548,7 @@ class DisbursementService(BaseService):
             .first()
         )
 
-        no_of_after = batch_status.number_of_disbursements_received - len(
-            disbursements_in_db
-        )
+        no_of_after = batch_status.number_of_disbursements_received - len(disbursements_in_db)
         total_amt_after = batch_status.total_disbursement_amount_received - sum(
             d.disbursement_amount for d in disbursements_in_db
         )

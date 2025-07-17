@@ -40,8 +40,7 @@ def check_funds_with_bank_beat_producer():
                 )
                 .filter(
                     date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    DisbursementEnvelope.cancellation_status == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
                     == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
                     DisbursementEnvelope.total_disbursement_amount

@@ -25,10 +25,8 @@ def mapper_resolution_beat_producer():
                 select(MapperResolutionBatchStatus)
                 .filter(
                     and_(
-                        MapperResolutionBatchStatus.resolution_status
-                        == ProcessStatus.PENDING,
-                        MapperResolutionBatchStatus.resolution_attempts
-                        < _config.mapper_resolve_attempts,
+                        MapperResolutionBatchStatus.resolution_status == ProcessStatus.PENDING,
+                        MapperResolutionBatchStatus.resolution_attempts < _config.mapper_resolve_attempts,
                     )
                 )
                 .limit(_config.no_of_tasks_to_process)

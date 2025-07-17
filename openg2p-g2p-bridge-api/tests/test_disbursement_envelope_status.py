@@ -18,13 +18,9 @@ from openg2p_g2pconnect_common_lib.schemas import (
 
 
 @pytest.mark.asyncio
-@patch(
-    "openg2p_g2p_bridge_api.services.DisbursementEnvelopeStatusService.get_component"
-)
+@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeStatusService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_get_disbursement_envelope_status_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_get_disbursement_envelope_status_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
 
@@ -82,8 +78,8 @@ async def test_get_disbursement_envelope_status_success(
         ),
     )
 
-    mock_service_instance.construct_disbursement_envelope_status_success_response = (
-        AsyncMock(return_value=expected_response)
+    mock_service_instance.construct_disbursement_envelope_status_success_response = AsyncMock(
+        return_value=expected_response
     )
 
     # Instantiate controller and make request
@@ -109,9 +105,7 @@ async def test_get_disbursement_envelope_status_success(
 
 
 @pytest.mark.asyncio
-@patch(
-    "openg2p_g2p_bridge_api.services.DisbursementEnvelopeStatusService.get_component"
-)
+@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeStatusService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
 @pytest.mark.parametrize("error_code", list(G2PBridgeErrorCodes))
 async def test_get_disbursement_envelope_status_failure(
@@ -125,8 +119,8 @@ async def test_get_disbursement_envelope_status_failure(
     mock_service_get_component.return_value = mock_service_instance
 
     # Mock service methods to raise an error
-    mock_service_instance.get_disbursement_envelope_batch_status.side_effect = (
-        DisbursementStatusException(code=error_code, message=f"{error_code} error.")
+    mock_service_instance.get_disbursement_envelope_batch_status.side_effect = DisbursementStatusException(
+        code=error_code, message=f"{error_code} error."
     )
 
     error_response = DisbursementEnvelopeStatusResponse(
@@ -140,8 +134,8 @@ async def test_get_disbursement_envelope_status_failure(
         message=None,
     )
 
-    mock_service_instance.construct_disbursement_envelope_status_error_response = (
-        AsyncMock(return_value=error_response)
+    mock_service_instance.construct_disbursement_envelope_status_error_response = AsyncMock(
+        return_value=error_response
     )
 
     # Instantiate controller and make request

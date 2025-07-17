@@ -27,14 +27,11 @@ def disburse_funds_from_bank_beat_producer():
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
     with session_maker() as session:
         # 1. Reset stale 'PROCESSING' batches back to 'PENDING'
-        stale_at = datetime.now() - timedelta(
-            minutes=_config.disbursement_retry_threshold_minutes
-        )
+        stale_at = datetime.now() - timedelta(minutes=_config.disbursement_retry_threshold_minutes)
         reset_stmt = (
             update(BankDisbursementBatchStatus)
             .where(
-                BankDisbursementBatchStatus.disbursement_status
-                == ProcessStatus.PROCESSING.value,
+                BankDisbursementBatchStatus.disbursement_status == ProcessStatus.PROCESSING.value,
                 BankDisbursementBatchStatus.updated_at < stale_at,
             )
             .values(disbursement_status=ProcessStatus.PENDING.value)
@@ -58,8 +55,7 @@ def disburse_funds_from_bank_beat_producer():
                 )
                 .filter(
                     date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.Not_Cancelled.value,
+                    DisbursementEnvelope.cancellation_status == CancellationStatus.Not_Cancelled.value,
                     DisbursementEnvelope.number_of_disbursements
                     == DisbursementEnvelopeBatchStatus.number_of_disbursements_received,
                     DisbursementEnvelopeBatchStatus.funds_blocked_with_bank
@@ -78,8 +74,7 @@ def disburse_funds_from_bank_beat_producer():
                         and_(
                             BankDisbursementBatchStatus.disbursement_envelope_id
                             == envelope.disbursement_envelope_id,
-                            BankDisbursementBatchStatus.disbursement_status
-                            == ProcessStatus.PENDING.value,
+                            BankDisbursementBatchStatus.disbursement_status == ProcessStatus.PENDING.value,
                             BankDisbursementBatchStatus.disbursement_attempts
                             < _config.funds_disbursement_attempts,
                         )
@@ -99,8 +94,7 @@ def disburse_funds_from_bank_beat_producer():
                     .filter(
                         DisbursementBatchControl.bank_disbursement_batch_id
                         == batch.bank_disbursement_batch_id,
-                        DisbursementBatchControl.mapper_status
-                        != ProcessStatus.PROCESSED.value,
+                        DisbursementBatchControl.mapper_status != ProcessStatus.PROCESSED.value,
                     )
                     .first()
                 )
@@ -111,9 +105,7 @@ def disburse_funds_from_bank_beat_producer():
                     )
                     continue
 
-                _logger.info(
-                    f"Sending task to disburse funds for batch {batch.bank_disbursement_batch_id}"
-                )
+                _logger.info(f"Sending task to disburse funds for batch {batch.bank_disbursement_batch_id}")
                 batch.disbursement_status = ProcessStatus.PROCESSING.value
                 session.add(batch)
                 _logger.info("Added batch to session")
@@ -123,6 +115,4 @@ def disburse_funds_from_bank_beat_producer():
                     (batch.bank_disbursement_batch_id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
-            _logger.info(
-                f"Sent tasks to disburse funds for {len(pending_batches)} batches"
-            )
+            _logger.info(f"Sent tasks to disburse funds for {len(pending_batches)} batches")

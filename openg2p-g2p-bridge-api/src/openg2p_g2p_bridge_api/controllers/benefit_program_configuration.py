@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 from typing import Annotated
 
 from fastapi import Depends
@@ -25,9 +26,6 @@ class BenefitProgramConfigurationController(BaseController):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.benefit_program_configuration_service = (
-            BenefitProgramConfigurationService.get_component()
-        )
         self.router.tags += ["G2P Bridge Benefit Program Configuration"]
 
         self.router.add_api_route(
@@ -37,6 +35,14 @@ class BenefitProgramConfigurationController(BaseController):
             methods=["POST"],
         )
 
+    @cached_property
+    def benefit_program_configuration_service(self) -> BenefitProgramConfigurationService:
+        return BenefitProgramConfigurationService.get_component()
+
+    @cached_property
+    def request_validation(self) -> RequestValidation:
+        return RequestValidation.get_component()
+
     async def create_benefit_program_configuration(
         self,
         benefit_program_configuration_request: BenefitProgramConfigurationRequest,
@@ -44,13 +50,13 @@ class BenefitProgramConfigurationController(BaseController):
     ) -> BenefitProgramConfigurationResponse:
         _logger.info("Creating benefit program configuration")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
-            RequestValidation.get_component().validate_request(
-                benefit_program_configuration_request
-            )
+            self.request_validation.validate_signature(is_signature_valid)
+            self.request_validation.validate_request(benefit_program_configuration_request)
 
-            benefit_program_configuration_payload: BenefitProgramConfigurationPayload = await self.benefit_program_configuration_service.create_benefit_program_configuration(
-                benefit_program_configuration_request
+            benefit_program_configuration_payload: BenefitProgramConfigurationPayload = (
+                await self.benefit_program_configuration_service.create_benefit_program_configuration(
+                    benefit_program_configuration_request
+                )
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")
