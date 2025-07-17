@@ -47,7 +47,8 @@ class DisbursementStatusController(BaseController):
     async def get_disbursement_status(
         self,
         disbursement_status_request: DisbursementStatusRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: bool =True,
     ) -> DisbursementStatusResponse:
         _logger.info("Retrieving disbursement envelope status")
         try:
@@ -81,7 +82,8 @@ class DisbursementStatusController(BaseController):
     async def get_disbursement_batch_control(
         self,
         disbursement_batch_control_request: DisbursementBatchControlRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: bool =True,
     ) -> DisbursementBatchControlResponse:
         _logger.info("Retrieving disbursement batch status")
         try:

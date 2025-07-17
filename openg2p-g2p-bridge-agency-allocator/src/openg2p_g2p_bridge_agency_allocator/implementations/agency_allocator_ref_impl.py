@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
 from ..interface import AgencyAllocator
-from ..models import G2PAgency
+from ..models import G2PAgency, G2PAgencyProgramBenefitCode, G2PAdministrativeAreaSmallAgencyRel
 from ..config import Settings
 from ..engine import get_engine
 
@@ -31,33 +31,52 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
         with session_maker() as pbms_session:
             # Fetch G2P agencies based on the small geo list
             for geo in small_geo_list:
+                # 1. Get agency_ids with program_id and benefit_code_id
+                program_benefit_agency_ids = set([
+                    row.agency_id for row in pbms_session.query(G2PAgencyProgramBenefitCode)
+                    .filter(
+                        G2PAgencyProgramBenefitCode.program_id == program_id,
+                        G2PAgencyProgramBenefitCode.benefit_code_id == benefit_code_id
+                    ).all()
+                ])
+                # 2. Get agency_ids under geo["administrative_zone_id_small"]
+                geo_agency_ids = set([
+                    row.g2p_agency_id for row in pbms_session.query(G2PAdministrativeAreaSmallAgencyRel)
+                    .filter(
+                        G2PAdministrativeAreaSmallAgencyRel.g2p_administrative_area_small_id == geo["administrative_zone_id_small"]
+                    ).all()
+                ])
+                # 3. Intersect both sets
+                agency_ids = list(program_benefit_agency_ids & geo_agency_ids)
                 g2p_agencies = (
                     pbms_session.query(G2PAgency)
-                    .filter(
-                        G2PAgency.administrative_zone_id_small
-                        == geo["administrative_zone_id_small"]
-                    )
+                    .filter(G2PAgency.id.in_(agency_ids))
                     .all()
                 )
                 g2p_agency = random.choice(g2p_agencies) if g2p_agencies else None
+                agency_additional_attributes = None
                 if g2p_agency:
+                    # Try to get the additional_info from G2PAgencyProgramBenefitCode for this agency
+                    benefit_code_entry = pbms_session.query(G2PAgencyProgramBenefitCode).filter(
+                        G2PAgencyProgramBenefitCode.agency_id == g2p_agency.id,
+                        G2PAgencyProgramBenefitCode.program_id == program_id,
+                        G2PAgencyProgramBenefitCode.benefit_code_id == benefit_code_id
+                    ).first()
+                    agency_additional_attributes= benefit_code_entry.additional_info if benefit_code_entry else None
                     results.append(
                         {
                             "batch_control_geo_id": geo["batch_control_geo_id"],
-                            "administrative_zone_id_small": geo[
-                                "administrative_zone_id_small"
-                            ],
-                            "administrative_zone_mnemonic_small": geo[
-                                "administrative_zone_mnemonic_small"
-                            ],
+                            "administrative_zone_id_small": geo["administrative_zone_id_small"],
+                            "administrative_zone_mnemonic_small": geo["administrative_zone_mnemonic_small"],
                             "benefit_code_id": benefit_code_id,
                             "program_id": program_id,
                             "agency_id": g2p_agency.id,
-                            "agency_mnemonic": g2p_agency.mnemonic,
-                            "agency_additional_attributes": g2p_agencies.agency_additional_attributes,
+                            "agency_mnemonic": g2p_agency.agency_mnemonic,
+                            "agency_name": g2p_agency.name,
                             "agency_admin_name": g2p_agency.admin_name,
                             "agency_admin_email": g2p_agency.admin_email,
-                            "agency_admin_phone": g2p_agency.admin_phone,
+                            "agency_admin_phone": g2p_agency.admin_mobile,
+                            "agency_additional_attributes": agency_additional_attributes,
                         }
                     )
         return results

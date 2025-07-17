@@ -12,7 +12,7 @@ from openg2p_g2p_bridge_models.models.disbursement_envelope import (
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
-    EnvelopeStatusForDigitalCashPayload,
+    DisbursementEnvelopeStatusPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     RequestHeader,
@@ -38,7 +38,7 @@ async def test_get_disbursement_envelope_status_success(
 
     # Mock service methods
     mock_service_instance.get_disbursement_envelope_batch_status = AsyncMock(
-        return_value=EnvelopeStatusForDigitalCashPayload(
+        return_value=DisbursementEnvelopeStatusPayload(
             disbursement_envelope_id="env123",
             number_of_disbursements_received=100,
             total_disbursement_quantity_received=5000,
@@ -66,7 +66,7 @@ async def test_get_disbursement_envelope_status_success(
             status=StatusEnum.succ,
             status_reason_message="",
         ),
-        message=EnvelopeStatusForDigitalCashPayload(
+        message=DisbursementEnvelopeStatusPayload(
             disbursement_envelope_id="env123",
             number_of_disbursements_received=100,
             total_disbursement_quantity_received=5000,

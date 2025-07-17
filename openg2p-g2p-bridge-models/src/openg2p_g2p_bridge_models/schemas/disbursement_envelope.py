@@ -16,7 +16,7 @@ from ..models import FundsAvailableWithBankEnum, FundsBlockedWithBankEnum
 
 class DisbursementEnvelopePayload(BaseModel):
     id: Optional[str] = None
-    benefit_program_id: Optional[str] = None
+    benefit_program_id: Optional[int] = None
     benefit_program_mnemonic: Optional[str] = None
     target_registry: Optional[str] = None
     benefit_code_id: Optional[str] = None

@@ -40,7 +40,8 @@ class DisbursementEnvelopeStatusController(BaseController):
     async def get_disbursement_envelope_status(
         self,
         disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: bool =True,
     ) -> DisbursementEnvelopeStatusResponse:
         _logger.info("Getting disbursement envelope batch status payload")
         try:

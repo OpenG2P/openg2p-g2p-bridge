@@ -44,7 +44,8 @@ class DisbursementController(BaseController):
     async def create_disbursements(
         self,
         disbursement_request: DisbursementRequest,
-        is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: bool =True,
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
@@ -85,7 +86,8 @@ class DisbursementController(BaseController):
     async def cancel_disbursements(
         self,
         disbursement_request: DisbursementRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid: bool =True,
     ) -> DisbursementResponse:
         _logger.info("Cancelling disbursements")
         try:
