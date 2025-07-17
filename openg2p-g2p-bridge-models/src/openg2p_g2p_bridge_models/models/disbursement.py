@@ -25,7 +25,7 @@ class Disbursement(BaseORMModelWithId):
 
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
     beneficiary_id: Mapped[str] = mapped_column(String)
-    beneficiary_name: Mapped[str] = mapped_column(String)
+    beneficiary_name: Mapped[str] = mapped_column(String, nullable=True, default=None)
     disbursement_quantity: Mapped[float] = mapped_column(Float)
     narrative: Mapped[str] = mapped_column(String)
     receipt_time_stamp: Mapped[datetime] = mapped_column(
