@@ -17,7 +17,7 @@ class DisbursementPayload(BaseModel):
     receipt_time_stamp: Optional[datetime.datetime] = None
     cancellation_status: Optional[DisbursementCancellationStatus] = None
     cancellation_time_stamp: Optional[datetime.datetime] = None
-    disbursement_cycle_id: Optional[str] = None
+    disbursement_cycle_id: Optional[int] = None
     disbursement_batch_control_id: Optional[str] = None 
     response_error_codes: Optional[List[str]] = None
 

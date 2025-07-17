@@ -38,7 +38,7 @@ class Disbursement(BaseORMModelWithId):
     cancellation_time_stamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None
     )
-    disbursement_cycle_id: Mapped[str] = mapped_column(String)
+    disbursement_cycle_id: Mapped[int] = mapped_column(Integer)
     disbursement_batch_control_id: Mapped[str] = mapped_column(String)
 
 

@@ -268,7 +268,7 @@ class DisbursementEnvelopeService(BaseService):
     ) -> DisbursementEnvelope:
         _logger.info("Constructing disbursement envelope")
         disbursement_envelope: DisbursementEnvelope = DisbursementEnvelope(
-            id=str(uuid.uuid4()),
+            id=disbursement_envelope_payload.id,
             benefit_program_mnemonic=disbursement_envelope_payload.benefit_program_mnemonic,
             benefit_program_id=disbursement_envelope_payload.benefit_program_id,
             target_registry=disbursement_envelope_payload.target_registry,
@@ -296,6 +296,7 @@ class DisbursementEnvelopeService(BaseService):
     ) -> EnvelopeControl:
         _logger.info("Constructing envelope control")
         return EnvelopeControl(
+            id=disbursement_envelope.id,
             disbursement_envelope_id=disbursement_envelope.id,
         )
 
