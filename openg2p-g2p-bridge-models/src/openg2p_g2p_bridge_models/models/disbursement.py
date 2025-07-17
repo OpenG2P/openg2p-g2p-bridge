@@ -45,7 +45,7 @@ class Disbursement(BaseORMModelWithId):
 class DisbursementBatchControl(BaseORMModelWithId):
     __tablename__ = "disbursement_batch_control"
 
-    disbursement_cycle_id: Mapped[str] = mapped_column(String, index=True)
+    disbursement_cycle_id: Mapped[int] = mapped_column(Integer, index=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, index=True)
     fa_resolution_status: Mapped[ProcessStatus] = mapped_column(String)
     fa_resolution_timestamp: Mapped[datetime] = mapped_column(
