@@ -247,13 +247,6 @@ class DisbursementService(BaseService):
                     G2PBridgeErrorCodes.INVALID_BENEFICIARY_ID
                 )
             if (
-                disbursement_payload.beneficiary_name is None
-                or disbursement_payload.beneficiary_name == ""
-            ):
-                disbursement_payload.response_error_codes.append(
-                    G2PBridgeErrorCodes.INVALID_BENEFICIARY_NAME
-                )
-            if (
                 disbursement_payload.narrative is None
                 or disbursement_payload.narrative == ""
             ):
