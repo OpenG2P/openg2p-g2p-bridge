@@ -40,7 +40,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
         disbursement_envelope = (
             session.query(DisbursementEnvelope)
             .filter(
-                DisbursementEnvelope.disbursement_envelope_id
+                DisbursementEnvelope.id
                 == disbursement_envelope_id
             )
             .first()

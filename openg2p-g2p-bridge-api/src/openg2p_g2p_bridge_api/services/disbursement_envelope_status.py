@@ -44,7 +44,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.disbursement_envelope_id
+                            DisbursementEnvelope.id
                             == disbursement_envelope_status_request.message
                         )
                     )
@@ -63,7 +63,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                     await session.execute(
                         select(EnvelopeControl).where(
                             EnvelopeControl.disbursement_envelope_id
-                            == envelope.disbursement_envelope_id
+                            == envelope.id
                         )
                     )
                 )
@@ -81,7 +81,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                         await session.execute(
                             select(EnvelopeBatchStatusForCash).where(
                                 EnvelopeBatchStatusForCash.disbursement_envelope_id
-                                == envelope.disbursement_envelope_id
+                                == envelope.id
                             )
                         )
                     )
@@ -94,7 +94,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                         await session.execute(
                             select(DisbursementBatchControlGeo).where(
                                 DisbursementBatchControlGeo.disbursement_envelope_id
-                                == envelope.disbursement_envelope_id
+                                == envelope.id
                             )
                         )
                     )
@@ -129,7 +129,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                         await session.execute(
                             select(DisbursementResolutionGeoAddress).where(
                                 DisbursementResolutionGeoAddress.disbursement_envelope_id
-                                == envelope.disbursement_envelope_id,
+                                == envelope.id,
                                 DisbursementResolutionGeoAddress.beneficiary_notification_status
                                 == ProcessStatus.PROCESSED,
                             )
@@ -182,7 +182,7 @@ class DisbursementEnvelopeStatusService(BaseService):
             if batch_control_geos else set()
         )
         return DisbursementEnvelopeStatusPayload(
-            disbursement_envelope_id=envelope.disbursement_envelope_id,
+            disbursement_envelope_id=envelope.id,
             benefit_code_id=envelope.benefit_code_id,
             benefit_code_mnemonic=envelope.benefit_code_mnemonic,
             benefit_type=envelope.benefit_type.value if envelope.benefit_type else None,

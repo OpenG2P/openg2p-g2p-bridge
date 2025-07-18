@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from ..app import celery_app
 from ..engine import get_engine
 from ..config import Settings
-from ..helpers import ResolveHelper
+from ..helpers import ResolveHelper, FAKeys
 
 # Configure logging
 _config = Settings.get_config()
@@ -36,7 +36,7 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
             disbursement_batch_control = (
                 session.execute(
                     select(DisbursementBatchControl).filter(
-                        DisbursementBatchControl.disbursement_batch_control_id
+                        DisbursementBatchControl.id
                         == disbursement_batch_control_id
                     )
                 )
@@ -53,7 +53,7 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
 
             dfa_exists = (
                 select(1)
-                .where(DisbursementResolutionFinancialAddress.disbursement_id == Disbursement.disbursement_id)
+                .where(DisbursementResolutionFinancialAddress.disbursement_id == Disbursement.id)
             )
 
             disbursements = (
@@ -72,8 +72,9 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
             )
 
             beneficiary_disbursement_map = {
-                d.beneficiary_id: d.disbursement_id for d in disbursements
+                d.beneficiary_id: d.id for d in disbursements
             }
+            _logger.info(f"Sending resolve request to url {_config.mapper_resolve_api_url}")
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
@@ -101,16 +102,7 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
 
         
         except Exception as e:
-            disbursement_batch_control = (
-                session.execute(
-                    select(DisbursementBatchControl).filter(
-                        DisbursementBatchControl.disbursement_batch_control_id
-                        == disbursement_batch_control_id
-                    )
-                )
-                .scalars()
-                .first()
-            )
+    
             disbursement_batch_control.fa_resolution_latest_error_code = (
                 str(e)
             )
@@ -144,13 +136,15 @@ async def make_resolve_request(disbursements):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
         single_resolve_requests
     )
-    jwt_token = await resolve_helper.create_jwt_token(
-        resolve_request.model_dump(mode="json")
-    )
+    # jwt_token = await resolve_helper.create_jwt_token(
+    #     resolve_request.model_dump(mode="json")
+    # )
+    jwt_token = ""
     headers = {"content-type": "application/json", "Signature": jwt_token}
 
     resolve_client = MapperResolveClient()
     try:
+        _logger.info(f"Sending resolve request to url {_config.mapper_resolve_api_url}")
         resolve_response = await resolve_client.resolve_request(
             resolve_request, headers, _config.mapper_resolve_api_url
         )
@@ -186,7 +180,26 @@ def process_and_store_resolution(
                     mapper_resolved_name=single_response.account_provider_info.name
                     if single_response.account_provider_info
                     else None,
-                    **deconstructed_fa,
+                    bank_account_number=deconstructed_fa.get(
+                        FAKeys.account_number.value, None
+                    ),
+                    bank_code=deconstructed_fa.get(FAKeys.bank_code.value, None),
+                    branch_code=deconstructed_fa.get(FAKeys.branch_code.value, None),
+                    mapper_resolved_fa_type=deconstructed_fa.get(
+                        FAKeys.fa_type.value, None
+                    ),
+                    mobile_number=deconstructed_fa.get(
+                        FAKeys.mobile_number.value, None
+                    ),
+                    mobile_wallet_provider=deconstructed_fa.get(
+                        FAKeys.mobile_wallet_provider.value, None
+                    ),
+                    email_address=deconstructed_fa.get(
+                        FAKeys.email_address.value, None
+                    ),
+                    email_wallet_provider=deconstructed_fa.get(
+                        FAKeys.email_wallet_provider.value, None
+                    ),
                 )
             )
             disbursement_resolution_financial_address_list.append(disbursement_resolution_financial_address)
@@ -200,7 +213,7 @@ def process_and_store_resolution(
     if not batch_has_error:
         _logger.info("Batch has no error")
         session.query(DisbursementBatchControl).filter(
-            DisbursementBatchControl.disbursement_batch_control_id
+            DisbursementBatchControl.id
             == disbursement_batch_control_id
         ).update(
             {

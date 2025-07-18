@@ -6,7 +6,7 @@ from .example_bank_connector import ExampleBankConnector
 
 class BankConnectorFactory(BaseService):
     def get_bank_connector(self, sponsor_bank_code: str) -> BankConnectorInterface:
-        if sponsor_bank_code == "EXAMPLE":
+        if sponsor_bank_code == "EXAMPLE-BANK":
             return ExampleBankConnector()
         else:
             raise NotImplementedError(f"Bank {sponsor_bank_code} is not supported")

@@ -35,7 +35,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         disbursement_envelope = (
             session.query(DisbursementEnvelope)
             .filter(
-                DisbursementEnvelope.disbursement_envelope_id
+                DisbursementEnvelope.id
                 == disbursement_envelope_id
             )
             .first()
@@ -75,7 +75,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         try:
             funds_available = (
                 bank_connector.check_funds(
-                    sponsor_bank_configuration.sponsor_bank_account_number,
+                    sponsor_bank_configuration.program_account_number,
                     disbursement_envelope.measurement_unit,
                     total_funds_needed,
                 ).status

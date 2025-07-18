@@ -73,13 +73,13 @@ def check_funds_with_bank_beat_producer():
 
         for disbursement_envelope in disbursement_envelopes:
             _logger.info(
-                f"Sending task to check funds with bank for envelope {disbursement_envelope.disbursement_envelope_id}"
+                f"Sending task to check funds with bank for envelope {disbursement_envelope.id}"
             )
             envelope_batch_status_for_cash = (
                 session.query(EnvelopeBatchStatusForCash)
                 .filter(
                     EnvelopeBatchStatusForCash.disbursement_envelope_id
-                    == disbursement_envelope.disbursement_envelope_id
+                    == disbursement_envelope.id
                 )
                 .first()
             )
@@ -90,7 +90,7 @@ def check_funds_with_bank_beat_producer():
             session.commit()
             celery_app.send_task(
                 "check_funds_with_bank_worker",
-                args=(disbursement_envelope.disbursement_envelope_id,),
+                args=(disbursement_envelope.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
             

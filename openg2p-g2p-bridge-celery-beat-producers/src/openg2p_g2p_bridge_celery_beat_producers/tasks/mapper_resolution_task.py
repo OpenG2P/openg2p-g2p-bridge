@@ -61,10 +61,10 @@ def mapper_resolution_beat_producer():
             celery_app.send_task(
                 "mapper_resolution_worker",
                 queue="g2p_bridge_celery_worker_tasks",
-                args=[disbursement_batch_control.disbursement_batch_control_id],
+                args=[disbursement_batch_control.id],
             )
             _logger.info(
-                f"Published disbursement batch {disbursement_batch_control.disbursement_batch_control_id} to mapper-resolution-worker."
+                f"Published disbursement batch {disbursement_batch_control.id} to mapper-resolution-worker."
             )
 
         _logger.info(

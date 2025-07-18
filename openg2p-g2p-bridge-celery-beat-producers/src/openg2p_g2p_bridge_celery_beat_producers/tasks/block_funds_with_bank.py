@@ -67,13 +67,13 @@ def block_funds_with_bank_beat_producer():
 
         for envelope in envelopes:
             _logger.info(
-                f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
+                f"Blocking funds with bank for envelope: {envelope.id}"
             )
             envelope_batch_status_for_cash = (
                 session.query(EnvelopeBatchStatusForCash)
                 .filter(
                     EnvelopeBatchStatusForCash.disbursement_envelope_id
-                    == envelope.disbursement_envelope_id
+                    == envelope.id
                 )
                 .first()
             )
@@ -85,7 +85,7 @@ def block_funds_with_bank_beat_producer():
 
             celery_app.send_task(
                 "block_funds_with_bank_worker",
-                args=(envelope.disbursement_envelope_id,),
+                args=(envelope.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
             

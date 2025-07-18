@@ -149,7 +149,7 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
 
         except Exception as e:
             session.rollback()
-            _logger.error(f"Warehouse notification failed: {e}")
+            _logger.error(f"Beneficiary notification failed: {e}")
 
             disbursement_resolution_geo_address.beneficiary_notification_attempts += 1
             disbursement_resolution_geo_address.beneficiary_notification_latest_error_code = str(e)

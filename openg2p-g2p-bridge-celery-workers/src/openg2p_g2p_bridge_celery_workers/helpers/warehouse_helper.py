@@ -17,7 +17,7 @@ def extract(tag, data):
     return match.group(1) if match else None
 class WarehouseHelper(BaseService):
     def retrieve_sponsor_bank_configuration(
-        benefit_program_id: int, benefit_code_id: int
+        self, benefit_program_id: int, benefit_code_id: int
     ):
         """
         Retrieve the sponsor bank configuration for the given benefit program and code from g2p_warehouse_program_benefit_codes.
@@ -47,11 +47,11 @@ class WarehouseHelper(BaseService):
                 program_account_number=extract('ACCOUNT', info),
                 program_account_type=extract('TYPE', info),
                 program_account_branch_code=extract('BRANCH', info),
-                sponsor_bank_code=extract('BANK', info)
+                sponsor_bank_code=record.warehouse_mnemonic
             )
 
 def retrieve_sponsor_bank_configuration_for_account_number(
-    account_number: str
+    self, account_number: str
 ) -> SponsorBankConfiguration:
     """
     Retrieve the sponsor bank configuration for the given account number by searching additional_info LIKE '%#ACCOUNT#{account_number}%'.
@@ -74,5 +74,5 @@ def retrieve_sponsor_bank_configuration_for_account_number(
             program_account_number=extract('ACCOUNT', info),
             program_account_type=extract('TYPE', info),
             program_account_branch_code=extract('BRANCH', info),
-            sponsor_bank_code=extract('BANK', info)
+            sponsor_bank_code=record.warehouse_mnemonic
         )

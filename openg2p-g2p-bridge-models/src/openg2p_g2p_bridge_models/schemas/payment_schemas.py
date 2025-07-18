@@ -14,6 +14,4 @@ class AgencyDetailForPayment(BaseModel):
     agency_account_type: Optional[str] = None
     agency_account_branch_code: str
     agency_account_bank_code: str
-    agency_email_address: Optional[str] = None
-    agency_phone_number: Optional[str] = None
         

@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     mapper_resolution_max_attempts: int = 3
     check_funds_with_bank_max_attempts: int = 3
     block_funds_with_bank_max_attempts: int = 3
+    disburse_funds_with_bank_max_attempts: int = 3
     mt940_processor_max_attempts: int = 3
 
     agency_notification_max_attempts: int = 3

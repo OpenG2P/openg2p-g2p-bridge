@@ -78,7 +78,7 @@ def disburse_funds_from_bank_beat_producer():
                 )
             else:
                 _logger.warning(
-                    f"Disbursement batch control {disbursement_batch_control.disbursement_batch_control_id} does not meet the criteria for processing."
+                    f"Disbursement batch control {disbursement_batch_control.id} does not meet the criteria for processing."
                 )
 
 def check_envelope_status(session, disbursement_batch_control) -> bool:
@@ -104,28 +104,15 @@ def check_envelope_status(session, disbursement_batch_control) -> bool:
         .first()
     )
 
-    # Check if the disbursement schedule date is today if the configuration is
-    # not set to process future disbursement schedules
-    date_condition = (
-        disbursement_envelope.disbursement_schedule_date == datetime.now().date()
-        if not _config.process_future_disbursement_schedules
-        else literal(True)
-    )
-    if not date_condition:
-        _logger.warning(
-            f"Disbursement Envelope {disbursement_envelope.disbursement_envelope_id} is not scheduled for today."
-        )
-        return False
-
     if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED.value:
         _logger.warning(
-            f"Disbursement Envelope {disbursement_envelope.disbursement_envelope_id} is cancelled."
+            f"Disbursement Envelope {disbursement_envelope.id} is cancelled."
         )                       
         return False
     
     if not envelope_batch_status_for_cash.funds_blocked_with_bank == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value:
         _logger.warning(
-            f"Funds are not blocked successfully for envelope {disbursement_envelope.disbursement_envelope_id}."
+            f"Funds are not blocked for envelope {disbursement_envelope.id}."
         )
         return False
 

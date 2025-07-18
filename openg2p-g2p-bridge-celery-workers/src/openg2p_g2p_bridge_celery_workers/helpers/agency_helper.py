@@ -5,7 +5,6 @@ from openg2p_g2p_bridge_models.schemas import AgencyDetailForPayment
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_agency_allocator.models.agency import G2PAgencyProgramBenefitCode
 import re
-from openg2p_g2p_bridge_models.models.disbursement_geo import DisbursementBatchControlGeoAttributes
 
 from ..engine import get_engine
 _logger = logging.getLogger("openg2p_g2p_bridge")
@@ -34,20 +33,12 @@ class AgencyHelper(BaseService):
                 _logger.error(f"No agency program benefit code found for agency {agency_id}, program {benefit_program_id}, code {benefit_code_id}")
                 return None
             info = record.additional_info
-            # Fetch agency_admin_email and agency_admin_phone from DisbursementBatchControlGeoAttributes
-            disbursement_batch_control_geo_attributes = session.query(DisbursementBatchControlGeoAttributes).filter(
-                DisbursementBatchControlGeoAttributes.agency_id == agency_id
-            ).first()
-            agency_email_address = disbursement_batch_control_geo_attributes.agency_admin_email if disbursement_batch_control_geo_attributes else None
-            agency_phone_number = disbursement_batch_control_geo_attributes.agency_admin_phone if disbursement_batch_control_geo_attributes else None
             agency_detail_for_payment = AgencyDetailForPayment(
                 agency_name=record.agency_name,
                 agency_account_number=extract('ACCOUNT', info),
                 agency_account_type=extract('TYPE', info),
                 agency_account_branch_code=extract('BRANCH', info),
                 agency_account_bank_code=extract('BANK', info),
-                agency_email_address=agency_email_address,
-                agency_phone_number=agency_phone_number
             )
             return agency_detail_for_payment
 

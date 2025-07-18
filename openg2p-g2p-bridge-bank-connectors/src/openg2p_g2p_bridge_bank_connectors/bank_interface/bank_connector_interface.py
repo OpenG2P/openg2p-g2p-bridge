@@ -5,7 +5,6 @@ from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.models import (
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
-    MapperResolvedFaType,
 )
 from pydantic import BaseModel
 
@@ -35,7 +34,7 @@ class DisbursementPaymentPayload(BaseModel):
 
     beneficiary_account: Optional[str] = None
     beneficiary_account_currency: Optional[str] = None
-    beneficiary_account_type: Optional[MapperResolvedFaType] = None
+    beneficiary_account_type: Optional[str] = None
     beneficiary_bank_code: Optional[str] = None
     beneficiary_branch_code: Optional[str] = None
 

@@ -99,6 +99,12 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 small_geo_list, benefit_code_id, program_id
             )
 
+            warehouse_notification_status = ProcessStatus.NOT_APPLICABLE.value
+            agency_notification_status = ProcessStatus.PENDING.value
+            if disbursement_envelope.benefit_type == BenefitType.SERVICE.value or disbursement_envelope.benefit_type == BenefitType.COMMODITY.value or disbursement_envelope.benefit_type == BenefitType.COMBINATION.value:
+                # For services or commodities, we do not need to update warehouse_notification_status
+                warehouse_notification_status = ProcessStatus.PENDING.value 
+
             for disbursement_batch_control_geo, allocation in zip(
                 disbursement_batch_control_geos, allocation_results
             ):
@@ -115,8 +121,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                         agency_additional_attributes=allocation.get(
                             "agency_additional_attributes", {}
                         ),
-                        warehouse_notification_status=ProcessStatus.PENDING.value,
-                        agency_notification_status=ProcessStatus.PENDING.value,
+                        warehouse_notification_status=warehouse_notification_status,
+                        agency_notification_status=agency_notification_status,
                     )
                 )
 
@@ -160,7 +166,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 ProcessStatus.PROCESSED.value
             )
 
-            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
                 disbursement_batch_control.sponsor_bank_dispatch_status = (
                     ProcessStatus.PENDING.value
                 )

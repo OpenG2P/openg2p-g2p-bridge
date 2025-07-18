@@ -17,6 +17,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementEnvelope,
     DisbursementResolutionFinancialAddress,
+    DisbursementBatchControlGeoAttributes,
     EnvelopeBatchStatusForCash,
     ProcessStatus,
 )
@@ -51,7 +52,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
         disbursement_batch_control = (
             session.query(DisbursementBatchControl)
             .filter(
-                DisbursementBatchControl.disbursement_batch_control_id
+                DisbursementBatchControl.id
                 == disbursement_batch_control_id,
             )
             .first()
@@ -60,7 +61,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
         disbursement_envelope = (
             session.query(DisbursementEnvelope)
             .filter(
-                DisbursementEnvelope.disbursement_envelope_id
+                DisbursementEnvelope.id
                 == disbursement_batch_control.disbursement_envelope_id
             )
             .first()
@@ -90,10 +91,10 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
 
         disbursement_payment_payloads: List[DisbursementPaymentPayload] 
 
-        if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
+        if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value:
             disbursement_payment_payloads = construct_disbursement_payloads_for_digital_cash(disbursement_batch_control_id, session, disbursement_envelope, envelope_batch_status_for_cash, sponsor_bank_configuration)
         
-        elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+        elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
             disbursement_payment_payloads = construct_disbursement_payloads_for_physical_cash(disbursement_batch_control_id, session, disbursement_envelope, envelope_batch_status_for_cash, sponsor_bank_configuration)
 
         bank_connector: BankConnectorInterface = (
@@ -182,7 +183,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                 disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
                 if (
                     disbursement_batch_control.sponsor_bank_dispatch_attempts
-                    >= _config.max_sponsor_bank_dispatch_attempts
+                    >= _config.disburse_funds_with_bank_max_attempts
                 ):
                     disbursement_batch_control.sponsor_bank_dispatch_status = (
                         ProcessStatus.ERROR.value
@@ -192,6 +193,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                         ProcessStatus.PENDING.value
                     )
                 session.commit()
+                raise e
                 break
 
         _logger.info(
@@ -233,7 +235,7 @@ def construct_disbursement_payloads_for_digital_cash(disbursement_batch_control_
                     beneficiary_account=disbursement_resolution_financial_address.bank_account_number
                     if disbursement_resolution_financial_address
                     else None,
-                    beneficiary_account_currency=sponsor_bank_configuration.sponsor_bank_account_currency,
+                    beneficiary_account_currency=envelope.measurement_unit,
                     beneficiary_bank_code=disbursement_resolution_financial_address.bank_code
                     if disbursement_resolution_financial_address
                     else None,
@@ -242,7 +244,7 @@ def construct_disbursement_payloads_for_digital_cash(disbursement_batch_control_
                     else None,
                     payment_date=str(datetime.date(datetime.now())),
                     beneficiary_id=disbursement.beneficiary_id,
-                    beneficiary_name=disbursement.beneficiary_name,
+                    beneficiary_name=disbursement.beneficiary_name if disbursement.beneficiary_name else "N/A",
                     beneficiary_account_type=disbursement_resolution_financial_address.mapper_resolved_fa_type,
                     beneficiary_phone_no=disbursement_resolution_financial_address.mobile_number
                     if disbursement_resolution_financial_address
@@ -282,6 +284,12 @@ def construct_disbursement_payloads_for_physical_cash(disbursement_batch_control
         agency_detail_for_payment:AgencyDetailForPayment = AgencyHelper.get_component().retrieve_agency_details(
             disbursement_batch_control_geo.agency_id, envelope.benefit_program_id, envelope.benefit_code_id
         )
+        # Fetch agency_admin_email and agency_admin_phone from DisbursementBatchControlGeoAttributes
+        disbursement_batch_control_geo_attributes = session.query(DisbursementBatchControlGeoAttributes).filter(
+            DisbursementBatchControlGeoAttributes.disbursement_batch_control_id == disbursement_batch_control_geo.id
+        ).first()
+        agency_email_address = disbursement_batch_control_geo_attributes.agency_admin_email if disbursement_batch_control_geo_attributes else None
+        agency_phone_number = disbursement_batch_control_geo_attributes.agency_admin_phone if disbursement_batch_control_geo_attributes else None
 
         disbursement_payload = DisbursementPaymentPayload(
             disbursement_id=disbursement_batch_control_geo.id,
@@ -298,11 +306,11 @@ def construct_disbursement_payloads_for_physical_cash(disbursement_batch_control
             payment_date=str(datetime.date(datetime.now())),
             beneficiary_id=disbursement_batch_control_geo.agency_id,  
             beneficiary_name=agency_detail_for_payment.agency_name,  
-            beneficiary_account_type=agency_detail_for_payment.agency_account_type,  
-            beneficiary_phone_no=agency_detail_for_payment.agency_phone_number,  
+            beneficiary_account_type=agency_detail_for_payment.agency_account_type if agency_detail_for_payment.agency_account_type else "Current",  
+            beneficiary_phone_no=agency_phone_number,  
             beneficiary_mobile_wallet_provider=None,  
             beneficiary_email_wallet_provider=None,  
-            beneficiary_email=agency_detail_for_payment.agency_email_address,  
+            beneficiary_email=agency_email_address,  
             disbursement_narrative="PAYMENT_TO_AGENCY_FOR_PHYSICAL_CASH_DISTRIBUTION",
             benefit_program_mnemonic=envelope.benefit_program_mnemonic,
             cycle_code_mnemonic=envelope.cycle_code_mnemonic,

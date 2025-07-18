@@ -182,14 +182,14 @@ class DisbursementService(BaseService):
         
         id = disbursement_batch_control_id
         # Determine statuses based on benefit_type
-        if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL:
+        if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value:
             fa_resolution_status = ProcessStatus.PENDING.value
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value
             geo_resolutuon_status = ProcessStatus.NOT_APPLICABLE.value
             warehouse_allocation_status = ProcessStatus.NOT_APPLICABLE.value
             agency_allocation_status = ProcessStatus.NOT_APPLICABLE.value
 
-        elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+        elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
             fa_resolution_status = ProcessStatus.NOT_APPLICABLE.value
             sponsor_bank_dispatch_status = ProcessStatus.NOT_APPLICABLE.value
             geo_resolutuon_status = ProcessStatus.PENDING.value
@@ -585,7 +585,7 @@ class DisbursementService(BaseService):
                 result = await session.execute(
                     select(DisbursementEnvelope)
                     .where(
-                        DisbursementEnvelope.disbursement_envelope_id
+                        DisbursementEnvelope.id
                         == str(disbursements_in_db[0].disbursement_envelope_id)
                     )
                     .with_for_update(nowait=True)

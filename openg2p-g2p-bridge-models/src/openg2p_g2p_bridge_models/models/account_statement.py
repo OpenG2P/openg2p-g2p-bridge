@@ -21,8 +21,8 @@ class AccountStatement(BaseORMModelWithId):
     statement_upload_timestamp: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now
     )
-    statement_process_status: Mapped[ProcessStatus] = mapped_column(
-        String, default=ProcessStatus.PENDING
+    statement_process_status: Mapped[str] = mapped_column(
+        String, default=ProcessStatus.PENDING.value
     )
     statement_process_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=None

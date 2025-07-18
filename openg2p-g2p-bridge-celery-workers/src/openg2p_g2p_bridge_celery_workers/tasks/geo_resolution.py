@@ -227,7 +227,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSED.value
 
-            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+            if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
                 disbursement_batch_control.agency_allocation_status = (
                     ProcessStatus.PENDING.value
                 )

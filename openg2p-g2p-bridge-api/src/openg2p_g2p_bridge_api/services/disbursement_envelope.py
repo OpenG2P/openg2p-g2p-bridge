@@ -67,7 +67,7 @@ class DisbursementEnvelopeService(BaseService):
                 )
                 envelope_controls.append(envelope_control)
 
-                if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL or disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL:
+                if (disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value or disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value):
                     envelope_batch_status_for_cash: EnvelopeBatchStatusForCash = (
                         await self.construct_envelope_batch_status_for_cash(
                             disbursement_envelope
