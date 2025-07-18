@@ -91,25 +91,23 @@ class DisbursementStatusController(BaseController):
             RequestValidation.get_component().validate_request(
                 disbursement_batch_control_request
             )
-            disbursement_batch_control_payloads: List[DisbursementBatchControlPayload] = await self.disbursement_service.get_disbursement_batch_control_payloads(
+            disbursement_batch_control_payload: DisbursementBatchControlPayload = await self.disbursement_service.get_disbursement_batch_control_payload(
                 disbursement_batch_control_request
             )
-            disbursement_batch_control_response = DisbursementBatchControlResponse(
-                header=disbursement_batch_control_request.header,
-                message=disbursement_batch_control_payloads,
+            disbursement_batch_control_response: DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_success_response(
+                disbursement_batch_control_request,
+                disbursement_batch_control_payload,
             )
             return disbursement_batch_control_response
         except RequestValidationException as e:
             _logger.error("Error validating request")
-            disbursement_batch_control_response = DisbursementBatchControlResponse(
-                header=disbursement_batch_control_request.header,
-                message=[],
+            disbursement_batch_control_response :DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
+                disbursement_batch_control_request, e.code
             )
             return disbursement_batch_control_response
         except Exception as e:
             _logger.error(f"Error retrieving disbursement batch status: {e}")
-            disbursement_batch_control_response = DisbursementBatchControlResponse(
-                header=disbursement_batch_control_request.header,
-                message=[],
+            disbursement_batch_control_response : DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
+                disbursement_batch_control_request, "internal_error"
             )
             return disbursement_batch_control_response

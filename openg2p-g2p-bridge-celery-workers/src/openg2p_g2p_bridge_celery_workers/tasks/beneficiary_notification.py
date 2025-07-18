@@ -122,12 +122,13 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 recipient_email=disbursement_resolution_geo_address.beneficiary_email,
                 recipient_phone=disbursement_resolution_geo_address.beneficiary_phone,
             )
-            notification_response: NotificationResponse = notifier.send_notification(
-                notification_id=notification_id,
-                payload=notification_payload.model_dump(),
-                notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
-                recipient=recipient
-            )
+            # TODO : Disabled notification sending for now
+            # notification_response: NotificationResponse = notifier.send_notification(
+            #     notification_id=notification_id,
+            #     payload=notification_payload.model_dump(),
+            #     notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
+            #     recipient=recipient
+            # )
 
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
@@ -137,10 +138,10 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 payload=str(notification_payload.model_dump()),
                 sent_at=datetime.datetime.now(),
             )
-            if notification_response.status == NotificationResponseStatus.FAILURE:
-                raise Exception(notification_response.error_message or "Notification failed")
+            # if notification_response.status == NotificationResponseStatus.FAILURE:
+            #     raise Exception(notification_response.error_message or "Notification failed")
                 
-            notification_log.response = notification_response.response
+            # notification_log.response = notification_response.response
             notification_log.processed_at = datetime.datetime.now()
             disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.PROCESSED.value
 
@@ -179,7 +180,9 @@ def construct_beneficiary_notification_payload(disbursement_resolution_geo_addre
         benefit_code_mnemonic=getattr(disbursement_envelope, "benefit_code_mnemonic", None),
         benefit_type=getattr(disbursement_envelope, "benefit_type", None),
         measurement_unit=getattr(disbursement_envelope, "measurement_unit", None),
-        benefit_description=None,  # Add if available
+        benefit_description=getattr(
+            disbursement_envelope, "benefit_code_description", None
+        ),
         warehouse_id=getattr(disbursement_resolution_geo_address, "warehouse_id", None),
         warehouse_mnemonic=getattr(disbursement_resolution_geo_address, "warehouse_mnemonic", None),
         warehouse_name=getattr(disbursement_batch_control_geo_attributes, "warehouse_name", None),

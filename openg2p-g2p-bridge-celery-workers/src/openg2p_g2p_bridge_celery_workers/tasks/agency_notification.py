@@ -231,7 +231,9 @@ def construct_agency_notification_payload(disbursement_batch_control_geo, disbur
         measurement_unit=getattr(
             disbursement_envelope, "measurement_unit", None
         ),
-        benefit_description=None,
+        benefit_description=getattr(
+            disbursement_envelope, "benefit_code_description", None
+        ),
         warehouse_id=getattr(
             disbursement_batch_control_geo, "warehouse_id", None
         ),

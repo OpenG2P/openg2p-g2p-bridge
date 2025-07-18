@@ -438,7 +438,7 @@ def construct_parsed_transaction(
     customer_reference = transaction.data["customer_reference"]
     remittance_reference_number = transaction.data["bank_reference"]
     narratives = transaction.data["transaction_details"].split("\n")
-    reconciliation_id = bank_connector.retrieve_disbursement_id(
+    reconciliation_id = bank_connector.retrieve_reconciliation_id(
         remittance_reference_number, customer_reference, narratives
     )
     beneficiary_name_from_bank = None
@@ -492,7 +492,7 @@ def construct_parsed_transaction(
 def get_disbursement_envelope_id(disbursement_id, session):
     disbursement = (
         session.query(Disbursement)
-        .filter(Disbursement.disbursement_id == disbursement_id)
+        .filter(Disbursement.id == disbursement_id)
         .first()
     )
 

@@ -24,7 +24,7 @@ class DisbursementBatchControlGeo(BaseORMModelWithId):
     agency_id: Mapped[str] = mapped_column(String, nullable=True)
     agency_mnemonic: Mapped[str] = mapped_column(String, nullable=True)
     agency_additional_attributes: Mapped[str] = mapped_column(String, nullable=True)
-    warehouse_notification_status: Mapped[ProcessStatus] = mapped_column(
+    warehouse_notification_status: Mapped[str] = mapped_column(
         String
     )
     warehouse_notification_attempts: Mapped[int] = mapped_column(
@@ -79,7 +79,7 @@ class DisbursementResolutionGeoAddress(BaseORMModelWithId):
     beneficiary_name: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_phone: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_email: Mapped[str] = mapped_column(String, nullable=True)
-    beneficiary_notification_status: Mapped[ProcessStatus] = mapped_column(
+    beneficiary_notification_status: Mapped[str] = mapped_column(
         String, default=ProcessStatus.NOT_APPLICABLE.value
     )
     beneficiary_notification_attempts: Mapped[int] = mapped_column(

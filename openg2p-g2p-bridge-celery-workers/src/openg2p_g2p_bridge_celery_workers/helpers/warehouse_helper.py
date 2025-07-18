@@ -50,29 +50,29 @@ class WarehouseHelper(BaseService):
                 sponsor_bank_code=record.warehouse_mnemonic
             )
 
-def retrieve_sponsor_bank_configuration_for_account_number(
-    self, account_number: str
-) -> SponsorBankConfiguration:
-    """
-    Retrieve the sponsor bank configuration for the given account number by searching additional_info LIKE '%#ACCOUNT#{account_number}%'.
-    """
-    pbms_session_maker = sessionmaker(
-        bind=_engine.get("db_engine_pbms"), expire_on_commit=False
-    )
-    with pbms_session_maker() as session:
-        like_pattern = f"%#ACCOUNT#{account_number}%"
-        record = session.query(G2PWarehouseProgramBenefitCode).filter(
-            G2PWarehouseProgramBenefitCode.additional_info.like(like_pattern)
-        ).first()
-        if not record or not record.additional_info:
-            _logger.error(
-                f"No SponsorBankConfiguration found for account number {account_number}"
-            )
-            return None
-        info = record.additional_info
-        return SponsorBankConfiguration(
-            program_account_number=extract('ACCOUNT', info),
-            program_account_type=extract('TYPE', info),
-            program_account_branch_code=extract('BRANCH', info),
-            sponsor_bank_code=record.warehouse_mnemonic
+    def retrieve_sponsor_bank_configuration_for_account_number(
+        self, account_number: str
+    ) -> SponsorBankConfiguration:
+        """
+        Retrieve the sponsor bank configuration for the given account number by searching additional_info LIKE '%#ACCOUNT#{account_number}%'.
+        """
+        pbms_session_maker = sessionmaker(
+            bind=_engine.get("db_engine_pbms"), expire_on_commit=False
         )
+        with pbms_session_maker() as session:
+            like_pattern = f"%#ACCOUNT#{account_number}%"
+            record = session.query(G2PWarehouseProgramBenefitCode).filter(
+                G2PWarehouseProgramBenefitCode.additional_info.like(like_pattern)
+            ).first()
+            if not record or not record.additional_info:
+                _logger.error(
+                    f"No SponsorBankConfiguration found for account number {account_number}"
+                )
+                return None
+            info = record.additional_info
+            return SponsorBankConfiguration(
+                program_account_number=extract('ACCOUNT', info),
+                program_account_type=extract('TYPE', info),
+                program_account_branch_code=extract('BRANCH', info),
+                sponsor_bank_code=record.warehouse_mnemonic
+            )

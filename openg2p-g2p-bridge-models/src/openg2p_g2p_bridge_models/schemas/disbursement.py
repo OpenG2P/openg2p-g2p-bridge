@@ -34,32 +34,37 @@ class DisbursementResponse(SyncResponse):
 
 class DisbursementBatchControlPayload(BaseModel):
     disbursement_batch_control_id: str
-    disbursement_cycle_id: int
+    disbursement_cycle_id: int = None
+    disbursement_cycle_code_mnemonic: Optional[str] = None
     disbursement_envelope_id: str
-    fa_resolution_status: str
+    benefit_code_id: Optional[int] = None
+    benefit_code_mnemonic: Optional[str] = None
+    benefit_type: str
+    measurement_unit: str
+    fa_resolution_status: Optional[str] = None
     fa_resolution_timestamp: Optional[datetime.datetime] = None
     fa_resolution_latest_error_code: Optional[str] = None
-    fa_resolution_attempts: int
-    sponsor_bank_dispatch_status: str
+    fa_resolution_attempts: Optional[int] = None
+    sponsor_bank_dispatch_status: Optional[str] = None
     sponsor_bank_dispatch_timestamp: Optional[datetime.datetime] = None
     sponsor_bank_dispatch_latest_error_code: Optional[str] = None
-    sponsor_bank_dispatch_attempts: int
-    geo_resolution_status: str
+    sponsor_bank_dispatch_attempts: Optional[int] = None
+    geo_resolution_status: Optional[str] = None
     geo_resolution_timestamp: Optional[datetime.datetime] = None
     geo_resolution_latest_error_code: Optional[str] = None
-    geo_resolution_attempts: int
-    warehouse_allocation_status: str
+    geo_resolution_attempts: Optional[int] = None
+    warehouse_allocation_status: Optional[str] = None
     warehouse_allocation_timestamp: Optional[datetime.datetime] = None
     warehouse_allocation_latest_error_code: Optional[str] = None
-    warehouse_allocation_attempts: int
-    agency_allocation_status: str
+    warehouse_allocation_attempts: Optional[int] = None
+    agency_allocation_status: Optional[str] = None
     agency_allocation_timestamp: Optional[datetime.datetime] = None
     agency_allocation_latest_error_code: Optional[str] = None
-    agency_allocation_attempts: int
+    agency_allocation_attempts: Optional[int] = None
     disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
 class DisbursementBatchControlRequest(Request):
-    disbursement_batch_control_id: str
+    message: str
 
 class DisbursementBatchControlResponse(SyncResponse):
     message: Optional[DisbursementBatchControlPayload] = None

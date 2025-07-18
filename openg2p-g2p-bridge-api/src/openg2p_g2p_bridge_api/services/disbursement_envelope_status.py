@@ -75,7 +75,7 @@ class DisbursementEnvelopeStatusService(BaseService):
             disbursement_batch_control_geos = None
             envelope_batch_status_for_digital_cash = None
             beneficiary_notified_count = None
-            if envelope.benefit_type == BenefitType.CASH_DIGITAL:
+            if envelope.benefit_type == BenefitType.CASH_DIGITAL.value or envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
                 envelope_batch_status_for_digital_cash = (
                     (
                         await session.execute(
@@ -103,7 +103,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                 )
                 disbursement_batch_control_geos = [
                     DisbursementBatchControlGeoPayload(
-                        disbursement_batch_control_geo_id=batch_control_geo.disbursement_batch_control_geo_id,
+                        disbursement_batch_control_geo_id=batch_control_geo.id,
                         disbursement_cycle_id=batch_control_geo.disbursement_cycle_id,
                         disbursement_envelope_id=batch_control_geo.disbursement_envelope_id,
                         disbursement_batch_control_id=batch_control_geo.disbursement_batch_control_id,
@@ -131,7 +131,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                                 DisbursementResolutionGeoAddress.disbursement_envelope_id
                                 == envelope.id,
                                 DisbursementResolutionGeoAddress.beneficiary_notification_status
-                                == ProcessStatus.PROCESSED,
+                                == ProcessStatus.PROCESSED.value,
                             )
                         )
                     )
@@ -142,7 +142,6 @@ class DisbursementEnvelopeStatusService(BaseService):
             return await self.construct_batch_status_payload(
                 envelope=envelope,
                 envelope_control=envelope_control,
-                batch_control_geos=disbursement_batch_control_geos,
                 digital_cash_status=envelope_batch_status_for_digital_cash,
                 beneficiary_notified_count=beneficiary_notified_count,
                 disbursement_batch_control_geos=disbursement_batch_control_geos,
@@ -152,40 +151,41 @@ class DisbursementEnvelopeStatusService(BaseService):
         self,
         envelope: DisbursementEnvelope,
         envelope_control: EnvelopeControl,
-        batch_control_geos=None,
         digital_cash_status=None,
         beneficiary_notified_count=None,
         disbursement_batch_control_geos=None,
     ) -> DisbursementEnvelopeStatusPayload:
         warehouse_ids = (
-            {geo.warehouse_id for geo in batch_control_geos if geo.warehouse_id}
-            if batch_control_geos else set()
+            {geo.warehouse_id for geo in disbursement_batch_control_geos if geo.warehouse_id}
+            if disbursement_batch_control_geos else set()
         )
         agency_ids = (
-            {geo.agency_id for geo in batch_control_geos if geo.agency_id}
-            if batch_control_geos else set()
+            {geo.agency_id for geo in disbursement_batch_control_geos if geo.agency_id}
+            if disbursement_batch_control_geos else set()
         )
         warehouses_notified = (
             {
                 geo.warehouse_id
-                for geo in batch_control_geos
-                if geo.warehouse_id and geo.warehouse_notification_status == ProcessStatus.PROCESSED
+                for geo in disbursement_batch_control_geos
+                if geo.warehouse_id and geo.warehouse_notification_status == ProcessStatus.PROCESSED.value
             }
-            if batch_control_geos else set()
+            if disbursement_batch_control_geos else set()
         )
         agencies_notified = (
             {
                 geo.agency_id
-                for geo in batch_control_geos
-                if geo.agency_id and geo.agency_notification_status == ProcessStatus.PROCESSED
+                for geo in disbursement_batch_control_geos
+                if geo.agency_id and geo.agency_notification_status == ProcessStatus.PROCESSED.value
             }
-            if batch_control_geos else set()
+            if disbursement_batch_control_geos else set()
         )
+        _logger.info(f"{envelope.id}")
         return DisbursementEnvelopeStatusPayload(
             disbursement_envelope_id=envelope.id,
             benefit_code_id=envelope.benefit_code_id,
             benefit_code_mnemonic=envelope.benefit_code_mnemonic,
-            benefit_type=envelope.benefit_type.value if envelope.benefit_type else None,
+            benefit_type=envelope.benefit_type if envelope.benefit_type else None,
+            measurement_unit=envelope.measurement_unit if envelope.measurement_unit else None,
             number_of_beneficiaries_received=envelope.number_of_beneficiaries,
             number_of_beneficiaries_declared=envelope.number_of_beneficiaries,
             number_of_disbursements_declared=envelope.number_of_disbursements,

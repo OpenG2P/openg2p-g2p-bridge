@@ -128,30 +128,31 @@ class DisbursementBatchControlGeoPayload(BaseModel):
 
 class DisbursementEnvelopeStatusPayload(BaseModel):
     disbursement_envelope_id: str
-    benefit_code_id: Optional[str] = None
+    benefit_code_id: Optional[int] = None
     benefit_code_mnemonic: Optional[str] = None
     benefit_type: Optional[str] = None
+    measurement_unit: Optional[str] = None
     number_of_beneficiaries_received: Optional[int] = None
     number_of_beneficiaries_declared: Optional[int] = None
     number_of_disbursements_declared: Optional[int] = None
     number_of_disbursements_received: int
-    total_disbursement_quantity_declared: Optional[float] = None
+    total_disbursement_quantity_declared: float = None
     total_disbursement_quantity_received: int
 
-    funds_available_with_bank: FundsAvailableWithBankEnum
+    funds_available_with_bank: Optional[FundsAvailableWithBankEnum] = None
     funds_available_latest_timestamp: Optional[datetime.datetime] = None
     funds_available_latest_error_code: Optional[str] = None
-    funds_available_attempts: int
+    funds_available_attempts: Optional[int] = None
 
-    funds_blocked_with_bank: FundsBlockedWithBankEnum
+    funds_blocked_with_bank: Optional[FundsBlockedWithBankEnum] = None
     funds_blocked_latest_timestamp: Optional[datetime.datetime] = None
     funds_blocked_latest_error_code: Optional[str] = None
     funds_blocked_attempts: int
     funds_blocked_reference_number: Optional[str] = None
 
-    number_of_disbursements_shipped: int
-    number_of_disbursements_reconciled: int
-    number_of_disbursements_reversed: int
+    number_of_disbursements_shipped: Optional[int] = None
+    number_of_disbursements_reconciled: Optional[int] = None
+    number_of_disbursements_reversed: Optional[int] = None
 
     no_of_warehouses_allocated: Optional[int] = None
     no_of_warehouses_notified: Optional[int] = None
