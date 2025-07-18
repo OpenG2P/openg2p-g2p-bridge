@@ -306,7 +306,7 @@ def construct_disbursement_payloads_for_physical_cash(disbursement_batch_control
             payment_date=str(datetime.date(datetime.now())),
             beneficiary_id=disbursement_batch_control_geo.agency_id,  
             beneficiary_name=agency_detail_for_payment.agency_name,  
-            beneficiary_account_type=agency_detail_for_payment.agency_account_type if agency_detail_for_payment.agency_account_type else "Current",  
+            beneficiary_account_type=agency_detail_for_payment.agency_account_type if agency_detail_for_payment.agency_account_type else "BANK_ACCOUNT",  # TODO: Check this property
             beneficiary_phone_no=agency_phone_number,  
             beneficiary_mobile_wallet_provider=None,  
             beneficiary_email_wallet_provider=None,  
