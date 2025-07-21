@@ -109,10 +109,7 @@ class DisbursementService(BaseService):
             except Exception as e:
                 _logger.error(f"Disbursement creation failed: {str(e)}")
                 session.rollback()
-                raise DisbursementException(
-                    code=G2PBridgeErrorCodes.DATABASE_TRANSACTION_ERROR,
-                    disbursement_payloads=disbursement_request.message,
-                )
+                raise e
 
     async def update_envelope_control(self, disbursements, session):
         _logger.info("Updating Envelope Control")

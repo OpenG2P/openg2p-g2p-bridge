@@ -179,9 +179,7 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                     _logger.error(
                         f"Could not lock after {max_retries} tries, marking pending"
                     )
-                    raise ValueError(
-                        f"Failed to lock envelope {disbursement_envelope.id} after {max_retries} attempts"
-                    )
+                    raise oe
 
             except Exception as e:
                 session.rollback()
@@ -207,7 +205,6 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                         ProcessStatus.PENDING.value
                     )
                 session.commit()
-                raise e
                 break
 
         _logger.info(

@@ -40,7 +40,6 @@ class MockSession:
             funds_blocked_attempts=0,
         )
 
-
     def __enter__(self):
         return self
 
