@@ -76,7 +76,6 @@ class DisbursementEnvelopeStatusService(BaseService):
             beneficiary_notified_count = None
             if (
                 envelope.benefit_type == BenefitType.CASH_DIGITAL.value
-                or envelope.benefit_type == BenefitType.CASH_PHYSICAL.value
             ):
                 envelope_batch_status_for_digital_cash = (
                     (
@@ -89,6 +88,68 @@ class DisbursementEnvelopeStatusService(BaseService):
                     )
                     .scalars()
                     .first()
+                )
+            elif envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
+                envelope_batch_status_for_digital_cash = (
+                    (
+                        await session.execute(
+                            select(EnvelopeBatchStatusForCash).where(
+                                EnvelopeBatchStatusForCash.disbursement_envelope_id
+                                == envelope.id
+                            )
+                        )
+                    )
+                    .scalars()
+                    .first()
+                )
+                disbursement_batch_control_geos = (
+                    (
+                        await session.execute(
+                            select(DisbursementBatchControlGeo).where(
+                                DisbursementBatchControlGeo.disbursement_envelope_id
+                                == envelope.id
+                            )
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                disbursement_batch_control_geos = [
+                    DisbursementBatchControlGeoPayload(
+                        disbursement_batch_control_geo_id=batch_control_geo.id,
+                        disbursement_cycle_id=batch_control_geo.disbursement_cycle_id,
+                        disbursement_envelope_id=batch_control_geo.disbursement_envelope_id,
+                        disbursement_batch_control_id=batch_control_geo.disbursement_batch_control_id,
+                        administrative_zone_id_large=batch_control_geo.administrative_zone_id_large,
+                        administrative_zone_mnemonic_large=batch_control_geo.administrative_zone_mnemonic_large,
+                        administrative_zone_id_small=batch_control_geo.administrative_zone_id_small,
+                        administrative_zone_mnemonic_small=batch_control_geo.administrative_zone_mnemonic_small,
+                        no_of_beneficiaries=batch_control_geo.no_of_beneficiaries,
+                        total_quantity=batch_control_geo.total_quantity,
+                        warehouse_id=batch_control_geo.warehouse_id,
+                        warehouse_mnemonic=batch_control_geo.warehouse_mnemonic,
+                        warehouse_additional_attributes=batch_control_geo.warehouse_additional_attributes,
+                        agency_id=batch_control_geo.agency_id,
+                        agency_mnemonic=batch_control_geo.agency_mnemonic,
+                        agency_additional_attributes=batch_control_geo.agency_additional_attributes,
+                        warehouse_notification_status=batch_control_geo.warehouse_notification_status,
+                        agency_notification_status=batch_control_geo.agency_notification_status,
+                    )
+                    for batch_control_geo in disbursement_batch_control_geos
+                ]
+                beneficiary_notified_count = (
+                    (
+                        await session.execute(
+                            select(DisbursementResolutionGeoAddress).where(
+                                DisbursementResolutionGeoAddress.disbursement_envelope_id
+                                == envelope.id,
+                                DisbursementResolutionGeoAddress.beneficiary_notification_status
+                                == ProcessStatus.PROCESSED.value,
+                            )
+                        )
+                    )
+                    .scalars()
+                    .all()
                 )
             else:
                 disbursement_batch_control_geos = (
