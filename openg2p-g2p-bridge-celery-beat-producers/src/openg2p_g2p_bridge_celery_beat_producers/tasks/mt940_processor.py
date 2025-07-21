@@ -8,8 +8,8 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -49,5 +49,5 @@ def mt940_processor_beat_producer():
                 args=[statement.statement_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            
+
         _logger.info("Finished mt940_processor_beat_producer")

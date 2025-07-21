@@ -11,4 +11,4 @@ This module provides a notification abstraction for the OpenG2P G2P Bridge, incl
 - `src/openg2p_g2p_bridge_notification/implementations/novu_notifier.py`: Novu reference implementation
 
 ## Usage
-Import the interface and use a reference implementation to send notifications to recipients. 
+Import the interface and use a reference implementation to send notifications to recipients.

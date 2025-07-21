@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -37,14 +37,15 @@ def geo_resolution_beat_producer():
                 f"Sending geo resolution task for batch: {disbursement_batch_control.id}"
             )
 
-            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSING.value
+            disbursement_batch_control.geo_resolution_status = (
+                ProcessStatus.PROCESSING.value
+            )
             session.commit()
             celery_app.send_task(
                 "geo_resolution_worker",
                 args=(disbursement_batch_control.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            
 
         _logger.info(
             "Completed checking for disbursement batches to perform geo resolution"

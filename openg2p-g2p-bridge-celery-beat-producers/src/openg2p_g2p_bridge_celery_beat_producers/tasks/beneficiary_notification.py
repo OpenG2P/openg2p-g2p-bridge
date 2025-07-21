@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -21,7 +21,8 @@ def beneficiary_notification_beat_producer():
     session_maker = sessionmaker(_engine, expire_on_commit=False)
     with session_maker() as session:
         result = session.execute(
-            select(DisbursementResolutionGeoAddress).where(
+            select(DisbursementResolutionGeoAddress)
+            .where(
                 DisbursementResolutionGeoAddress.beneficiary_notification_status
                 == ProcessStatus.PENDING.value
             )
@@ -34,7 +35,9 @@ def beneficiary_notification_beat_producer():
             _logger.info(
                 f"Sending beneficiary_notification_worker task for disbursement_id: {disbursement_resolution_geo_address.disbursement_id}"
             )
-            disbursement_resolution_geo_address.beneficiary_notification_status = ProcessStatus.PROCESSING.value
+            disbursement_resolution_geo_address.beneficiary_notification_status = (
+                ProcessStatus.PROCESSING.value
+            )
             session.add(disbursement_resolution_geo_address)
             session.commit()
             celery_app.send_task(

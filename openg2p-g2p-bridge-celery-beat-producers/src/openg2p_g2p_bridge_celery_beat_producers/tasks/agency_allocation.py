@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -21,7 +21,8 @@ def agency_allocation_beat_producer():
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
     with session_maker() as session:
         result = session.execute(
-            select(DisbursementBatchControl).where(
+            select(DisbursementBatchControl)
+            .where(
                 DisbursementBatchControl.agency_allocation_status
                 == ProcessStatus.PENDING.value,
             )
@@ -44,5 +45,5 @@ def agency_allocation_beat_producer():
                 args=[disbursement_batch_control.id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            
+
         _logger.info("Finished agency_allocation_beat_producer")

@@ -1,7 +1,6 @@
 import logging
-from typing import Annotated, List
+from typing import List
 
-from fastapi import Depends
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.exceptions import (
     DisbursementException,
@@ -12,7 +11,6 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementRequest,
     DisbursementResponse,
 )
-from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
 from ..config import Settings
 from ..services import DisbursementService, RequestValidation
@@ -45,7 +43,7 @@ class DisbursementController(BaseController):
         self,
         disbursement_request: DisbursementRequest,
         # is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool =True,
+        is_signature_valid: bool = True,
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
@@ -87,7 +85,7 @@ class DisbursementController(BaseController):
         self,
         disbursement_request: DisbursementRequest,
         # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool =True,
+        is_signature_valid: bool = True,
     ) -> DisbursementResponse:
         _logger.info("Cancelling disbursements")
         try:

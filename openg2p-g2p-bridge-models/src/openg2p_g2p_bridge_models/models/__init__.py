@@ -1,10 +1,10 @@
-from .base import BaseORMModelWithId
 from .account_statement import (
     AccountStatement,
     AccountStatementLob,
     DisbursementErrorRecon,
     DisbursementRecon,
 )
+from .base import BaseORMModelWithId
 from .common_enums import ProcessStatus
 from .disbursement import (
     Disbursement,
@@ -25,7 +25,7 @@ from .disbursement_envelope import (
 )
 from .disbursement_geo import (
     DisbursementBatchControlGeo,
-    DisbursementResolutionGeoAddress,
     DisbursementBatchControlGeoAttributes,
+    DisbursementResolutionGeoAddress,
 )
 from .notification_log import NotificationLog

@@ -6,16 +6,15 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementEnvelope,
     EnvelopeBatchStatusForCash,
-    EnvelopeControl,
     FundsBlockedWithBankEnum,
     ProcessStatus,
 )
-from sqlalchemy import literal, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -55,13 +54,10 @@ def disburse_funds_from_bank_beat_producer():
             .scalars()
             .all()
         )
-        _logger.info(
-            f"Found {len(disbursement_batch_controls)} pending batch controls"
-        )
+        _logger.info(f"Found {len(disbursement_batch_controls)} pending batch controls")
 
         for disbursement_batch_control in disbursement_batch_controls:
             if check_envelope_status(session, disbursement_batch_control):
-
                 # 2. Mark as PROCESSING
                 disbursement_batch_control.sponsor_bank_dispatch_status = (
                     ProcessStatus.PROCESSING.value
@@ -81,15 +77,14 @@ def disburse_funds_from_bank_beat_producer():
                     f"Disbursement batch control {disbursement_batch_control.id} does not meet the criteria for processing."
                 )
 
-def check_envelope_status(session, disbursement_batch_control) -> bool:
 
+def check_envelope_status(session, disbursement_batch_control) -> bool:
     disbursement_envelope = (
         session.execute(
-            select(DisbursementEnvelope)
-            .filter(
-                DisbursementEnvelope.id 
+            select(DisbursementEnvelope).filter(
+                DisbursementEnvelope.id
                 == disbursement_batch_control.disbursement_envelope_id,
-            )  
+            )
         )
         .scalars()
         .first()
@@ -107,10 +102,13 @@ def check_envelope_status(session, disbursement_batch_control) -> bool:
     if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED.value:
         _logger.warning(
             f"Disbursement Envelope {disbursement_envelope.id} is cancelled."
-        )                       
+        )
         return False
-    
-    if not envelope_batch_status_for_cash.funds_blocked_with_bank == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value:
+
+    if (
+        not envelope_batch_status_for_cash.funds_blocked_with_bank
+        == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
+    ):
         _logger.warning(
             f"Funds are not blocked for envelope {disbursement_envelope.id}."
         )

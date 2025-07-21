@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import Enum
 
-from .base import BaseORMModelWithId
 from sqlalchemy import Date, DateTime, Integer, String
-from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import BaseORMModelWithId
 
 
 class FundsAvailableWithBankEnum(Enum):
@@ -58,9 +58,7 @@ class DisbursementEnvelope(BaseORMModelWithId):
     target_registry: Mapped[str] = mapped_column(String, nullable=True)
     benefit_code_id: Mapped[int] = mapped_column(Integer)
     benefit_code_mnemonic: Mapped[str] = mapped_column(String)
-    benefit_code_description: Mapped[str] = mapped_column(
-        String, nullable=True
-    )
+    benefit_code_description: Mapped[str] = mapped_column(String, nullable=True)
     benefit_type: Mapped[BenefitType] = mapped_column(String)
     disbursement_cycle_id: Mapped[int] = mapped_column(Integer)
     disbursement_frequency: Mapped[DisbursementFrequency] = mapped_column(String)

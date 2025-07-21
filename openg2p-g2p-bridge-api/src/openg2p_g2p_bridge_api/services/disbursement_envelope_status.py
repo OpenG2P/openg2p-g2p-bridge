@@ -15,10 +15,10 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
+    DisbursementBatchControlGeoPayload,
     DisbursementEnvelopeStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
-    DisbursementBatchControlGeoPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     StatusEnum,
@@ -62,8 +62,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                 (
                     await session.execute(
                         select(EnvelopeControl).where(
-                            EnvelopeControl.disbursement_envelope_id
-                            == envelope.id
+                            EnvelopeControl.disbursement_envelope_id == envelope.id
                         )
                     )
                 )
@@ -75,7 +74,10 @@ class DisbursementEnvelopeStatusService(BaseService):
             disbursement_batch_control_geos = None
             envelope_batch_status_for_digital_cash = None
             beneficiary_notified_count = None
-            if envelope.benefit_type == BenefitType.CASH_DIGITAL.value or envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
+            if (
+                envelope.benefit_type == BenefitType.CASH_DIGITAL.value
+                or envelope.benefit_type == BenefitType.CASH_PHYSICAL.value
+            ):
                 envelope_batch_status_for_digital_cash = (
                     (
                         await session.execute(
@@ -156,28 +158,38 @@ class DisbursementEnvelopeStatusService(BaseService):
         disbursement_batch_control_geos=None,
     ) -> DisbursementEnvelopeStatusPayload:
         warehouse_ids = (
-            {geo.warehouse_id for geo in disbursement_batch_control_geos if geo.warehouse_id}
-            if disbursement_batch_control_geos else set()
+            {
+                geo.warehouse_id
+                for geo in disbursement_batch_control_geos
+                if geo.warehouse_id
+            }
+            if disbursement_batch_control_geos
+            else set()
         )
         agency_ids = (
             {geo.agency_id for geo in disbursement_batch_control_geos if geo.agency_id}
-            if disbursement_batch_control_geos else set()
+            if disbursement_batch_control_geos
+            else set()
         )
         warehouses_notified = (
             {
                 geo.warehouse_id
                 for geo in disbursement_batch_control_geos
-                if geo.warehouse_id and geo.warehouse_notification_status == ProcessStatus.PROCESSED.value
+                if geo.warehouse_id
+                and geo.warehouse_notification_status == ProcessStatus.PROCESSED.value
             }
-            if disbursement_batch_control_geos else set()
+            if disbursement_batch_control_geos
+            else set()
         )
         agencies_notified = (
             {
                 geo.agency_id
                 for geo in disbursement_batch_control_geos
-                if geo.agency_id and geo.agency_notification_status == ProcessStatus.PROCESSED.value
+                if geo.agency_id
+                and geo.agency_notification_status == ProcessStatus.PROCESSED.value
             }
-            if disbursement_batch_control_geos else set()
+            if disbursement_batch_control_geos
+            else set()
         )
         _logger.info(f"{envelope.id}")
         return DisbursementEnvelopeStatusPayload(
@@ -185,30 +197,69 @@ class DisbursementEnvelopeStatusService(BaseService):
             benefit_code_id=envelope.benefit_code_id,
             benefit_code_mnemonic=envelope.benefit_code_mnemonic,
             benefit_type=envelope.benefit_type if envelope.benefit_type else None,
-            measurement_unit=envelope.measurement_unit if envelope.measurement_unit else None,
+            measurement_unit=envelope.measurement_unit
+            if envelope.measurement_unit
+            else None,
             number_of_beneficiaries_received=envelope.number_of_beneficiaries,
             number_of_beneficiaries_declared=envelope.number_of_beneficiaries,
             number_of_disbursements_declared=envelope.number_of_disbursements,
-            number_of_disbursements_received=envelope_control.number_of_disbursements_received if envelope_control else 0,
+            number_of_disbursements_received=envelope_control.number_of_disbursements_received
+            if envelope_control
+            else 0,
             total_disbursement_quantity_declared=envelope.total_disbursement_quantity,
-            total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received if envelope_control else 0,
-            funds_available_with_bank=getattr(digital_cash_status, 'funds_available_with_bank', None),
-            funds_available_latest_timestamp=getattr(digital_cash_status, 'funds_available_latest_timestamp', None),
-            funds_available_latest_error_code=getattr(digital_cash_status, 'funds_available_latest_error_code', None),
-            funds_available_attempts=getattr(digital_cash_status, 'funds_available_attempts', 0) or 0,
-            funds_blocked_with_bank=getattr(digital_cash_status, 'funds_blocked_with_bank', None),
-            funds_blocked_latest_timestamp=getattr(digital_cash_status, 'funds_blocked_latest_timestamp', None),
-            funds_blocked_latest_error_code=getattr(digital_cash_status, 'funds_blocked_latest_error_code', None),
-            funds_blocked_attempts=getattr(digital_cash_status, 'funds_blocked_attempts', 0) or 0,
-            funds_blocked_reference_number=getattr(digital_cash_status, 'funds_blocked_reference_number', None),
-            number_of_disbursements_shipped=getattr(digital_cash_status, 'number_of_disbursements_shipped', 0) or 0,
-            number_of_disbursements_reconciled=getattr(digital_cash_status, 'number_of_disbursements_reconciled', 0) or 0,
-            number_of_disbursements_reversed=getattr(digital_cash_status, 'number_of_disbursements_reversed', 0) or 0,
+            total_disbursement_quantity_received=envelope_control.total_disbursement_quantity_received
+            if envelope_control
+            else 0,
+            funds_available_with_bank=getattr(
+                digital_cash_status, "funds_available_with_bank", None
+            ),
+            funds_available_latest_timestamp=getattr(
+                digital_cash_status, "funds_available_latest_timestamp", None
+            ),
+            funds_available_latest_error_code=getattr(
+                digital_cash_status, "funds_available_latest_error_code", None
+            ),
+            funds_available_attempts=getattr(
+                digital_cash_status, "funds_available_attempts", 0
+            )
+            or 0,
+            funds_blocked_with_bank=getattr(
+                digital_cash_status, "funds_blocked_with_bank", None
+            ),
+            funds_blocked_latest_timestamp=getattr(
+                digital_cash_status, "funds_blocked_latest_timestamp", None
+            ),
+            funds_blocked_latest_error_code=getattr(
+                digital_cash_status, "funds_blocked_latest_error_code", None
+            ),
+            funds_blocked_attempts=getattr(
+                digital_cash_status, "funds_blocked_attempts", 0
+            )
+            or 0,
+            funds_blocked_reference_number=getattr(
+                digital_cash_status, "funds_blocked_reference_number", None
+            ),
+            number_of_disbursements_shipped=getattr(
+                digital_cash_status, "number_of_disbursements_shipped", 0
+            )
+            or 0,
+            number_of_disbursements_reconciled=getattr(
+                digital_cash_status, "number_of_disbursements_reconciled", 0
+            )
+            or 0,
+            number_of_disbursements_reversed=getattr(
+                digital_cash_status, "number_of_disbursements_reversed", 0
+            )
+            or 0,
             no_of_warehouses_allocated=len(warehouse_ids) if warehouse_ids else 0,
-            no_of_warehouses_notified=len(warehouses_notified) if warehouses_notified else 0,
+            no_of_warehouses_notified=len(warehouses_notified)
+            if warehouses_notified
+            else 0,
             no_of_agencies_allocated=len(agency_ids) if agency_ids else 0,
             no_of_agencies_notified=len(agencies_notified) if agencies_notified else 0,
-            no_of_beneficiaries_notified=len(beneficiary_notified_count) if beneficiary_notified_count is not None else 0,
+            no_of_beneficiaries_notified=len(beneficiary_notified_count)
+            if beneficiary_notified_count is not None
+            else 0,
             no_of_pods_received=None,
             disbursement_batch_control_geos=disbursement_batch_control_geos,
         )

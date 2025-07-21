@@ -1,21 +1,19 @@
 import logging
-from typing import Annotated, List
+from typing import List
 
-from fastapi import Depends
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.exceptions import (
     DisbursementException,
     RequestValidationException,
 )
 from openg2p_g2p_bridge_models.schemas import (
+    DisbursementBatchControlPayload,
+    DisbursementBatchControlRequest,
+    DisbursementBatchControlResponse,
     DisbursementStatusPayload,
     DisbursementStatusRequest,
     DisbursementStatusResponse,
-    DisbursementBatchControlRequest,
-    DisbursementBatchControlPayload,
-    DisbursementBatchControlResponse,
 )
-from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
 from ..config import Settings
 from ..services import DisbursementStatusService, RequestValidation
@@ -48,7 +46,7 @@ class DisbursementStatusController(BaseController):
         self,
         disbursement_status_request: DisbursementStatusRequest,
         # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool =True,
+        is_signature_valid: bool = True,
     ) -> DisbursementStatusResponse:
         _logger.info("Retrieving disbursement envelope status")
         try:
@@ -83,7 +81,7 @@ class DisbursementStatusController(BaseController):
         self,
         disbursement_batch_control_request: DisbursementBatchControlRequest,
         # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool =True,
+        is_signature_valid: bool = True,
     ) -> DisbursementBatchControlResponse:
         _logger.info("Retrieving disbursement batch status")
         try:
@@ -91,8 +89,10 @@ class DisbursementStatusController(BaseController):
             RequestValidation.get_component().validate_request(
                 disbursement_batch_control_request
             )
-            disbursement_batch_control_payload: DisbursementBatchControlPayload = await self.disbursement_service.get_disbursement_batch_control_payload(
-                disbursement_batch_control_request
+            disbursement_batch_control_payload: DisbursementBatchControlPayload = (
+                await self.disbursement_service.get_disbursement_batch_control_payload(
+                    disbursement_batch_control_request
+                )
             )
             disbursement_batch_control_response: DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_success_response(
                 disbursement_batch_control_request,
@@ -101,13 +101,13 @@ class DisbursementStatusController(BaseController):
             return disbursement_batch_control_response
         except RequestValidationException as e:
             _logger.error("Error validating request")
-            disbursement_batch_control_response :DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
+            disbursement_batch_control_response: DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
                 disbursement_batch_control_request, e.code
             )
             return disbursement_batch_control_response
         except Exception as e:
             _logger.error(f"Error retrieving disbursement batch status: {e}")
-            disbursement_batch_control_response : DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
+            disbursement_batch_control_response: DisbursementBatchControlResponse = await self.disbursement_service.construct_disbursement_batch_control_error_response(
                 disbursement_batch_control_request, "internal_error"
             )
             return disbursement_batch_control_response

@@ -12,8 +12,8 @@ from sqlalchemy import and_, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -66,14 +66,11 @@ def block_funds_with_bank_beat_producer():
         )
 
         for envelope in envelopes:
-            _logger.info(
-                f"Blocking funds with bank for envelope: {envelope.id}"
-            )
+            _logger.info(f"Blocking funds with bank for envelope: {envelope.id}")
             envelope_batch_status_for_cash = (
                 session.query(EnvelopeBatchStatusForCash)
                 .filter(
-                    EnvelopeBatchStatusForCash.disbursement_envelope_id
-                    == envelope.id
+                    EnvelopeBatchStatusForCash.disbursement_envelope_id == envelope.id
                 )
                 .first()
             )
@@ -88,6 +85,5 @@ def block_funds_with_bank_beat_producer():
                 args=(envelope.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            
 
         _logger.info("Completed checking for envelopes to block funds with bank")

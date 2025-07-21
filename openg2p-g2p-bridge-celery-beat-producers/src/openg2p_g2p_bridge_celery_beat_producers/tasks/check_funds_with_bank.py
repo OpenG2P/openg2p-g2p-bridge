@@ -12,8 +12,8 @@ from sqlalchemy import and_, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -43,8 +43,7 @@ def check_funds_with_bank_beat_producer():
                 )
                 .join(
                     EnvelopeControl,
-                    DisbursementEnvelope.id
-                    == EnvelopeControl.disbursement_envelope_id,
+                    DisbursementEnvelope.id == EnvelopeControl.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
@@ -93,5 +92,5 @@ def check_funds_with_bank_beat_producer():
                 args=(disbursement_envelope.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            
+
         _logger.info("Checking funds with bank beat tasks push completed")

@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from sqlalchemy.orm import Session
-
 
 class WarehouseAllocator(ABC):
     @abstractmethod

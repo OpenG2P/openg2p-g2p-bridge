@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
+    DisbursementBatchControlGeoAttributes,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
-    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_warehouse_allocator.factory import WarehouseAllocatorFactory
@@ -16,8 +16,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _logger = logging.getLogger("warehouse_allocation_worker")
 _engine = get_engine()
@@ -37,8 +37,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id
-                            == disbursement_batch_control_id
+                            DisbursementBatchControl.id == disbursement_batch_control_id
                         )
                     )
                 )
@@ -49,7 +48,9 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 _logger.error(
                     f"No batch control found for id {disbursement_batch_control_id}"
                 )
-                raise Exception(f"No batch control found for id {disbursement_batch_control_id}")
+                raise Exception(
+                    f"No batch control found for id {disbursement_batch_control_id}"
+                )
 
             # Fetch all related geo records
             disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
@@ -80,7 +81,9 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                 _logger.error(
                     f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}"
                 )
-                raise Exception(f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}")
+                raise Exception(
+                    f"No envelope found for id {disbursement_batch_control.disbursement_envelope_id}"
+                )
 
             # Prepare large_geo_list
             large_geo_list = [
@@ -94,7 +97,9 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             benefit_code_id = disbursement_envelope.benefit_code_id
             program_id = disbursement_envelope.benefit_program_id
 
-            warehouse_allocator = WarehouseAllocatorFactory.get_component().get_warehouse_allocator()
+            warehouse_allocator = (
+                WarehouseAllocatorFactory.get_component().get_warehouse_allocator()
+            )
             allocation_results: List[
                 Dict[str, Any]
             ] = warehouse_allocator.allocate_warehouse(
@@ -150,7 +155,7 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
                         ),
                         warehouse_admin_phone=allocation.get(
                             "warehouse_admin_phone", None
-                        )
+                        ),
                     )
                 )
 
@@ -161,7 +166,9 @@ def warehouse_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_batch_control.warehouse_allocation_latest_error_code = None
             disbursement_batch_control.warehouse_allocation_attempts += 1
             disbursement_batch_control.warehouse_allocation_timestamp = datetime.now()
-            disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING.value
+            disbursement_batch_control.agency_allocation_status = (
+                ProcessStatus.PENDING.value
+            )
             session.commit()
         except Exception as e:
             session.rollback()

@@ -6,8 +6,8 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -41,8 +41,10 @@ def mapper_resolution_beat_producer():
 
         # 2. Select pending tasks
         disbursement_batch_controls = session.scalars(
-            select(DisbursementBatchControl).where(
-                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING.value,
+            select(DisbursementBatchControl)
+            .where(
+                DisbursementBatchControl.fa_resolution_status
+                == ProcessStatus.PENDING.value,
             )
             .limit(_config.no_of_tasks_to_process)
         ).all()
@@ -53,7 +55,9 @@ def mapper_resolution_beat_producer():
 
         for disbursement_batch_control in disbursement_batch_controls:
             # 3. Mark as in progress
-            disbursement_batch_control.fa_resolution_status = ProcessStatus.PROCESSING.value
+            disbursement_batch_control.fa_resolution_status = (
+                ProcessStatus.PROCESSING.value
+            )
             session.add(disbursement_batch_control)
             session.commit()
 

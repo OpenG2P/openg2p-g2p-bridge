@@ -7,16 +7,22 @@ _config = Settings.get_config()
 from celery import Celery
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
 from openg2p_fastapi_common.exception import BaseExceptionHandler
+from openg2p_g2p_bridge_agency_allocator.app import (
+    Initializer as AgencyAllocatorInitializer,
+)
 from openg2p_g2p_bridge_bank_connectors.app import (
     Initializer as BankConnectorInitializer,
 )
 from openg2p_g2p_bridge_geo_resolver.app import Initializer as GeoResolversInitializer
-from openg2p_g2p_bridge_agency_allocator.app import Initializer as AgencyAllocatorInitializer
-from openg2p_g2p_bridge_warehouse_allocator.app import Initializer as WarehouseAllocatorInitializer
-from openg2p_g2p_bridge_notification_connectors.app import Initializer as NotificationConnectorInitializer
-
+from openg2p_g2p_bridge_notification_connectors.app import (
+    Initializer as NotificationConnectorInitializer,
+)
+from openg2p_g2p_bridge_warehouse_allocator.app import (
+    Initializer as WarehouseAllocatorInitializer,
+)
 from openg2p_g2pconnect_mapper_lib.app import Initializer as MapperInitializer
-from .helpers import ResolveHelper, WarehouseHelper, AgencyHelper
+
+from .helpers import AgencyHelper, ResolveHelper, WarehouseHelper
 
 
 class Initializer(BaseInitializer):
@@ -34,6 +40,7 @@ class Initializer(BaseInitializer):
         ResolveHelper()
         WarehouseHelper()
         AgencyHelper()
+
 
 celery_app = Celery(
     "g2p_bridge_celery_worker",

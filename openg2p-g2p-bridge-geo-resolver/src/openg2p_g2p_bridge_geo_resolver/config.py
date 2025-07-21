@@ -9,4 +9,6 @@ class Settings(BaseSettings):
 
     db_dbname: str = "openg2p_g2p_bridge_db"
 
-    db_engine_registry: str = "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
+    db_engine_registry: str = (
+        "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
+    )

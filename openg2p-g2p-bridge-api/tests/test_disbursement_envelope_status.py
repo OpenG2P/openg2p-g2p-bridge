@@ -10,9 +10,9 @@ from openg2p_g2p_bridge_models.models.disbursement_envelope import (
     FundsBlockedWithBankEnum,
 )
 from openg2p_g2p_bridge_models.schemas import (
+    DisbursementEnvelopeStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
-    DisbursementEnvelopeStatusPayload,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     RequestHeader,

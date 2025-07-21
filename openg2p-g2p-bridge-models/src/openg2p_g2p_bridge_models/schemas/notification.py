@@ -1,17 +1,17 @@
 import datetime
-import enum
 from typing import List, Optional
 
 from pydantic import BaseModel
 
+
 class NotificationPayload(BaseModel):
     """Base class for all notification payloads."""
+
     program_mnemonic: Optional[str] = None
     program_description: Optional[str] = None
 
 
 class WarehouseNotificationPayload(NotificationPayload):
-    
     target_registry: Optional[str] = None
     disbursement_cycle_mnemonic: Optional[str] = None
     disbursement_date: Optional[datetime.datetime] = None
@@ -93,6 +93,7 @@ class BeneficiaryNotificationPayload(NotificationPayload):
     administrative_zone_mnemonic_large: Optional[str] = None
     administrative_zone_id_small: Optional[str] = None
     administrative_zone_mnemonic_small: Optional[str] = None
+
 
 class NotificationRequest(BaseModel):
     notification_type: str

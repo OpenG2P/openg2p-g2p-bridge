@@ -10,7 +10,6 @@ from openg2p_fastapi_common.exception import BaseExceptionHandler
 from openg2p_g2p_bridge_bank_connectors.app import (
     Initializer as BankConnectorInitializer,
 )
-from sqlalchemy import create_engine
 
 
 class Initializer(BaseInitializer):
@@ -20,6 +19,7 @@ class Initializer(BaseInitializer):
         BaseExceptionHandler()
 
         BankConnectorInitializer()
+
 
 celery_app = Celery(
     "g2p_bridge_celery_beat_producer",

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ..models import DisbursementCancellationStatus
 from .disbursement_envelope import DisbursementBatchControlGeoPayload
 
+
 class DisbursementPayload(BaseModel):
     disbursement_id: str
     disbursement_envelope_id: Optional[str] = None
@@ -18,7 +19,7 @@ class DisbursementPayload(BaseModel):
     cancellation_status: Optional[DisbursementCancellationStatus] = None
     cancellation_time_stamp: Optional[datetime.datetime] = None
     disbursement_cycle_id: Optional[int] = None
-    disbursement_batch_control_id: Optional[str] = None 
+    disbursement_batch_control_id: Optional[str] = None
     response_error_codes: Optional[List[str]] = None
 
 
@@ -61,10 +62,14 @@ class DisbursementBatchControlPayload(BaseModel):
     agency_allocation_timestamp: Optional[datetime.datetime] = None
     agency_allocation_latest_error_code: Optional[str] = None
     agency_allocation_attempts: Optional[int] = None
-    disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
+    disbursement_batch_control_geos: Optional[
+        List[DisbursementBatchControlGeoPayload]
+    ] = None
+
 
 class DisbursementBatchControlRequest(Request):
     message: str
+
 
 class DisbursementBatchControlResponse(SyncResponse):
     message: Optional[DisbursementBatchControlPayload] = None

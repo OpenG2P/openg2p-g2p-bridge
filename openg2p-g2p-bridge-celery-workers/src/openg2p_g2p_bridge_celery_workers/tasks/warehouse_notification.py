@@ -1,31 +1,30 @@
-import asyncio
 import datetime
 import logging
 import uuid
-from typing import Optional
 
 from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControlGeo,
-    DisbursementEnvelope,
     DisbursementBatchControlGeoAttributes,
+    DisbursementEnvelope,
     NotificationLog,
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    NotificationRequest,
     WarehouseNotificationPayload,
 )
+from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
 from openg2p_g2p_bridge_notification_connectors.models import (
-    NotificationType, NotificationResponse, NotificationResponseStatus
+    NotificationResponse,
+    NotificationResponseStatus,
+    NotificationType,
+    Recipient,
 )
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
-from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
-from openg2p_g2p_bridge_notification_connectors.models import Recipient
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _engine = get_engine()
@@ -78,7 +77,7 @@ def warehouse_notification_worker(disbursement_batch_control_geo_id: str) -> Non
                 raise ValueError(
                     f"No DisbursementEnvelope found for id {disbursement_batch_control_geo.disbursement_envelope_id}"
                 )
-            
+
             disbursement_batch_control_geo_attributes = (
                 session.execute(
                     select(DisbursementBatchControlGeoAttributes).where(
@@ -98,24 +97,28 @@ def warehouse_notification_worker(disbursement_batch_control_geo_id: str) -> Non
                 )
 
             # Build notification payload
-            notification_payload = construct_warehouse_notification_payload(disbursement_batch_control_geo, disbursement_envelope, disbursement_batch_control_geo_attributes)
+            notification_payload = construct_warehouse_notification_payload(
+                disbursement_batch_control_geo,
+                disbursement_envelope,
+                disbursement_batch_control_geo_attributes,
+            )
             # Generate notification_id
             notification_id = str(uuid.uuid4())
 
-            # Send notification 
+            # Send notification
             notifier = NotificationFactory.get_component().get_notifier()
             recipient = Recipient(
                 recipient_id=disbursement_batch_control_geo.warehouse_id,
                 recipient_name=disbursement_batch_control_geo_attributes.warehouse_admin_name,
                 recipient_email=disbursement_batch_control_geo_attributes.warehouse_admin_email,
-                recipient_phone=disbursement_batch_control_geo_attributes.warehouse_admin_phone
+                recipient_phone=disbursement_batch_control_geo_attributes.warehouse_admin_phone,
             )
-            
+
             notification_response: NotificationResponse = notifier.send_notification(
                 notification_id=notification_id,
                 payload=notification_payload.model_dump(),
                 notification_type=NotificationType.WAREHOUSE_NOTIFICATION.value,
-                recipient=recipient
+                recipient=recipient,
             )
 
             # Create NotificationLog entry (PENDING)
@@ -128,25 +131,32 @@ def warehouse_notification_worker(disbursement_batch_control_geo_id: str) -> Non
             )
 
             if notification_response.status == NotificationResponseStatus.FAILURE:
-                raise Exception(notification_response.error_message or "Notification failed")
-            
+                raise Exception(
+                    notification_response.error_message or "Notification failed"
+                )
+
             notification_log.response = notification_response.response
             notification_log.processed_at = datetime.datetime.now()
             disbursement_batch_control_geo.warehouse_notification_status = (
                 ProcessStatus.PROCESSED.value
             )
             session.add(notification_log)
-      
+
             session.commit()
 
         except Exception as e:
             session.rollback()
             _logger.error(f"Warehouse notification failed: {e}")
-            
+
             if disbursement_batch_control_geo:
                 disbursement_batch_control_geo.warehouse_notification_attempts += 1
-                disbursement_batch_control_geo.warehouse_notification_latest_error_code = str(e)
-            if disbursement_batch_control_geo.warehouse_notification_attempts > _config.warehouse_notification_max_attempts:
+                disbursement_batch_control_geo.warehouse_notification_latest_error_code = str(
+                    e
+                )
+            if (
+                disbursement_batch_control_geo.warehouse_notification_attempts
+                > _config.warehouse_notification_max_attempts
+            ):
                 disbursement_batch_control_geo.warehouse_notification_status = (
                     ProcessStatus.ERROR.value
                 )
@@ -156,7 +166,12 @@ def warehouse_notification_worker(disbursement_batch_control_geo_id: str) -> Non
                 )
             session.commit()
 
-def construct_warehouse_notification_payload(disbursement_batch_control_geo, disbursement_envelope, disbursement_batch_control_geo_attributes):
+
+def construct_warehouse_notification_payload(
+    disbursement_batch_control_geo,
+    disbursement_envelope,
+    disbursement_batch_control_geo_attributes,
+):
     notification_payload = WarehouseNotificationPayload(
         program_mnemonic=getattr(
             disbursement_envelope, "benefit_program_mnemonic", None
@@ -176,15 +191,11 @@ def construct_warehouse_notification_payload(disbursement_batch_control_geo, dis
             disbursement_envelope, "benefit_code_mnemonic", None
         ),
         benefit_type=getattr(disbursement_envelope, "benefit_type", None),
-        measurement_unit=getattr(
-            disbursement_envelope, "measurement_unit", None
-        ),
+        measurement_unit=getattr(disbursement_envelope, "measurement_unit", None),
         benefit_code_description=getattr(
             disbursement_envelope, "benefit_code_description", None
         ),
-        warehouse_id=getattr(
-            disbursement_batch_control_geo, "warehouse_id", None
-        ),
+        warehouse_id=getattr(disbursement_batch_control_geo, "warehouse_id", None),
         warehouse_mnemonic=getattr(
             disbursement_batch_control_geo, "warehouse_mnemonic", None
         ),
@@ -198,9 +209,7 @@ def construct_warehouse_notification_payload(disbursement_batch_control_geo, dis
         agency_name=getattr(
             disbursement_batch_control_geo_attributes, "agency_name", None
         ),
-        total_quantity=getattr(
-            disbursement_batch_control_geo, "total_quantity", None
-        ),
+        total_quantity=getattr(disbursement_batch_control_geo, "total_quantity", None),
         no_of_bebeficiaries=getattr(
             disbursement_batch_control_geo, "no_of_beneficiaries", None
         ),
@@ -221,5 +230,5 @@ def construct_warehouse_notification_payload(disbursement_batch_control_geo, dis
             None,
         ),
     )
-    
+
     return notification_payload

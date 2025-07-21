@@ -12,12 +12,12 @@ from openg2p_g2p_bridge_models.models import (
 from openg2p_g2p_bridge_models.schemas import (
     SponsorBankConfiguration,
 )
-from ..helpers import WarehouseHelper
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
+from ..helpers import WarehouseHelper
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -34,10 +34,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
     with session_maker() as session:
         disbursement_envelope = (
             session.query(DisbursementEnvelope)
-            .filter(
-                DisbursementEnvelope.id
-                == disbursement_envelope_id
-            )
+            .filter(DisbursementEnvelope.id == disbursement_envelope_id)
             .first()
         )
 
@@ -61,10 +58,12 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 f"Envelope Batch Status For Digital Cash not found for envelope id: {disbursement_envelope_id}"
             )
             return
-        
-        sponsor_bank_configuration: SponsorBankConfiguration = WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
-            disbursement_envelope.benefit_program_id,
-            disbursement_envelope.benefit_code_id
+
+        sponsor_bank_configuration: SponsorBankConfiguration = (
+            WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
+                disbursement_envelope.benefit_program_id,
+                disbursement_envelope.benefit_code_id,
+            )
         )
 
         total_funds_needed = disbursement_envelope.total_disbursement_quantity
@@ -94,9 +93,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             envelope_batch_status_for_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            envelope_batch_status_for_cash.funds_available_latest_error_code = (
-                None
-            )
+            envelope_batch_status_for_cash.funds_available_latest_error_code = None
             envelope_batch_status_for_cash.funds_available_attempts += 1
 
         except Exception as e:
@@ -106,9 +103,7 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
             envelope_batch_status_for_cash.funds_available_latest_timestamp = (
                 datetime.now()
             )
-            envelope_batch_status_for_cash.funds_available_latest_error_code = (
-                str(e)
-            )
+            envelope_batch_status_for_cash.funds_available_latest_error_code = str(e)
             envelope_batch_status_for_cash.funds_available_attempts += 1
             if (
                 envelope_batch_status_for_cash.funds_available_attempts

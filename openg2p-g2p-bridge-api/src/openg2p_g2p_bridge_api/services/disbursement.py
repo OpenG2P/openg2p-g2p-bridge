@@ -8,8 +8,6 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementException
-from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
-
 from openg2p_g2p_bridge_models.models import (
     BenefitType,
     CancellationStatus,
@@ -19,6 +17,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementEnvelope,
     EnvelopeControl,
 )
+from openg2p_g2p_bridge_models.models.common_enums import ProcessStatus
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
     DisbursementRequest,
@@ -70,7 +69,9 @@ class DisbursementService(BaseService):
                             select(DisbursementEnvelope).where(
                                 DisbursementEnvelope.id
                                 == str(
-                                    disbursement_request.message[0].disbursement_envelope_id
+                                    disbursement_request.message[
+                                        0
+                                    ].disbursement_envelope_id
                                 )
                             )
                         )
@@ -90,7 +91,9 @@ class DisbursementService(BaseService):
                     disbursement_payloads=disbursement_request.message,
                     disbursement_batch_control_id=disbursement_batch_control.id,
                 )
-                _logger.info(f"***Length of disbursements before updating: {len(disbursements)}***")
+                _logger.info(
+                    f"***Length of disbursements before updating: {len(disbursements)}***"
+                )
                 # Lock the envelope batch status row for update (nowait)
                 envelope_control = await self.update_envelope_control(
                     disbursements, session
@@ -176,10 +179,12 @@ class DisbursementService(BaseService):
         return disbursements
 
     async def construct_disbursement_batch_control(
-        self,disbursement_batch_control_id: str, disbursement_envelope: DisbursementEnvelope
+        self,
+        disbursement_batch_control_id: str,
+        disbursement_envelope: DisbursementEnvelope,
     ):
         _logger.info("Constructing Disbursement Batch Control")
-        
+
         id = disbursement_batch_control_id
         # Determine statuses based on benefit_type
         if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value:
@@ -284,8 +289,7 @@ class DisbursementService(BaseService):
             (
                 await session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.id
-                        == str(disbursement_envelope_id)
+                        DisbursementEnvelope.id == str(disbursement_envelope_id)
                     )
                 )
             )

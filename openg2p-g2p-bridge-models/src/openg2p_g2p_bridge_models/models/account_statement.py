@@ -1,13 +1,11 @@
 from datetime import datetime
 
-from .base import BaseORMModelWithId
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
-from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..errors.codes import G2PBridgeErrorCodes
+from .base import BaseORMModelWithId
 from .common_enums import ProcessStatus
-from .disbursement_envelope import BenefitType
 
 
 class AccountStatement(BaseORMModelWithId):
@@ -78,9 +76,7 @@ class DisbursementErrorRecon(BaseORMModelWithId):
     entry_sequence: Mapped[str] = mapped_column(String, nullable=True)
     entry_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     value_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(
-        String, nullable=True
-    )
+    error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(String, nullable=True)
     reconciliation_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
         String, nullable=True, index=True

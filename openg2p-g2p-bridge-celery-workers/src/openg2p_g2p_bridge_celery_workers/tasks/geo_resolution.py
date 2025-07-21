@@ -1,27 +1,26 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from openg2p_g2p_bridge_geo_resolver.factory import GeoResolutionFactory
 from openg2p_g2p_bridge_geo_resolver.interface import GeoResolver
-from openg2p_g2p_bridge_geo_resolver.models import G2PRegistryType
 from openg2p_g2p_bridge_models.models import (
     BenefitType,
     Disbursement,
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
+    DisbursementBatchControlGeoAttributes,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
-    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -38,14 +37,13 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
         bind=_engine.get("db_engine_farmer_registry"), expire_on_commit=False
     )
 
-    with session_maker() as session, session_maker_farmer_registry() as farmer_registry_session:
+    with session_maker() as session, session_maker_farmer_registry():
         try:
             disbursement_batch_control: Optional[
                 DisbursementBatchControl
             ] = session.execute(
                 select(DisbursementBatchControl).where(
-                    DisbursementBatchControl.id
-                    == disbursement_batch_control_id
+                    DisbursementBatchControl.id == disbursement_batch_control_id
                 )
             ).scalar_one_or_none()
 
@@ -53,7 +51,9 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 _logger.error(
                     f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
                 )
-                raise ValueError(f"No DisbursementBatchControl found for id {disbursement_batch_control_id}")
+                raise ValueError(
+                    f"No DisbursementBatchControl found for id {disbursement_batch_control_id}"
+                )
 
             disbursement_envelope = session.execute(
                 select(DisbursementEnvelope).where(
@@ -97,12 +97,14 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                 for d in disbursements
             ]
 
-            geo_resolver: GeoResolver = GeoResolutionFactory.get_component().get_geo_resolver(disbursement_envelope.target_registry)
+            geo_resolver: GeoResolver = (
+                GeoResolutionFactory.get_component().get_geo_resolver(
+                    disbursement_envelope.target_registry
+                )
+            )
 
             resolved_data: List[Dict[str, str]]
-            resolved_data = geo_resolver.resolve_geo(
-                batch_beneficiary_list
-            )
+            resolved_data = geo_resolver.resolve_geo(batch_beneficiary_list)
 
             if not resolved_data:
                 _logger.error(
@@ -207,13 +209,11 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
                     administrative_zone_mnemonic_small=geo_resolution_item.get(
                         "administrative_zone_mnemonic_small", None
                     ),
-                    beneficiary_name = geo_resolution_item.get(
-                        "beneficiary_name", None
-                    ),
-                    beneficiary_email = geo_resolution_item.get(
+                    beneficiary_name=geo_resolution_item.get("beneficiary_name", None),
+                    beneficiary_email=geo_resolution_item.get(
                         "beneficiary_email", None
                     ),
-                    beneficiary_phone = geo_resolution_item.get(
+                    beneficiary_phone=geo_resolution_item.get(
                         "beneficiary_phone", None
                     ),
                 )
@@ -225,14 +225,16 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
 
             # Update the DisbursementBatchControl status
 
-            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSED.value
+            disbursement_batch_control.geo_resolution_status = (
+                ProcessStatus.PROCESSED.value
+            )
 
             if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
                 disbursement_batch_control.agency_allocation_status = (
                     ProcessStatus.PENDING.value
                 )
             else:
-                # For non-cash physical benefits, set warehouse allocation status to PENDING and 
+                # For non-cash physical benefits, set warehouse allocation status to PENDING and
                 # Warehouse allocation will make Agency allocation as PENDING
                 # This worker is not applicable to DIGITAL CASH
                 disbursement_batch_control.warehouse_allocation_status = (
@@ -257,18 +259,13 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             )
             disbursement_batch_control = (
                 session.query(DisbursementBatchControl)
-                .filter_by(
-                    id=disbursement_batch_control_id
-                )
+                .filter_by(id=disbursement_batch_control_id)
                 .first()
             )
             if disbursement_batch_control:
-                disbursement_batch_control.geo_resolution_latest_error_code = str(
-                    e
-                )
+                disbursement_batch_control.geo_resolution_latest_error_code = str(e)
                 disbursement_batch_control.geo_resolution_attempts = (
-                    disbursement_batch_control.geo_resolution_attempts
-                    or 0
+                    disbursement_batch_control.geo_resolution_attempts or 0
                 ) + 1
                 if (
                     disbursement_batch_control.geo_resolution_attempts

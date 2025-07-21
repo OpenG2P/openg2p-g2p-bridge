@@ -1,2 +1,6 @@
+from .notifications import (
+    NotificationResponse,
+    NotificationResponseStatus,
+    NotificationType,
+)
 from .recipient import Recipient
-from .notifications import NotificationType, NotificationResponse, NotificationResponseStatus

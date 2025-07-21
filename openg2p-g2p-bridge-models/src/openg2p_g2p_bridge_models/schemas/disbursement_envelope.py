@@ -4,14 +4,14 @@ from typing import List, Optional
 from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
 from pydantic import BaseModel
 
+from ..errors.codes import G2PBridgeErrorCodes
 from ..models import (
     BenefitType,
     CancellationStatus,
     DisbursementFrequency,
+    FundsAvailableWithBankEnum,
+    FundsBlockedWithBankEnum,
 )
-
-from ..errors.codes import G2PBridgeErrorCodes
-from ..models import FundsAvailableWithBankEnum, FundsBlockedWithBankEnum
 
 
 class DisbursementEnvelopePayload(BaseModel):
@@ -114,13 +114,13 @@ class DisbursementBatchControlGeoPayload(BaseModel):
     administrative_zone_mnemonic_large: Optional[str] = None
     administrative_zone_id_small: Optional[str] = None
     administrative_zone_mnemonic_small: Optional[str] = None
-    no_of_beneficiaries:Optional[int] = None
+    no_of_beneficiaries: Optional[int] = None
     total_quantity: Optional[float] = None
     warehouse_id: Optional[str] = None
     warehouse_mnemonic: Optional[str] = None
     warehouse_additional_attributes: Optional[str] = None
     agency_id: Optional[str] = None
-    agency_mnemonic:Optional[str] = None
+    agency_mnemonic: Optional[str] = None
     agency_additional_attributes: Optional[str] = None
     warehouse_notification_status: Optional[str] = None
     agency_notification_status: Optional[str] = None
@@ -166,7 +166,4 @@ class DisbursementEnvelopeStatusPayload(BaseModel):
 
 
 class DisbursementEnvelopeStatusResponse(SyncResponse):
-    message: Optional[
-        DisbursementEnvelopeStatusPayload
-    ] = None
-
+    message: Optional[DisbursementEnvelopeStatusPayload] = None

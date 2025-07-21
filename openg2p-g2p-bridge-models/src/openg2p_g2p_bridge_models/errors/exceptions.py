@@ -47,4 +47,3 @@ class DisbursementStatusException(Exception):
         self.code: G2PBridgeErrorCodes = code
         self.message: Optional[str] = message
         super().__init__(code, self.message)
-

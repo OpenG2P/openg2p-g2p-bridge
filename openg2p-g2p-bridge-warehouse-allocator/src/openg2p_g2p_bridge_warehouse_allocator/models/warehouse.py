@@ -39,4 +39,3 @@ class G2PAdministrativeAreaLargeWarehouseRel(BaseORMModel):
 
     g2p_warehouse_id = mapped_column(Integer, primary_key=True)
     g2p_administrative_area_large_id = mapped_column(Integer, primary_key=True)
-

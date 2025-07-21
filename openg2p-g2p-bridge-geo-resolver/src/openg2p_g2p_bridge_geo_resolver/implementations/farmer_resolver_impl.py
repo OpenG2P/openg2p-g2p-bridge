@@ -1,12 +1,12 @@
-from typing import Dict, List
 import logging
+from typing import Dict, List
 
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
+from ..engine import get_engine
 from ..interface.geo_resolver_interface import GeoResolver
 from ..models import G2PFarmerRegistry
-from ..engine import get_engine
 
 _logger = logging.getLogger("farmer_geo_resolver_impl")
 _engine = get_engine()
@@ -15,9 +15,10 @@ session_maker = sessionmaker(
     bind=_engine.get("db_engine_registry"), expire_on_commit=False
 )
 
+
 class FarmerGeoResolverImpl(GeoResolver):
     def resolve_geo(
-        self,  batch_beneficiary_list: List[Dict[str, str]]
+        self, batch_beneficiary_list: List[Dict[str, str]]
     ) -> List[Dict[str, str]]:
         with session_maker() as registry_session:
             _logger.info(
@@ -25,7 +26,9 @@ class FarmerGeoResolverImpl(GeoResolver):
             )
             results = []
 
-            beneficiary_ids = [item["beneficiary_id"] for item in batch_beneficiary_list]
+            beneficiary_ids = [
+                item["beneficiary_id"] for item in batch_beneficiary_list
+            ]
             farmer_details = registry_session.execute(
                 select(
                     G2PFarmerRegistry.unique_id,
@@ -39,7 +42,9 @@ class FarmerGeoResolverImpl(GeoResolver):
                 f"Fetched {len(farmer_details)} farmer details for the provided beneficiary IDs"
             )
             if not farmer_details:
-                _logger.warning(f"No farmer details found for the provided beneficiary IDs {beneficiary_ids}")
+                _logger.warning(
+                    f"No farmer details found for the provided beneficiary IDs {beneficiary_ids}"
+                )
                 return results
             farmer_map = {row.unique_id: row for row in farmer_details}
             for item in batch_beneficiary_list:

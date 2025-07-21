@@ -30,4 +30,4 @@ Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge"
 Source = "https://github.com/OpenG2P/openg2p-g2p-bridge/openg2p-g2p-bridge-notification-connectors"
 
 [tool.hatch.version]
-path = "src/openg2p_g2p_bridge_notification_connectors/__init__.py" 
+path = "src/openg2p_g2p_bridge_notification_connectors/__init__.py"

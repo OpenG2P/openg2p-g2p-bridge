@@ -9,9 +9,9 @@ from openg2p_g2p_bridge_models.models import (
     BenefitType,
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
+    DisbursementBatchControlGeoAttributes,
     DisbursementEnvelope,
     DisbursementResolutionGeoAddress,
-    DisbursementBatchControlGeoAttributes,
     ProcessStatus,
 )
 from sqlalchemy import update
@@ -19,8 +19,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 
 _logger = logging.getLogger("agency_allocation_worker")
 _engine = get_engine()
@@ -40,8 +40,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id
-                            == disbursement_batch_control_id
+                            DisbursementBatchControl.id == disbursement_batch_control_id
                         )
                     )
                 )
@@ -94,16 +93,22 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             benefit_code_id = disbursement_envelope.benefit_code_id
             program_id = disbursement_envelope.benefit_program_id
 
-            agency_allocator = AgencyAllocatorFactory.get_component().get_agency_allocator()
+            agency_allocator = (
+                AgencyAllocatorFactory.get_component().get_agency_allocator()
+            )
             allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency(
                 small_geo_list, benefit_code_id, program_id
             )
 
             warehouse_notification_status = ProcessStatus.NOT_APPLICABLE.value
             agency_notification_status = ProcessStatus.PENDING.value
-            if disbursement_envelope.benefit_type == BenefitType.SERVICE.value or disbursement_envelope.benefit_type == BenefitType.COMMODITY.value or disbursement_envelope.benefit_type == BenefitType.COMBINATION.value:
+            if (
+                disbursement_envelope.benefit_type == BenefitType.SERVICE.value
+                or disbursement_envelope.benefit_type == BenefitType.COMMODITY.value
+                or disbursement_envelope.benefit_type == BenefitType.COMBINATION.value
+            ):
                 # For services or commodities, we do not need to update warehouse_notification_status
-                warehouse_notification_status = ProcessStatus.PENDING.value 
+                warehouse_notification_status = ProcessStatus.PENDING.value
 
             for disbursement_batch_control_geo, allocation in zip(
                 disbursement_batch_control_geos, allocation_results
@@ -136,7 +141,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
-                        beneficiary_notification_status=ProcessStatus.PENDING.value,
+                        beneficiary_notification_status=ProcessStatus.PROCESSED.value,  # TODO: Disabled for demo and made processed
                     )
                 )
 
@@ -149,15 +154,9 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     )
                     .values(
                         agency_name=allocation.get("agency_name", None),
-                        agency_admin_name=allocation.get(
-                            "agency_admin_name", None
-                        ),
-                        agency_admin_email=allocation.get(
-                            "agency_admin_email", None
-                        ),
-                        agency_admin_phone=allocation.get(
-                            "agency_admin_phone", None
-                        )
+                        agency_admin_name=allocation.get("agency_admin_name", None),
+                        agency_admin_email=allocation.get("agency_admin_email", None),
+                        agency_admin_phone=allocation.get("agency_admin_phone", None),
                     )
                 )
 

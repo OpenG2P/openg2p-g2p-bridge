@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Any
-from ..models import Recipient, NotificationType
+from typing import Any
+
+from ..models import NotificationType, Recipient
+
 
 class NotificationInterface(ABC):
     @abstractmethod
@@ -14,4 +16,4 @@ class NotificationInterface(ABC):
         """
         Send a notification to a list of recipients.
         """
-        pass 
+        pass

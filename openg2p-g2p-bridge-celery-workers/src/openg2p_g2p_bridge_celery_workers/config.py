@@ -59,4 +59,3 @@ class Settings(BaseSettings):
         "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
     )
     db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"
-

@@ -39,12 +39,7 @@ class MockSession:
             funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK,
             funds_blocked_attempts=0,
         )
-        self.benefit_program_configuration = BenefitProgramConfiguration(
-            benefit_program_mnemonic="test_program",
-            sponsor_bank_code="EXAMPLE",
-            sponsor_bank_account_number="test_account_number",
-            sponsor_bank_account_currency="INR",
-        )
+
 
     def __enter__(self):
         return self
@@ -67,8 +62,6 @@ class MockSession:
         elif self.query_args[0] is EnvelopeBatchStatusForCash:
             return self.disbursement_envelope_batch_status
 
-        elif self.query_args[0] is BenefitProgramConfiguration:
-            return self.benefit_program_configuration
         return None
 
     def commit(self):

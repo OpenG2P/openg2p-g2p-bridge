@@ -21,13 +21,12 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import SponsorBankConfiguration
-
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from ..app import celery_app
-from ..engine import get_engine
 from ..config import Settings
+from ..engine import get_engine
 from ..helpers import WarehouseHelper
 
 _config = Settings.get_config()
@@ -97,14 +96,14 @@ def mt940_processor_worker(statement_id: str):
             _logger.info("Parsed account statement header")
             # Get the benefit program configuration
             sponsor_bank_configuration: SponsorBankConfiguration = WarehouseHelper.get_component().retrieve_sponsor_bank_configuration_for_account_number(
-               account_statement.account_number
+                account_statement.account_number
             )
 
             if not sponsor_bank_configuration:
                 _logger.error(
                     f"No SponsorBankConfiguration found for account number: {account_statement.account_number}"
                 )
-            
+
                 account_statement.statement_process_status = ProcessStatus.ERROR.value
                 account_statement.statement_process_error_code = (
                     G2PBridgeErrorCodes.INVALID_ACCOUNT_NUMBER.value
@@ -204,7 +203,10 @@ def mt940_processor_worker(statement_id: str):
             account_statement.statement_process_error_code = str(e)
             account_statement.statement_process_timestamp = datetime.now()
             account_statement.statement_process_attempts += 1
-            if account_statement.statement_process_attempts > _config.mt940_processor_max_attempts:
+            if (
+                account_statement.statement_process_attempts
+                > _config.mt940_processor_max_attempts
+            ):
                 account_statement.statement_process_status = ProcessStatus.ERROR.value
             else:
                 account_statement.statement_process_status = ProcessStatus.PENDING.value
@@ -220,11 +222,17 @@ def process_reversal_of_debits(
     statement_id,
 ):
     for parsed_transaction in parsed_transactions_rd:
-        disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
+        disbursement: Disbursement | None = check_valid_disbursement_id(
+            parsed_transaction, session
+        )
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
 
         if not disbursement:
-            disbursement_batch_control_geo = check_valid_disbursement_batch_control_geo_id(parsed_transaction, session)
+            disbursement_batch_control_geo = (
+                check_valid_disbursement_batch_control_geo_id(
+                    parsed_transaction, session
+                )
+            )
             if not disbursement_batch_control_geo:
                 disbursement_error_recons.append(
                     construct_disbursement_error_recon(
@@ -269,11 +277,17 @@ def process_debit_transactions(
     statement_id,
 ):
     for parsed_transaction in parsed_transactions_d:
-        disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
+        disbursement: Disbursement | None = check_valid_disbursement_id(
+            parsed_transaction, session
+        )
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
 
         if not disbursement:
-            disbursement_batch_control_geo = check_valid_disbursement_batch_control_geo_id(parsed_transaction, session)
+            disbursement_batch_control_geo = (
+                check_valid_disbursement_batch_control_geo_id(
+                    parsed_transaction, session
+                )
+            )
             if not disbursement_batch_control_geo:
                 disbursement_error_recons.append(
                     construct_disbursement_error_recon(
@@ -307,7 +321,7 @@ def process_debit_transactions(
             statement_id,
             account_statement.statement_number,
             account_statement.sequence_number,
-            session
+            session,
         )
         disbursement_recons_d.append(disbursement_recon)
 
@@ -336,29 +350,29 @@ def check_valid_disbursement_id(parsed_transaction, session) -> Disbursement | N
     # Look up the Disbursement by disbursement_id
     disbursement: Disbursement = (
         session.query(Disbursement)
-        .filter(
-            Disbursement.id
-            == parsed_transaction["reconciliation_id"]
-        )
+        .filter(Disbursement.id == parsed_transaction["reconciliation_id"])
         .first()
     )
     if not disbursement:
         return None
     return disbursement
 
-def check_valid_disbursement_batch_control_geo_id(parsed_transaction, session) -> DisbursementBatchControlGeo | None:
+
+def check_valid_disbursement_batch_control_geo_id(
+    parsed_transaction, session
+) -> DisbursementBatchControlGeo | None:
     # Look up the DisbursementBatchControlGeo by disbursement_id
     disbursement_batch_control_geo: DisbursementBatchControlGeo = (
         session.query(DisbursementBatchControlGeo)
         .filter(
-            DisbursementBatchControlGeo.id
-            == parsed_transaction["reconciliation_id"]
+            DisbursementBatchControlGeo.id == parsed_transaction["reconciliation_id"]
         )
         .first()
     )
     if not disbursement_batch_control_geo:
         return None
     return disbursement_batch_control_geo
+
 
 def construct_disbursement_error_recon(
     statement_id,
@@ -406,18 +420,22 @@ def construct_new_disbursement_recon(
     statement_id,
     statement_number,
     statement_sequence,
-    session
+    session,
 ):
     disbursement_recon = DisbursementRecon(
         # If disbursement is present, then it is for DIGITAL CASH
-        disbursement_batch_control_id=disbursement.disbursement_batch_control_id if disbursement else None,
+        disbursement_batch_control_id=disbursement.disbursement_batch_control_id
+        if disbursement
+        else None,
         disbursement_id=disbursement.id if disbursement else None,
-        
-        # If disbursement_batch_control_geo is present, then it is for PHYSICAL CASH 
+        # If disbursement_batch_control_geo is present, then it is for PHYSICAL CASH
         # PHYSICAL CASH means transfer for agency accounts
-        disbursement_batch_control_geo_id=disbursement_batch_control_geo.id if disbursement_batch_control_geo else None,
-
-        disbursement_envelope_id=get_disbursement_envelope_id(parsed_transaction["reconciliation_id"], session),
+        disbursement_batch_control_geo_id=disbursement_batch_control_geo.id
+        if disbursement_batch_control_geo
+        else None,
+        disbursement_envelope_id=get_disbursement_envelope_id(
+            parsed_transaction["reconciliation_id"], session
+        ),
         beneficiary_name_from_bank=parsed_transaction["beneficiary_name_from_bank"],
         remittance_reference_number=parsed_transaction["remittance_reference_number"],
         remittance_statement_id=statement_id,
@@ -491,13 +509,11 @@ def construct_parsed_transaction(
 
 def get_disbursement_envelope_id(disbursement_id, session):
     disbursement = (
-        session.query(Disbursement)
-        .filter(Disbursement.id == disbursement_id)
-        .first()
+        session.query(Disbursement).filter(Disbursement.id == disbursement_id).first()
     )
 
     if disbursement:
-        return disbursement.disbursement_envelope_id 
+        return disbursement.disbursement_envelope_id
     else:
         disbursement_batch_control_geo = (
             session.query(DisbursementBatchControlGeo)
@@ -507,7 +523,12 @@ def get_disbursement_envelope_id(disbursement_id, session):
             )
             .first()
         )
-        return disbursement_batch_control_geo.disbursement_envelope_id if disbursement_batch_control_geo else None
+        return (
+            disbursement_batch_control_geo.disbursement_envelope_id
+            if disbursement_batch_control_geo
+            else None
+        )
+
 
 def update_envelope_batch_status_reconciled(
     disbursement_recons: List[DisbursementRecon], session
@@ -556,9 +577,7 @@ def update_envelope_batch_status_reconciled(
             )
             raise last_exc
 
-        envelope_batch_status_for_cash.number_of_disbursements_reconciled += (
-            count
-        )
+        envelope_batch_status_for_cash.number_of_disbursements_reconciled += count
         session.add(envelope_batch_status_for_cash)
         session.commit()
 

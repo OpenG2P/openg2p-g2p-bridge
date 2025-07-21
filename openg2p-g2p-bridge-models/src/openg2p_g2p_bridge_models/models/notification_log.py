@@ -1,9 +1,9 @@
-import enum
 from datetime import datetime
 
-from .base import BaseORMModelWithId
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
+
+from .base import BaseORMModelWithId
 
 
 class NotificationLog(BaseORMModelWithId):

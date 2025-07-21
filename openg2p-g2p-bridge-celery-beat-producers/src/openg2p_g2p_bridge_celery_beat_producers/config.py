@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     warehouse_notification_max_attempts: int = 3
     agency_notification_max_attempts: int = 3
 
-    mapper_resolve_frequency: int = 5
-    funds_available_check_frequency: int = 10
+    mapper_resolve_frequency: int = 3600
+    funds_available_check_frequency: int = 3600
     funds_blocked_frequency: int = 3600
     funds_disbursement_frequency: int = 3600
     mt940_processor_frequency: int = 3600
