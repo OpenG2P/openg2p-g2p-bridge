@@ -1,8 +1,8 @@
 import logging
-import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 
+from fastnanoid import generate
 from openg2p_g2p_bridge_geo_resolver.factory import GeoResolutionFactory
 from openg2p_g2p_bridge_geo_resolver.interface import GeoResolver
 from openg2p_g2p_bridge_models.models import (
@@ -15,7 +15,6 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionGeoAddress,
     ProcessStatus,
 )
-from fastnanoid import generate
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
@@ -34,11 +33,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
     session_maker = sessionmaker(
         bind=_engine.get("db_engine_bridge"), expire_on_commit=False
     )
-    session_maker_farmer_registry = sessionmaker(
-        bind=_engine.get("db_engine_farmer_registry"), expire_on_commit=False
-    )
-
-    with session_maker() as session, session_maker_farmer_registry():
+    with session_maker() as session:
         try:
             disbursement_batch_control: Optional[
                 DisbursementBatchControl
@@ -146,7 +141,9 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             disbursement_batch_control_geo_attributes_list = []
             batch_control_geo_id_map = {}
             for (admin_large_id, admin_small_id), data in batch_control_geo_map.items():
-                disbursement_batch_control_geo_id = str(generate(size=16)) # TODO: Use a more robust ID generation strategy if needed
+                disbursement_batch_control_geo_id = str(
+                    generate(size=16)
+                )  # TODO: Use a more robust ID generation strategy if needed
                 disbursement_batch_control_geo = DisbursementBatchControlGeo(
                     id=disbursement_batch_control_geo_id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,

@@ -130,10 +130,13 @@ async def make_resolve_request(disbursements):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(
         single_resolve_requests
     )
-    # jwt_token = await resolve_helper.create_jwt_token(
-    #     resolve_request.model_dump(mode="json")
-    # )
-    jwt_token = ""
+    if _config.mapper_request_jwt_enabled:
+        jwt_token = await resolve_helper.create_jwt_token(
+            resolve_request.model_dump(mode="json")
+        )
+    else:
+        jwt_token = ""
+
     headers = {"content-type": "application/json", "Signature": jwt_token}
 
     resolve_client = MapperResolveClient()

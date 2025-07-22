@@ -23,17 +23,6 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/0"
     celery_backend_url: str = "redis://localhost:6379/0"
 
-    mapper_resolution_max_attempts: int = 3
-    funds_available_check_attempts: int = 3
-    funds_blocked_attempts: int = 3
-    funds_disbursement_attempts: int = 3
-    statement_process_attempts: int = 3
-    geo_resolution_max_attempts: int = 3
-    warehouse_allocation_max_attempts: int = 3
-    agency_allocation_max_attempts: int = 3
-    warehouse_notification_max_attempts: int = 3
-    agency_notification_max_attempts: int = 3
-
     mapper_resolve_frequency: int = 3600
     funds_available_check_frequency: int = 3600
     funds_blocked_frequency: int = 3600
@@ -47,9 +36,6 @@ class Settings(BaseSettings):
     beneficiary_notification_frequency: int = 3600
 
     no_of_tasks_to_process: int = 2
-    disbursement_retry_threshold_minutes: int = (
-        30  # Will reset stuck processing batches older than threshold
-    )
 
     process_future_disbursement_schedules: bool = False
     task_stale_threshold_minutes: int = 60  # Threshold for stale tasks

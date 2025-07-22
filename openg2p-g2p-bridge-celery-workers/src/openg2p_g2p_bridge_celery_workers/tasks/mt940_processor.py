@@ -517,10 +517,7 @@ def get_disbursement_envelope_id(disbursement_id, session):
     else:
         disbursement_batch_control_geo = (
             session.query(DisbursementBatchControlGeo)
-            .filter(
-                DisbursementBatchControlGeo.id
-                == disbursement_id
-            )
+            .filter(DisbursementBatchControlGeo.id == disbursement_id)
             .first()
         )
         return (

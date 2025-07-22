@@ -28,8 +28,6 @@ def mt940_processor_beat_producer():
                     and_(
                         AccountStatement.statement_process_status
                         == ProcessStatus.PENDING.value,
-                        AccountStatement.statement_process_attempts
-                        < _config.statement_process_attempts,
                     )
                 )
                 .limit(_config.no_of_tasks_to_process)

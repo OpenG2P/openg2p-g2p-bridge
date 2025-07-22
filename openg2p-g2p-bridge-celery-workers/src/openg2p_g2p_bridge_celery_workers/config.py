@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     mobile_wallet_deconstruct_strategy: str = r"^mobile_number:(?P<mobile_number>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
     email_wallet_deconstruct_strategy: str = r"^email_address:(?P<email_address>.*)\.wallet_provider_name:(?P<wallet_provider_name>.*)\.wallet_provider_code:(?P<wallet_provider_code>.*)\.fa_type:(?P<fa_type>.*)$"
 
+    mapper_request_jwt_enabled: bool = True
     mapper_request_sender_id: str = "openg2p-g2p-bridge"
 
     sign_key_keymanager_app_id: str = "G2PBRIDGE"
@@ -49,7 +50,6 @@ class Settings(BaseSettings):
     block_funds_with_bank_max_attempts: int = 3
     disburse_funds_with_bank_max_attempts: int = 3
     mt940_processor_max_attempts: int = 3
-
     agency_notification_max_attempts: int = 3
     warehouse_notification_max_attempts: int = 3
     beneficiary_notification_max_attempts: int = 3

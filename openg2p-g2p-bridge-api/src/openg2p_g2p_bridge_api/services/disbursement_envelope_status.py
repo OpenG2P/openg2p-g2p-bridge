@@ -74,9 +74,7 @@ class DisbursementEnvelopeStatusService(BaseService):
             disbursement_batch_control_geos = None
             envelope_batch_status_for_digital_cash = None
             beneficiary_notified_count = None
-            if (
-                envelope.benefit_type == BenefitType.CASH_DIGITAL.value
-            ):
+            if envelope.benefit_type == BenefitType.CASH_DIGITAL.value:
                 envelope_batch_status_for_digital_cash = (
                     (
                         await session.execute(

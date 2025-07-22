@@ -31,9 +31,6 @@ def agency_allocation_beat_producer():
         disbursement_batch_controls = result.scalars().all()
         for disbursement_batch_control in disbursement_batch_controls:
             _logger.info(
-                f"{disbursement_batch_control.agency_allocation_attempts} / {_config.agency_allocation_max_attempts} attempts done"
-            )
-            _logger.info(
                 f"Sending agency_allocation_worker task for batch_control_id: {disbursement_batch_control.id}"
             )
             disbursement_batch_control.agency_allocation_status = (
