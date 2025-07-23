@@ -27,6 +27,8 @@ from openg2p_g2p_bridge_models.models import (
     FundsBlockedWithBankEnum,
     ProcessStatus,
 )
+from openg2p_g2p_bridge_models.schemas import SponsorBankConfiguration
+from openg2p_g2p_bridge_celery_workers.helpers import WarehouseHelper
 
 
 class MockSession:
@@ -37,7 +39,7 @@ class MockSession:
         self.account_statement = AccountStatement(
             statement_id="test_statement_id",
             account_number="test_account_number",
-            statement_process_status=ProcessStatus.PENDING,
+            statement_process_status=ProcessStatus.PENDING.value,
             statement_process_attempts=0,
         )
         self.account_statement_lob = AccountStatementLob(
@@ -53,27 +55,28 @@ class MockSession:
             :62F:C000000000000,00
             """,
         )
-        self.benefit_program_configuration = BenefitProgramConfiguration(
-            benefit_program_mnemonic="test_program",
+        self.benefit_program_configuration = SponsorBankConfiguration(
+            program_account_number="test_account_number",
+            program_account_type=None,
+            program_account_branch_code="test_branch",
             sponsor_bank_code="test_bank",
-            sponsor_bank_account_number="test_account_number",
         )
         self.disbursement = Disbursement(
-            disbursement_id="test_disbursement_id",
+            id="test_disbursement_id",
             disbursement_envelope_id="test_envelope_id",
             beneficiary_id="test_beneficiary_id",
             beneficiary_name="Test Beneficiary",
             disbursement_quantity=100.0,
             narrative="Test disbursement",
-            disbursement_cycle_id="test_cycle_id",
+            disbursement_cycle_id=1,
             disbursement_batch_control_id="test_batch_control_id",
         )
         self.disbursement_envelope = DisbursementEnvelope(
-            disbursement_envelope_id="test_envelope_id",
+            id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            benefit_code_id="test_benefit",
-            benefit_type=BenefitType.CASH,
-            disbursement_cycle_id="test_cycle",
+            benefit_code_id=1,
+            benefit_type=BenefitType.CASH_DIGITAL,
+            disbursement_cycle_id=1,
             disbursement_frequency=DisbursementFrequency.Monthly,
             cycle_code_mnemonic="test_cycle_mnemonic",
             number_of_beneficiaries=10,
@@ -84,20 +87,21 @@ class MockSession:
         )
         self.disbursement_envelope_batch_status = EnvelopeBatchStatusForCash(
             disbursement_envelope_id="test_envelope_id",
-            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE,
-            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS,
+            funds_available_with_bank=FundsAvailableWithBankEnum.FUNDS_AVAILABLE.value,
+            funds_blocked_with_bank=FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
             number_of_disbursements_reconciled=0,
             number_of_disbursements_reversed=0,
         )
         self.disbursement_recon = None
         self.disbursement_batch_control = DisbursementBatchControl(
-            disbursement_batch_control_id="test_batch_control_id",
-            disbursement_cycle_id="test_cycle_id",
+            id="test_batch_control_id",
+            disbursement_cycle_id=1,
             disbursement_envelope_id="test_envelope_id",
-            fa_resolution_status=ProcessStatus.PROCESSED,
-            sponsor_bank_dispatch_status=ProcessStatus.PROCESSED,
-            geo_resolutuon_status=ProcessStatus.PROCESSED,
-            warehouse_allocation_status=ProcessStatus.PROCESSED,
+            fa_resolution_status=ProcessStatus.PENDING.value,
+            sponsor_bank_dispatch_status=ProcessStatus.PENDING.value,
+            geo_resolution_status=ProcessStatus.PENDING.value,
+            warehouse_allocation_status=ProcessStatus.PENDING.value,
+            agency_allocation_status=ProcessStatus.PENDING.value,
         )
 
     def __enter__(self):
@@ -119,7 +123,7 @@ class MockSession:
             return self.account_statement
         elif self.query_args[0] is AccountStatementLob:
             return self.account_statement_lob
-        elif self.query_args[0] is BenefitProgramConfiguration:
+        elif self.query_args[0] is SponsorBankConfiguration:
             return self.benefit_program_configuration
         elif self.query_args[0] is Disbursement:
             return self.disbursement
@@ -184,12 +188,14 @@ def test_mt940_processor_success(mock_session_maker, mock_bank_connector_factory
     mock_bank_connector_factory.retrieve_beneficiary_name.return_value = (
         "Test Beneficiary"
     )
-
-    mt940_processor_worker("test_statement_id")
+    mock_warehouse_helper = MagicMock()
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = mock_session_maker.benefit_program_configuration
+    with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+        mt940_processor_worker("test_statement_id")
 
     assert (
         mock_session_maker.account_statement.statement_process_status
-        == ProcessStatus.PROCESSED
+        == ProcessStatus.PROCESSED.value
     )
     assert mock_session_maker.account_statement.statement_process_error_code is None
     assert isinstance(
@@ -202,12 +208,14 @@ def test_mt940_processor_invalid_account(
     mock_session_maker, mock_bank_connector_factory
 ):
     mock_session_maker.benefit_program_configuration = None
-
-    mt940_processor_worker("test_statement_id")
+    mock_warehouse_helper = MagicMock()
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = None
+    with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+        mt940_processor_worker("test_statement_id")
 
     assert (
         mock_session_maker.account_statement.statement_process_status
-        == ProcessStatus.ERROR
+        == ProcessStatus.ERROR.value
     )
     assert (
         mock_session_maker.account_statement.statement_process_error_code
@@ -241,14 +249,16 @@ def test_mt940_processor_exception(
     # Mock mt940.models.Transactions to raise an exception
     with patch("mt940.models.Transactions") as mock_transactions:
         mock_transactions.side_effect = Exception("TEST_ERROR")
-
-        with caplog.at_level(logging.ERROR):
-            mt940_processor_worker("test_statement_id")
+        mock_warehouse_helper = MagicMock()
+        mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = mock_session_maker.benefit_program_configuration
+        with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+            with caplog.at_level(logging.ERROR):
+                mt940_processor_worker("test_statement_id")
 
         assert "TEST_ERROR" in caplog.text
         assert (
             mock_session_maker.account_statement.statement_process_status
-            == ProcessStatus.PENDING
+            == ProcessStatus.PENDING.value
         )
         assert (
             mock_session_maker.account_statement.statement_process_error_code
@@ -296,7 +306,8 @@ def test_construct_parsed_transaction(mock_session_maker, mock_bank_connector_fa
     result = construct_parsed_transaction(
         mock_bank_connector_factory, "D", 1, mock_transaction, mock_session_maker
     )
-
+    # Ensure result contains all expected keys
+    assert "disbursement_id" in result
     assert result["disbursement_id"] == "test_disbursement_id"
     assert result["disbursement_envelope_id"] == "test_envelope_id"
     assert result["transaction_amount"] == 100
@@ -315,6 +326,7 @@ def test_process_debit_transactions_success(
     parsed_transactions_d = [
         {
             "disbursement_id": "test_disbursement_id",
+            "reconciliation_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
             "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
@@ -355,6 +367,7 @@ def test_process_debit_transactions_invalid_disbursement(
     parsed_transactions_d = [
         {
             "disbursement_id": "INVALID_ID",  # Set to an invaild id for this test
+            "reconciliation_id": "INVALID_ID",
             "disbursement_envelope_id": "test_envelope_id",
             "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
@@ -367,18 +380,15 @@ def test_process_debit_transactions_invalid_disbursement(
         }
     ]
 
-    with patch(
-        "openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.get_bank_batch_id",
-        return_value=None,
-    ):
-        process_debit_transactions(
-            account_statement,
-            disbursement_error_recons,
-            disbursement_recons_d,
-            parsed_transactions_d,
-            mock_session_maker,
-            "test_statement_id",
-        )
+    # Remove patch for get_bank_batch_id (does not exist)
+    process_debit_transactions(
+        account_statement,
+        disbursement_error_recons,
+        disbursement_recons_d,
+        parsed_transactions_d,
+        mock_session_maker,
+        "test_statement_id",
+    )
 
     assert len(disbursement_recons_d) == 0
     assert len(disbursement_error_recons) == 1
@@ -408,6 +418,7 @@ def test_process_debit_transactions_duplicate(mock_session_maker):
     parsed_transactions_d = [
         {
             "disbursement_id": "test_disbursement_id",
+            "reconciliation_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
             "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,
@@ -452,6 +463,7 @@ def test_process_reversal_of_debits_success(mock_session_maker):
     parsed_transactions_rd = [
         {
             "disbursement_id": "test_disbursement_id",
+            "reconciliation_id": "test_disbursement_id",
             "disbursement_envelope_id": "test_envelope_id",
             "disbursement_batch_control_id": "test_batch_control_id",
             "transaction_amount": 100,

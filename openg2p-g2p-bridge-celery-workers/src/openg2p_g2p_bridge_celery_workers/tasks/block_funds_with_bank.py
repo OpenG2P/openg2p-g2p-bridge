@@ -128,7 +128,7 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                 )
             else:
                 envelope_batch_status_for_cash.funds_blocked_with_bank = (
-                    FundsBlockedWithBankEnum.PENDING_BLOCK.value
+                    FundsBlockedWithBankEnum.ERROR.value
                 )
             session.commit()
 

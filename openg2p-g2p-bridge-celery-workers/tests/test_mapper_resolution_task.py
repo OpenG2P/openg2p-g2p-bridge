@@ -26,39 +26,40 @@ class MockSession:
         self.query_args = ()
         self.disbursement_batch_controls = [
             DisbursementBatchControl(
-                disbursement_batch_control_id="test_batch_control_id",
-                disbursement_cycle_id="test_cycle_id",
+                id="test_batch_control_id",
+                disbursement_cycle_id=1,
                 disbursement_envelope_id="test_envelope_id",
                 fa_resolution_status=ProcessStatus.PENDING,
                 sponsor_bank_dispatch_status=ProcessStatus.PENDING,
-                geo_resolutuon_status=ProcessStatus.PENDING,
+                geo_resolution_status=ProcessStatus.PENDING,
                 warehouse_allocation_status=ProcessStatus.PENDING,
+                agency_allocation_status=ProcessStatus.PENDING,
             ),
         ]
         self.disbursement = Disbursement(
-            disbursement_id="test_disbursement_id",
+            id="test_disbursement_id",
             disbursement_envelope_id="test_envelope_id",
             beneficiary_id="test_beneficiary_id",
             beneficiary_name="Test Beneficiary",
             disbursement_quantity=100.0,
             narrative="Test disbursement",
-            disbursement_cycle_id="test_cycle_id",
+            disbursement_cycle_id=1,
             disbursement_batch_control_id="test_batch_control_id",
         )
         self.disbursements = [self.disbursement]
         self.disbursement_envelope = DisbursementEnvelope(
-            disbursement_envelope_id="test_envelope_id",
+            id="test_envelope_id",
             benefit_program_mnemonic="test_program",
-            benefit_code_id="test_benefit",
+            benefit_code_id=1,
             benefit_type=BenefitType.CASH_DIGITAL,
-            disbursement_cycle_id="test_cycle",
+            disbursement_cycle_id=1,
             disbursement_frequency=DisbursementFrequency.Monthly,
             cycle_code_mnemonic="test_cycle_mnemonic",
             number_of_beneficiaries=10,
             number_of_disbursements=10,
             total_disbursement_quantity=1000,
             measurement_unit="KES",
-            disbursement_schedule_date=date.today(),
+            disbursement_schedule_date=datetime.now().date(),
         )
 
     def __enter__(self):
@@ -275,13 +276,13 @@ def test_mapper_resolution_worker_failure(
 async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_client):
     disbursements = [
         Disbursement(
-            disbursement_id="test_disbursement_id",
+            id="test_disbursement_id",
             disbursement_envelope_id="test_envelope_id",
             beneficiary_id="test_beneficiary_id",
             beneficiary_name="Test Beneficiary",
             disbursement_quantity=100.0,
             narrative="Test disbursement",
-            disbursement_cycle_id="test_cycle_id",
+            disbursement_cycle_id=1,
             disbursement_batch_control_id="test_batch_control_id",
         )
     ]
@@ -297,13 +298,13 @@ async def test_make_resolve_request_success(mock_resolve_helper, mock_resolve_cl
 async def test_make_resolve_request_failure(mock_resolve_helper, mock_resolve_client):
     disbursements = [
         Disbursement(
-            disbursement_id="test_disbursement_id",
+            id="test_disbursement_id",
             disbursement_envelope_id="test_envelope_id",
             beneficiary_id="test_beneficiary_id",
             beneficiary_name="Test Beneficiary",
             disbursement_quantity=100.0,
             narrative="Test disbursement",
-            disbursement_cycle_id="test_cycle_id",
+            disbursement_cycle_id=1,
             disbursement_batch_control_id="test_batch_control_id",
         )
     ]
