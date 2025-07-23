@@ -38,13 +38,10 @@ class AccountStatementController(BaseController):
 
     async def upload_mt940(
         self,
-        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool = True,
         statement_file: UploadFile = File(...),
     ) -> AccountStatementResponse:
         _logger.info("Uploading statement file")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(statement_file)
             RequestValidation.get_component().validate_mt940_file(statement_file)
             account_statement_id: str = (
