@@ -28,7 +28,6 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import SponsorBankConfiguration
-from openg2p_g2p_bridge_celery_workers.helpers import WarehouseHelper
 
 
 class MockSession:
@@ -189,8 +188,13 @@ def test_mt940_processor_success(mock_session_maker, mock_bank_connector_factory
         "Test Beneficiary"
     )
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         mt940_processor_worker("test_statement_id")
 
     assert (
@@ -209,8 +213,13 @@ def test_mt940_processor_invalid_account(
 ):
     mock_session_maker.benefit_program_configuration = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = None
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = (
+        None
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         mt940_processor_worker("test_statement_id")
 
     assert (
@@ -250,8 +259,13 @@ def test_mt940_processor_exception(
     with patch("mt940.models.Transactions") as mock_transactions:
         mock_transactions.side_effect = Exception("TEST_ERROR")
         mock_warehouse_helper = MagicMock()
-        mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = mock_session_maker.benefit_program_configuration
-        with patch("openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+        mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = (
+            mock_session_maker.benefit_program_configuration
+        )
+        with patch(
+            "openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component",
+            return_value=mock_warehouse_helper,
+        ):
             with caplog.at_level(logging.ERROR):
                 mt940_processor_worker("test_statement_id")
 

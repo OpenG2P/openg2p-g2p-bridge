@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from openg2p_g2p_bridge_bank_connectors.bank_interface import CheckFundsResponse
 from openg2p_g2p_bridge_celery_workers.tasks import check_funds_with_bank_worker
-from openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper import WarehouseHelper
 from openg2p_g2p_bridge_models.models import (
     BenefitType,
     DisbursementEnvelope,
@@ -88,6 +87,7 @@ def mock_session_maker():
     ):
         yield mock_session
 
+
 @pytest.fixture
 def mock_bank_connector_factory():
     mock_bank_connector = MagicMock()
@@ -106,8 +106,13 @@ def test_check_funds_with_bank_success(mock_session_maker, mock_bank_connector_f
         status=FundsAvailableWithBankEnum.FUNDS_AVAILABLE, error_code=""
     )
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         check_funds_with_bank_worker("test_envelope_id")
 
     assert (
@@ -122,8 +127,13 @@ def test_check_funds_with_bank_failure(mock_session_maker, mock_bank_connector_f
         status=FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE, error_code=""
     )
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         check_funds_with_bank_worker("test_envelope_id")
 
     assert (
@@ -138,8 +148,13 @@ def test_check_funds_with_bank_exception(
 ):
     mock_bank_connector_factory.check_funds.side_effect = Exception("TEST_EXCEPTION")
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         check_funds_with_bank_worker("test_envelope_id")
 
     assert (
@@ -158,8 +173,13 @@ def test_check_funds_with_bank_envelope_not_found(
 ):
     mock_session_maker.disbursement_envelope = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         check_funds_with_bank_worker("test_envelope_id")
 
     assert not mock_session_maker.committed
@@ -170,8 +190,13 @@ def test_check_funds_with_bank_envelope_batch_status_not_found(
 ):
     mock_session_maker.disbursement_envelope_batch_status = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = mock_session_maker.benefit_program_configuration
-    with patch("openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component", return_value=mock_warehouse_helper):
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        mock_session_maker.benefit_program_configuration
+    )
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.tasks.check_funds_with_bank.WarehouseHelper.get_component",
+        return_value=mock_warehouse_helper,
+    ):
         check_funds_with_bank_worker("test_envelope_id")
 
     assert not mock_session_maker.committed

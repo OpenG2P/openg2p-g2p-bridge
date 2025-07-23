@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,7 +23,6 @@ from openg2p_g2p_bridge_models.models import (
     ProcessStatus,
 )
 from openg2p_g2p_bridge_models.schemas import SponsorBankConfiguration
-from openg2p_g2p_bridge_celery_workers.helpers import WarehouseHelper
 
 
 class MockSession:
@@ -117,11 +116,13 @@ class MockSession:
         if self.query_args[0] is DisbursementBatchControl:
             # Check if the filter is for the test_batch_id
             if (
-                hasattr(self, 'filter_args') and len(self.filter_args) > 0 and
-                hasattr(self.filter_args[0], 'right') and getattr(self.filter_args[0].right, 'value', None) == "test_batch_id"
+                hasattr(self, "filter_args")
+                and len(self.filter_args) > 0
+                and hasattr(self.filter_args[0], "right")
+                and getattr(self.filter_args[0].right, "value", None) == "test_batch_id"
             ):
                 # Allow test to override for negative cases
-                if hasattr(self, 'bank_disbursement_batch_status'):
+                if hasattr(self, "bank_disbursement_batch_status"):
                     return self.bank_disbursement_batch_status
                 return self.disbursement_batch_status
             else:
@@ -205,11 +206,13 @@ def patch_bank_connector_factory_global():
 
 def get_mock_warehouse_helper():
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
-        program_account_number="test_account_number",
-        program_account_type=None,
-        program_account_branch_code="test_branch",
-        sponsor_bank_code="EXAMPLE",
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
+        SponsorBankConfiguration(
+            program_account_number="test_account_number",
+            program_account_type=None,
+            program_account_branch_code="test_branch",
+            sponsor_bank_code="EXAMPLE",
+        )
     )
     return mock_warehouse_helper
 
@@ -219,7 +222,10 @@ def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory)
         status=PaymentStatus.SUCCESS,
         error_code="",
     )
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
@@ -242,7 +248,10 @@ def test_disburse_funds_failure(mock_session_maker, mock_bank_connector_factory)
         status=PaymentStatus.ERROR,
         error_code="TEST_ERROR",
     )
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert (
@@ -262,7 +271,10 @@ def test_disburse_funds_exception(
     mock_bank_connector_factory.initiate_payment.side_effect = Exception(
         "TEST_EXCEPTION"
     )
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         with caplog.at_level(logging.ERROR):
             disburse_funds_from_bank_worker("test_batch_id")
 
@@ -283,7 +295,10 @@ def test_disburse_funds_exception(
 
 def test_disburse_funds_batch_not_found(mock_session_maker):
     mock_session_maker.bank_disbursement_batch_status = None
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert not mock_session_maker.committed
@@ -291,7 +306,10 @@ def test_disburse_funds_batch_not_found(mock_session_maker):
 
 def test_disburse_funds_envelope_not_found(mock_session_maker):
     mock_session_maker.disbursement_envelope = None
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert not mock_session_maker.committed
@@ -299,7 +317,10 @@ def test_disburse_funds_envelope_not_found(mock_session_maker):
 
 def test_disburse_funds_envelope_batch_status_not_found(mock_session_maker):
     mock_session_maker.disbursement_envelope_batch_status = None
-    with patch("openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component", return_value=get_mock_warehouse_helper()):
+    with patch(
+        "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
+        return_value=get_mock_warehouse_helper(),
+    ):
         disburse_funds_from_bank_worker("test_batch_id")
 
     assert not mock_session_maker.committed

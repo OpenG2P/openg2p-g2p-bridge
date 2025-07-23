@@ -1,10 +1,32 @@
 from openg2p_fastapi_common.config import Settings as BaseSettings
+from openg2p_g2p_bridge_agency_allocator.config import (
+    BaseSettings as AgencyAllocatorBaseSettings,
+)
+from openg2p_g2p_bridge_bank_connectors.config import (
+    BaseSettings as BankConnectorsBaseSettings,
+)
+from openg2p_g2p_bridge_geo_resolver.config import (
+    BaseSettings as GeoResolverBaseSettings,
+)
+from openg2p_g2p_bridge_warehouse_allocator.config import (
+    BaseSettings as WarehouseAllocatorBaseSettings,
+)
+from openg2p_g2p_bridge_notification_connectors import (
+    BaseSettings as NotificationConnectorsBaseSettings,
+)
 from pydantic_settings import SettingsConfigDict
 
 from . import __version__
 
 
-class Settings(BaseSettings):
+class Settings(
+    BaseSettings,
+    AgencyAllocatorBaseSettings,
+    BankConnectorsBaseSettings,
+    WarehouseAllocatorBaseSettings,
+    GeoResolverBaseSettings,
+    NotificationConnectorsBaseSettings,
+):
     model_config = SettingsConfigDict(
         env_prefix="g2p_bridge_celery_workers_", env_file=".env", extra="allow"
     )

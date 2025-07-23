@@ -4,7 +4,7 @@ from pydantic_settings import SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="g2p_bridge_celery_producers_", env_file=".env", extra="allow"
+        env_prefix="g2p_bridge_warehouse_allocator_", env_file=".env", extra="allow"
     )
 
     db_dbname: str = "openg2p_g2p_bridge_db"

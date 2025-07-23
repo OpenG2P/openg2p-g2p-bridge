@@ -8,7 +8,6 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/openg2p-g2p-bridge-bank-connectors)](https://pypi.org/project/openg2p-g2p-bridge-bank-connectors)
 
 
-
 ## Licenses
 
 This repository is licensed under [MPL-2.0](LICENSE).
