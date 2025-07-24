@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
+from openg2p_fastapi_common.service import BaseService
 from typing import Any
 
 from ..models import NotificationType, Recipient
 
 
-class NotificationInterface(ABC):
-    @abstractmethod
+class NotificationInterface(BaseService):
     def send_notification(
         self,
         notification_id: str,

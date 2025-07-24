@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
+from openg2p_fastapi_common.service import BaseService
 from typing import Dict, List
 
 
-class WarehouseAllocator(ABC):
-    @abstractmethod
+class WarehouseAllocator(BaseService):
     def allocate_warehouse(
         self,
         large_geo_list: List[Dict],
@@ -17,4 +16,4 @@ class WarehouseAllocator(ABC):
           - program_id: str
         Returns a list of dicts with warehouse allocation info for each geo.
         """
-        pass
+        raise NotImplementedError()

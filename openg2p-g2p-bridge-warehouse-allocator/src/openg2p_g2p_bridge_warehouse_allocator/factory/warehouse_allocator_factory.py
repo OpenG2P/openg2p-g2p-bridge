@@ -5,6 +5,5 @@ from ..interface import WarehouseAllocator
 
 
 class WarehouseAllocatorFactory(BaseService):
-    @staticmethod
-    def get_warehouse_allocator() -> WarehouseAllocator:
-        return WarehouseAllocatorRefImpl()
+    def get_warehouse_allocator(self, warehouse_type) -> WarehouseAllocator:
+        return WarehouseAllocatorRefImpl.get_component()

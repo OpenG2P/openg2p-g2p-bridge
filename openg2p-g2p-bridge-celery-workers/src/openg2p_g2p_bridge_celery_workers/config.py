@@ -1,18 +1,17 @@
-from openg2p_fastapi_common.config import Settings as BaseSettings
 from openg2p_g2p_bridge_agency_allocator.config import (
-    BaseSettings as AgencyAllocatorBaseSettings,
+    Settings as AgencyAllocatorBaseSettings,
 )
 from openg2p_g2p_bridge_bank_connectors.config import (
-    BaseSettings as BankConnectorsBaseSettings,
+    Settings as BankConnectorsBaseSettings,
 )
 from openg2p_g2p_bridge_geo_resolver.config import (
-    BaseSettings as GeoResolverBaseSettings,
+    Settings as GeoResolverBaseSettings,
 )
 from openg2p_g2p_bridge_warehouse_allocator.config import (
-    BaseSettings as WarehouseAllocatorBaseSettings,
+    Settings as WarehouseAllocatorBaseSettings,
 )
-from openg2p_g2p_bridge_notification_connectors import (
-    BaseSettings as NotificationConnectorsBaseSettings,
+from openg2p_g2p_bridge_notification_connectors.config import (
+    Settings as NotificationConnectorsBaseSettings,
 )
 from pydantic_settings import SettingsConfigDict
 
@@ -20,12 +19,11 @@ from . import __version__
 
 
 class Settings(
-    BaseSettings,
     AgencyAllocatorBaseSettings,
     BankConnectorsBaseSettings,
-    WarehouseAllocatorBaseSettings,
     GeoResolverBaseSettings,
-    NotificationConnectorsBaseSettings,
+    WarehouseAllocatorBaseSettings,
+    NotificationConnectorsBaseSettings
 ):
     model_config = SettingsConfigDict(
         env_prefix="g2p_bridge_celery_workers_", env_file=".env", extra="allow"
@@ -80,4 +78,4 @@ class Settings(
     db_datasource_farmer_registry: str = (
         "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
     )
-    db_datasource_pbms: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"
+    db_datasource_pbms_db: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"

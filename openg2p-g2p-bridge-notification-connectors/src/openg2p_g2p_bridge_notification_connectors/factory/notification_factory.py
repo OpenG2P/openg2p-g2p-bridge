@@ -7,4 +7,4 @@ from ..interface.notification_interface import NotificationInterface
 class NotificationFactory(BaseService):
     @staticmethod
     def get_notifier() -> NotificationInterface:
-        return NovuNotifier()
+        return NovuNotifier.get_component()

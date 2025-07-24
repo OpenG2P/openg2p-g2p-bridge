@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
+from openg2p_fastapi_common.service import BaseService
 from typing import Dict, List
 
 
-class GeoResolver(ABC):
-    @abstractmethod
+class GeoResolver(BaseService):
     def resolve_geo(
         self, batch_beneficiary_list: List[Dict[str, str]]
     ) -> List[Dict[str, str]]:
@@ -11,4 +10,4 @@ class GeoResolver(ABC):
         Receives a list of dicts with keys: disbursement_id, beneficiary_id
         Returns a list of dicts with keys: disbursement_id, beneficiary_id, administrative_zone_id_large, administrative_zone_mnemonic_large, administrative_zone_id_small, administrative_zone_mnemonic_small
         """
-        pass
+        raise NotImplementedError()

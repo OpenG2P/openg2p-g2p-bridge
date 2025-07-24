@@ -7,4 +7,4 @@ from ..interface import AgencyAllocator
 class AgencyAllocatorFactory(BaseService):
     @staticmethod
     def get_agency_allocator() -> AgencyAllocator:
-        return AgencyAllocatorRefImpl()
+        return AgencyAllocatorRefImpl.get_component()

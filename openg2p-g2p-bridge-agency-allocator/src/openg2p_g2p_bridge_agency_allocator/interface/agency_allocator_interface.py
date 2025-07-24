@@ -1,9 +1,8 @@
-from abc import ABC, abstractmethod
+from openg2p_fastapi_common.service import BaseService
 from typing import Dict, List
 
 
-class AgencyAllocator(ABC):
-    @abstractmethod
+class AgencyAllocator(BaseService):
     def allocate_agency(
         self,
         small_geo_list: List[Dict],
@@ -17,4 +16,4 @@ class AgencyAllocator(ABC):
           - program: Dict with id and mnemonic
         Returns a list of dicts with agency allocation info for each geo.
         """
-        pass
+        raise NotImplementedError()

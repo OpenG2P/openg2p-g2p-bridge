@@ -5,8 +5,7 @@ from ..interface import GeoResolver
 
 
 class GeoResolutionFactory(BaseService):
-    @staticmethod
-    def get_geo_resolver(target_registry: str) -> GeoResolver:
+    def get_geo_resolver(self, target_registry: str) -> GeoResolver:
         if target_registry.lower() == "farmer":
-            return FarmerGeoResolverImpl()
+            return FarmerGeoResolverImpl.get_component()
         return None
