@@ -1,4 +1,6 @@
 import logging
+from typing import Annotated
+from fastapi import Depends
 
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.exceptions import (
@@ -10,6 +12,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
 )
+from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
 from ..config import Settings
 from ..services import DisbursementEnvelopeStatusService, RequestValidation
@@ -37,8 +40,7 @@ class DisbursementEnvelopeStatusController(BaseController):
     async def get_disbursement_envelope_status(
         self,
         disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
-        # is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
-        is_signature_valid: bool = True,
+        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementEnvelopeStatusResponse:
         _logger.info("Getting disbursement envelope batch status payload")
         try:
