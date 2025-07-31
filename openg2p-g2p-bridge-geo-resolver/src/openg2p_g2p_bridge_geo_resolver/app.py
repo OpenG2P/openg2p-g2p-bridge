@@ -6,10 +6,11 @@ _config = Settings.get_config()
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
 
-from .geo_resolver import GeoResolverFactory, ExampleGeoResolver
+from .factory import GeoResolutionFactory
+from .implementations import FarmerGeoResolverImpl
 
 
 class Initializer(BaseInitializer):
     def initialize(self, **kwargs):
-        GeoResolverFactory()
-        ExampleGeoResolver()
+        GeoResolutionFactory()
+        FarmerGeoResolverImpl()

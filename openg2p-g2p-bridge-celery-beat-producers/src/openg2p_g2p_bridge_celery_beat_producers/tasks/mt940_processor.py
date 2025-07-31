@@ -7,8 +7,9 @@ from openg2p_g2p_bridge_models.models import (
 from sqlalchemy import and_, select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -26,9 +27,7 @@ def mt940_processor_beat_producer():
                 .filter(
                     and_(
                         AccountStatement.statement_process_status
-                        == ProcessStatus.PENDING,
-                        AccountStatement.statement_process_attempts
-                        < _config.statement_process_attempts,
+                        == ProcessStatus.PENDING.value,
                     )
                 )
                 .limit(_config.no_of_tasks_to_process)
@@ -38,14 +37,15 @@ def mt940_processor_beat_producer():
         )
 
         for statement in account_statements:
-            statement.statement_process_status = ProcessStatus.PROCESSING
+            statement.statement_process_status = ProcessStatus.PROCESSING.value
             _logger.info(
                 f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}"
             )
+            session.commit()
             celery_app.send_task(
                 "mt940_processor_worker",
                 args=[statement.statement_id],
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            session.commit()
+
         _logger.info("Finished mt940_processor_beat_producer")

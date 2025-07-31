@@ -5,16 +5,16 @@ from openg2p_g2p_bridge_models.models import (
     CancellationStatus,
     DisbursementBatchControl,
     DisbursementEnvelope,
-    EnvelopeBatchStatusForDigitalCash,
-    EnvelopeControl,
+    EnvelopeBatchStatusForCash,
     FundsBlockedWithBankEnum,
     ProcessStatus,
 )
-from sqlalchemy import and_, literal, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -34,73 +34,84 @@ def disburse_funds_from_bank_beat_producer():
             update(DisbursementBatchControl)
             .where(
                 DisbursementBatchControl.sponsor_bank_dispatch_status
-                == ProcessStatus.PROCESSING,
+                == ProcessStatus.PROCESSING.value,
                 DisbursementBatchControl.updated_at < stale_at,
             )
-            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING)
+            .values(sponsor_bank_dispatch_status=ProcessStatus.PENDING.value)
         )
         session.execute(reset_stmt)
         session.commit()
-        # Check if the disbursement schedule date is today if the configuration is
-        # not set to process future disbursement schedules
-        date_condition = (
-            DisbursementEnvelope.disbursement_schedule_date == datetime.now().date()
-            if not _config.process_future_disbursement_schedules
-            else literal(True)
-        )
-        envelopes = (
+
+        disbursement_batch_controls: list[DisbursementBatchControl] = (
             session.execute(
-                select(DisbursementEnvelope)
-                .join(
-                    EnvelopeControl,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == EnvelopeControl.disbursement_envelope_id,
-                )
-                .join(
-                    EnvelopeBatchStatusForDigitalCash,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
-                )
+                select(DisbursementBatchControl)
                 .filter(
-                    date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.NOT_CANCELLED.value,
-                    DisbursementEnvelope.number_of_disbursements
-                    == EnvelopeControl.number_of_disbursements_received,
-                    EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
-                    == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value,
+                    DisbursementBatchControl.sponsor_bank_dispatch_status
+                    == ProcessStatus.PENDING.value,
                 )
                 .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
             .all()
         )
-        for envelope in envelopes:
+        _logger.info(f"Found {len(disbursement_batch_controls)} pending batch controls")
 
-            disbursement_batch_controls: list[DisbursementBatchControl] = (
-                session.execute(
-                select(DisbursementBatchControl).filter(
-                    DisbursementBatchControl.disbursement_envelope_id
-                    == envelope.disbursement_envelope_id,
-                    DisbursementBatchControl.sponsor_bank_dispatch_status
-                    == ProcessStatus.PENDING,
-                ).limit(_config.no_of_tasks_to_process)
-            )
-            .scalars()
-            .all()
-            )
-            _logger.info(
-                f"Found {len(disbursement_batch_controls)} pending batch controls for envelope {envelope.disbursement_envelope_id}"
-            )
-
-            for disbursement_batch_control in disbursement_batch_controls:
-                _logger.info("Added batch to session")
+        for disbursement_batch_control in disbursement_batch_controls:
+            if check_envelope_status(session, disbursement_batch_control):
+                # 2. Mark as PROCESSING
+                disbursement_batch_control.sponsor_bank_dispatch_status = (
+                    ProcessStatus.PROCESSING.value
+                )
+                session.add(disbursement_batch_control)
                 session.commit()
                 celery_app.send_task(
                     "disburse_funds_from_bank_worker",
-                    (disbursement_batch_control.disbursement_batch_control_id,),
+                    (disbursement_batch_control.id,),
                     queue="g2p_bridge_celery_worker_tasks",
                 )
-            _logger.info(
-                f"Sent tasks to disburse funds for {len(disbursement_batch_controls)} batches"
+                _logger.info(
+                    f"Sent tasks to disburse funds for {len(disbursement_batch_controls)} batches"
+                )
+            else:
+                _logger.warning(
+                    f"Disbursement batch control {disbursement_batch_control.id} does not meet the criteria for processing."
+                )
+
+
+def check_envelope_status(session, disbursement_batch_control) -> bool:
+    disbursement_envelope = (
+        session.execute(
+            select(DisbursementEnvelope).filter(
+                DisbursementEnvelope.id
+                == disbursement_batch_control.disbursement_envelope_id,
             )
+        )
+        .scalars()
+        .first()
+    )
+
+    envelope_batch_status_for_cash = (
+        session.query(EnvelopeBatchStatusForCash)
+        .filter(
+            EnvelopeBatchStatusForCash.disbursement_envelope_id
+            == disbursement_batch_control.disbursement_envelope_id
+        )
+        .first()
+    )
+
+    if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED.value:
+        _logger.warning(
+            f"Disbursement Envelope {disbursement_envelope.id} is cancelled."
+        )
+        return False
+
+    if (
+        not envelope_batch_status_for_cash.funds_blocked_with_bank
+        == FundsBlockedWithBankEnum.FUNDS_BLOCK_SUCCESS.value
+    ):
+        _logger.warning(
+            f"Funds are not blocked for envelope {disbursement_envelope.id}."
+        )
+        return False
+
+    return True

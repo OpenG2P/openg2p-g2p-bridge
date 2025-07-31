@@ -16,7 +16,7 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "openg2p-fastapi-common",
+  "openg2p-g2p-bridge-models",
 ]
 dynamic = ["version"]
 

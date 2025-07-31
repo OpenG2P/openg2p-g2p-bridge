@@ -4,8 +4,9 @@ from openg2p_g2p_bridge_models.models import DisbursementBatchControl, ProcessSt
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -23,7 +24,7 @@ def geo_resolution_beat_producer():
                 select(DisbursementBatchControl)
                 .filter(
                     DisbursementBatchControl.geo_resolution_status
-                    == ProcessStatus.PENDING
+                    == ProcessStatus.PENDING.value
                 )
                 .limit(_config.no_of_tasks_to_process)
             )
@@ -33,16 +34,19 @@ def geo_resolution_beat_producer():
 
         for disbursement_batch_control in disbursement_batch_controls:
             _logger.info(
-                f"Sending geo resolution task for batch: {disbursement_batch_control.disbursement_batch_control_id}"
+                f"Sending geo resolution task for batch: {disbursement_batch_control.id}"
             )
 
-            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSING
-
-            celery_app.send_task(
-                "geo_resolution_worker",
-                args=(disbursement_batch_control.disbursement_batch_control_id,),
-                queue="g2p_bridge_celery_worker_tasks",
+            disbursement_batch_control.geo_resolution_status = (
+                ProcessStatus.PROCESSING.value
             )
             session.commit()
+            celery_app.send_task(
+                "geo_resolution_worker",
+                args=(disbursement_batch_control.id,),
+                queue="g2p_bridge_celery_worker_tasks",
+            )
 
-        _logger.info("Completed checking for disbursement batches to perform geo resolution") 
+        _logger.info(
+            "Completed checking for disbursement batches to perform geo resolution"
+        )

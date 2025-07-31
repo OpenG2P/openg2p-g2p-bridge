@@ -4,15 +4,16 @@ from datetime import datetime
 from openg2p_g2p_bridge_models.models import (
     CancellationStatus,
     DisbursementEnvelope,
-    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeBatchStatusForCash,
     FundsAvailableWithBankEnum,
     FundsBlockedWithBankEnum,
 )
 from sqlalchemy import and_, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -37,26 +38,24 @@ def block_funds_with_bank_beat_producer():
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    EnvelopeBatchStatusForDigitalCash,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
+                    EnvelopeBatchStatusForCash,
+                    DisbursementEnvelope.id
+                    == EnvelopeBatchStatusForCash.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
                     DisbursementEnvelope.cancellation_status
                     == CancellationStatus.NOT_CANCELLED.value,
-                    EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
+                    EnvelopeBatchStatusForCash.funds_available_with_bank
                     == FundsAvailableWithBankEnum.FUNDS_AVAILABLE.value,
                     or_(
                         and_(
-                            EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
+                            EnvelopeBatchStatusForCash.funds_blocked_with_bank
                             == FundsBlockedWithBankEnum.PENDING_CHECK.value
-                           
                         ),
                         and_(
-                            EnvelopeBatchStatusForDigitalCash.funds_blocked_with_bank
+                            EnvelopeBatchStatusForCash.funds_blocked_with_bank
                             == FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
-                           
                         ),
                     ),
                 )
@@ -67,27 +66,24 @@ def block_funds_with_bank_beat_producer():
         )
 
         for envelope in envelopes:
-            _logger.info(
-                f"Blocking funds with bank for envelope: {envelope.disbursement_envelope_id}"
-            )
-            envelope_batch_status = (
-                session.query(EnvelopeBatchStatusForDigitalCash)
+            _logger.info(f"Blocking funds with bank for envelope: {envelope.id}")
+            envelope_batch_status_for_cash = (
+                session.query(EnvelopeBatchStatusForCash)
                 .filter(
-                    EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
-                    == envelope.disbursement_envelope_id
+                    EnvelopeBatchStatusForCash.disbursement_envelope_id == envelope.id
                 )
                 .first()
             )
 
-            envelope_batch_status.funds_blocked_with_bank = (
-                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS
+            envelope_batch_status_for_cash.funds_blocked_with_bank = (
+                FundsBlockedWithBankEnum.CHECK_IN_PROGRESS.value
             )
+            session.commit()
 
             celery_app.send_task(
                 "block_funds_with_bank_worker",
-                args=(envelope.disbursement_envelope_id,),
+                args=(envelope.id,),
                 queue="g2p_bridge_celery_worker_tasks",
             )
-            session.commit()
 
         _logger.info("Completed checking for envelopes to block funds with bank")

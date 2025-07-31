@@ -1,7 +1,6 @@
 import logging
-from typing import Annotated
 
-from fastapi import Depends, File, UploadFile
+from fastapi import File, UploadFile
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.codes import (
     G2PBridgeErrorCodes,
@@ -13,7 +12,6 @@ from openg2p_g2p_bridge_models.errors.exceptions import (
 from openg2p_g2p_bridge_models.schemas import (
     AccountStatementResponse,
 )
-from openg2p_g2pconnect_common_lib.jwt_signature_validator import JWTSignatureValidator
 
 from openg2p_g2p_bridge_api.services import AccountStatementService
 
@@ -40,12 +38,10 @@ class AccountStatementController(BaseController):
 
     async def upload_mt940(
         self,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
         statement_file: UploadFile = File(...),
     ) -> AccountStatementResponse:
         _logger.info("Uploading statement file")
         try:
-            RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(statement_file)
             RequestValidation.get_component().validate_mt940_file(statement_file)
             account_statement_id: str = (

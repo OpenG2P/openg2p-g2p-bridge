@@ -1,18 +1,17 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from openg2p_g2p_bridge_api.controllers import DisbursementEnvelopeController
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementEnvelopeException
+from openg2p_g2p_bridge_models.models import (
+    BenefitType,
+)
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopePayload,
     DisbursementEnvelopeRequest,
     DisbursementEnvelopeResponse,
-)
-from openg2p_g2p_bridge_models.models import (
-    BenefitType,
-    CashDistributionMode,
 )
 from openg2p_g2pconnect_common_lib.schemas import (
     RequestHeader,
@@ -121,8 +120,10 @@ async def test_create_disbursement_envelope_errors(
     )
 
     mock_service_instance = AsyncMock()
-    mock_service_instance.create_disbursement_envelopes.side_effect = (
-        lambda request: (_ for _ in ()).throw(DisbursementEnvelopeException(code=error_code, message=f"{error_code} error."))
+    mock_service_instance.create_disbursement_envelopes.side_effect = lambda request: (
+        _ for _ in ()
+    ).throw(
+        DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
     )
     mock_service_instance.construct_disbursement_envelope_error_response = AsyncMock()
 
@@ -468,42 +469,46 @@ async def test_amend_disbursement_envelope_errors(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("benefit_type, cash_mode", [
-    (BenefitType.CASH, CashDistributionMode.PHYSICAL),
-    (BenefitType.CASH, CashDistributionMode.DIGITAL),
-    (BenefitType.COMMODITY, None),
-    (BenefitType.SERVICE, None),
-    (BenefitType.COMBINATION, CashDistributionMode.PHYSICAL),
-    (BenefitType.COMBINATION, None),
-])
+@pytest.mark.parametrize(
+    "benefit_type",
+    [
+        BenefitType.CASH_DIGITAL,
+        BenefitType.CASH_PHYSICAL,
+    ],
+)
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
 async def test_create_envelope_various_benefit_types(
-    mock_request_validation, mock_service_get_component, benefit_type, cash_mode
+    mock_request_validation, mock_service_get_component, benefit_type
 ):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
+        None
+    )
 
     mock_service_instance = AsyncMock()
     mock_service_instance.create_disbursement_envelopes = AsyncMock(
-        return_value=[DisbursementEnvelopePayload(benefit_type=benefit_type, cash_distribution_mode=cash_mode)]
+        return_value=[DisbursementEnvelopePayload(benefit_type=benefit_type)]
     )
     mock_service_instance.construct_disbursement_envelope_success_response = AsyncMock()
     mock_service_get_component.return_value = mock_service_instance
 
     mock_service_instance.construct_disbursement_envelope_success_response.return_value = DisbursementEnvelopeResponse(
         header=SyncResponseHeader(
-            message_id="", message_ts=datetime.now().isoformat(), action="", status=StatusEnum.succ, status_reason_message=""
+            message_id="",
+            message_ts=datetime.now().isoformat(),
+            action="",
+            status=StatusEnum.succ,
+            status_reason_message="",
         ),
-        message=[DisbursementEnvelopePayload(benefit_type=benefit_type, cash_distribution_mode=cash_mode)],
+        message=[DisbursementEnvelopePayload(benefit_type=benefit_type)],
     )
 
     controller = DisbursementEnvelopeController()
     payload = DisbursementEnvelopePayload(
         benefit_program_mnemonic="TEST123",
         benefit_type=benefit_type,
-        cash_distribution_mode=cash_mode,
         disbursement_frequency="Monthly",
         cycle_code_mnemonic="CYCLE42",
         number_of_beneficiaries=100,
@@ -524,33 +529,80 @@ async def test_create_envelope_various_benefit_types(
         ),
         message=[payload],
     )
-    actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
+    actual_response = await controller.create_disbursement_envelopes(
+        request, is_signature_valid=True
+    )
     assert actual_response.message[0].benefit_type == benefit_type
-    assert actual_response.message[0].cash_distribution_mode == cash_mode
 
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_bulk_create_mixed_benefit_types(mock_request_validation, mock_service_get_component):
+async def test_bulk_create_mixed_benefit_types(
+    mock_request_validation, mock_service_get_component
+):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
+        None
+    )
 
     payloads = [
-        DisbursementEnvelopePayload(benefit_program_mnemonic="TEST123", benefit_type=BenefitType.CASH, cash_distribution_mode=CashDistributionMode.PHYSICAL, disbursement_frequency="Monthly", cycle_code_mnemonic="CYCLE42", number_of_beneficiaries=100, number_of_disbursements=100, total_disbursement_quantity=5000.00, disbursement_schedule_date=date.today()),
-        DisbursementEnvelopePayload(benefit_program_mnemonic="TEST124", benefit_type=BenefitType.COMMODITY, disbursement_frequency="Monthly", cycle_code_mnemonic="CYCLE43", number_of_beneficiaries=50, number_of_disbursements=50, total_disbursement_quantity=2500.00, disbursement_schedule_date=date.today()),
-        DisbursementEnvelopePayload(benefit_program_mnemonic="TEST125", benefit_type=BenefitType.SERVICE, disbursement_frequency="Monthly", cycle_code_mnemonic="CYCLE44", number_of_beneficiaries=75, number_of_disbursements=75, total_disbursement_quantity=3750.00, disbursement_schedule_date=date.today()),
-        DisbursementEnvelopePayload(benefit_program_mnemonic="TEST126", benefit_type=BenefitType.COMBINATION, cash_distribution_mode=CashDistributionMode.DIGITAL, disbursement_frequency="Monthly", cycle_code_mnemonic="CYCLE45", number_of_beneficiaries=120, number_of_disbursements=120, total_disbursement_quantity=6000.00, disbursement_schedule_date=date.today()),
+        DisbursementEnvelopePayload(
+            benefit_program_mnemonic="TEST123",
+            benefit_type=BenefitType.CASH_DIGITAL,
+            disbursement_frequency="Monthly",
+            cycle_code_mnemonic="CYCLE42",
+            number_of_beneficiaries=100,
+            number_of_disbursements=100,
+            total_disbursement_quantity=5000.00,
+            disbursement_schedule_date=date.today(),
+        ),
+        DisbursementEnvelopePayload(
+            benefit_program_mnemonic="TEST124",
+            benefit_type=BenefitType.CASH_PHYSICAL,
+            disbursement_frequency="Monthly",
+            cycle_code_mnemonic="CYCLE43",
+            number_of_beneficiaries=50,
+            number_of_disbursements=50,
+            total_disbursement_quantity=2500.00,
+            disbursement_schedule_date=date.today(),
+        ),
+        DisbursementEnvelopePayload(
+            benefit_program_mnemonic="TEST125",
+            benefit_type=BenefitType.COMMODITY,
+            disbursement_frequency="Monthly",
+            cycle_code_mnemonic="CYCLE44",
+            number_of_beneficiaries=75,
+            number_of_disbursements=75,
+            total_disbursement_quantity=3750.00,
+            disbursement_schedule_date=date.today(),
+        ),
+        DisbursementEnvelopePayload(
+            benefit_program_mnemonic="TEST126",
+            benefit_type=BenefitType.COMBINATION,
+            disbursement_frequency="Monthly",
+            cycle_code_mnemonic="CYCLE45",
+            number_of_beneficiaries=120,
+            number_of_disbursements=120,
+            total_disbursement_quantity=6000.00,
+            disbursement_schedule_date=date.today(),
+        ),
     ]
     mock_service_instance = AsyncMock()
-    mock_service_instance.create_disbursement_envelopes = AsyncMock(return_value=payloads)
+    mock_service_instance.create_disbursement_envelopes = AsyncMock(
+        return_value=payloads
+    )
     mock_service_instance.construct_disbursement_envelope_success_response = AsyncMock()
     mock_service_get_component.return_value = mock_service_instance
 
     mock_service_instance.construct_disbursement_envelope_success_response.return_value = DisbursementEnvelopeResponse(
         header=SyncResponseHeader(
-            message_id="", message_ts=datetime.now().isoformat(), action="", status=StatusEnum.succ, status_reason_message=""
+            message_id="",
+            message_ts=datetime.now().isoformat(),
+            action="",
+            status=StatusEnum.succ,
+            status_reason_message="",
         ),
         message=payloads,
     )
@@ -569,9 +621,11 @@ async def test_bulk_create_mixed_benefit_types(mock_request_validation, mock_ser
         ),
         message=payloads,
     )
-    actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
+    actual_response = await controller.create_disbursement_envelopes(
+        request, is_signature_valid=True
+    )
     assert len(actual_response.message) == 4
-    assert actual_response.message[0].benefit_type == BenefitType.CASH
-    assert actual_response.message[1].benefit_type == BenefitType.COMMODITY
-    assert actual_response.message[2].benefit_type == BenefitType.SERVICE
+    assert actual_response.message[0].benefit_type == BenefitType.CASH_DIGITAL
+    assert actual_response.message[1].benefit_type == BenefitType.CASH_PHYSICAL
+    assert actual_response.message[2].benefit_type == BenefitType.COMMODITY
     assert actual_response.message[3].benefit_type == BenefitType.COMBINATION

@@ -4,15 +4,16 @@ from datetime import datetime
 from openg2p_g2p_bridge_models.models import (
     CancellationStatus,
     DisbursementEnvelope,
-    EnvelopeBatchStatusForDigitalCash,
+    EnvelopeBatchStatusForCash,
     EnvelopeControl,
     FundsAvailableWithBankEnum,
 )
 from sqlalchemy import and_, literal, or_, select
 from sqlalchemy.orm import sessionmaker
 
-from ..app import celery_app, get_engine
+from ..app import celery_app
 from ..config import Settings
+from ..engine import get_engine
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
@@ -32,18 +33,17 @@ def check_funds_with_bank_beat_producer():
             else literal(True)
         )
 
-        envelopes = (
+        disbursement_envelopes = (
             session.execute(
                 select(DisbursementEnvelope)
                 .join(
-                    EnvelopeBatchStatusForDigitalCash,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id,
+                    EnvelopeBatchStatusForCash,
+                    DisbursementEnvelope.id
+                    == EnvelopeBatchStatusForCash.disbursement_envelope_id,
                 )
                 .join(
                     EnvelopeControl,
-                    DisbursementEnvelope.disbursement_envelope_id
-                    == EnvelopeControl.disbursement_envelope_id,
+                    DisbursementEnvelope.id == EnvelopeControl.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
@@ -55,14 +55,12 @@ def check_funds_with_bank_beat_producer():
                     == EnvelopeControl.total_disbursement_quantity_received,
                     or_(
                         and_(
-                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
+                            EnvelopeBatchStatusForCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.PENDING_CHECK.value
-                           
                         ),
                         and_(
-                            EnvelopeBatchStatusForDigitalCash.funds_available_with_bank
+                            EnvelopeBatchStatusForCash.funds_available_with_bank
                             == FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
-                           
                         ),
                     ),
                 )
@@ -72,26 +70,27 @@ def check_funds_with_bank_beat_producer():
             .all()
         )
 
-        for envelope in envelopes:
+        for disbursement_envelope in disbursement_envelopes:
             _logger.info(
-                f"Sending task to check funds with bank for envelope {envelope.disbursement_envelope_id}"
+                f"Sending task to check funds with bank for envelope {disbursement_envelope.id}"
             )
-            envelope_batch_status = (
-                session.query(EnvelopeBatchStatusForDigitalCash)
+            envelope_batch_status_for_cash = (
+                session.query(EnvelopeBatchStatusForCash)
                 .filter(
-                    EnvelopeBatchStatusForDigitalCash.disbursement_envelope_id
-                    == envelope.disbursement_envelope_id
+                    EnvelopeBatchStatusForCash.disbursement_envelope_id
+                    == disbursement_envelope.id
                 )
                 .first()
             )
 
-            envelope_batch_status.funds_available_with_bank = (
-                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS
-            )
-            celery_app.send_task(
-                "check_funds_with_bank_worker",
-                args=(envelope.disbursement_envelope_id,),
-                queue="g2p_bridge_celery_worker_tasks",
+            envelope_batch_status_for_cash.funds_available_with_bank = (
+                FundsAvailableWithBankEnum.CHECK_IN_PROGRESS.value
             )
             session.commit()
+            celery_app.send_task(
+                "check_funds_with_bank_worker",
+                args=(disbursement_envelope.id,),
+                queue="g2p_bridge_celery_worker_tasks",
+            )
+
         _logger.info("Checking funds with bank beat tasks push completed")

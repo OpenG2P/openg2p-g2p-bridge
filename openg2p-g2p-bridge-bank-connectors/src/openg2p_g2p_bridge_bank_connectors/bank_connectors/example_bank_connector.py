@@ -168,7 +168,6 @@ class ExampleBankConnector(BankConnectorInterface):
                         narrative_4=disbursement_payment_payload.beneficiary_id,
                         narrative_5="",
                         narrative_6="",
-                        active=True,
                     )
                     bank_payment_payloads.append(bank_payment_payload.model_dump())
 
@@ -194,11 +193,11 @@ class ExampleBankConnector(BankConnectorInterface):
             _logger.error(f"Error initiating payment: {e}")
             return PaymentResponse(status=PaymentStatus.ERROR, error_code=str(e))
 
-    def retrieve_disbursement_id(
+    def retrieve_reconciliation_id(
         self, bank_reference: str, customer_reference: str, narratives: str
     ) -> str:
         _logger.info(
-            f"Retrieving disbursement id for bank_reference: {bank_reference}, customer_reference: {customer_reference}"
+            f"Retrieving reconciliation id for bank_reference: {bank_reference}, customer_reference: {customer_reference}"
         )
         return customer_reference
 
