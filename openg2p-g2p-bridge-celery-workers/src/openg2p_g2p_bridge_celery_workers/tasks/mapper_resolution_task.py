@@ -141,7 +141,9 @@ async def make_resolve_request(disbursements):
     _logger.info(f"JWT token created: {jwt_token}")
     resolve_client = MapperResolveClient()
     try:
-        _logger.info(f"Sending resolve request to url: {_config.mapper_resolve_api_url}")
+        _logger.info(
+            f"Sending resolve request to url: {_config.mapper_resolve_api_url}"
+        )
         resolve_response = await resolve_client.resolve_request(
             resolve_request, headers, _config.mapper_resolve_api_url
         )

@@ -7,11 +7,11 @@ from openg2p_g2p_bridge_bank_connectors.config import (
 from openg2p_g2p_bridge_geo_resolver.config import (
     Settings as GeoResolverBaseSettings,
 )
-from openg2p_g2p_bridge_warehouse_allocator.config import (
-    Settings as WarehouseAllocatorBaseSettings,
-)
 from openg2p_g2p_bridge_notification_connectors.config import (
     Settings as NotificationConnectorsBaseSettings,
+)
+from openg2p_g2p_bridge_warehouse_allocator.config import (
+    Settings as WarehouseAllocatorBaseSettings,
 )
 from pydantic_settings import SettingsConfigDict
 
@@ -23,7 +23,7 @@ class Settings(
     BankConnectorsBaseSettings,
     GeoResolverBaseSettings,
     WarehouseAllocatorBaseSettings,
-    NotificationConnectorsBaseSettings
+    NotificationConnectorsBaseSettings,
 ):
     model_config = SettingsConfigDict(
         env_prefix="g2p_bridge_celery_workers_", env_file=".env", extra="allow"

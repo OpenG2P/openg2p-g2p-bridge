@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
-from fastapi import Depends
 
+from fastapi import Depends
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors.exceptions import (
     DisbursementStatusException,

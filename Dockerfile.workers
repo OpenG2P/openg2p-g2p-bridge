@@ -34,7 +34,7 @@ RUN python3 -m pip install \
     -e /app/openg2p-g2p-bridge-agency-allocator \
     -e /app/openg2p-g2p-bridge-geo-resolver \
     -e /app/openg2p-g2p-bridge-notification-connectors \
-    -e /app/openg2p-g2p-bridge-celery-workers 
+    -e /app/openg2p-g2p-bridge-celery-workers
 
 
 USER ${container_user}

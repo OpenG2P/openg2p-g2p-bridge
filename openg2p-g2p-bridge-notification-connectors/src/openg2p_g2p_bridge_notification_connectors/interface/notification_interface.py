@@ -1,5 +1,6 @@
-from openg2p_fastapi_common.service import BaseService
 from typing import Any
+
+from openg2p_fastapi_common.service import BaseService
 
 from ..models import NotificationType, Recipient
 

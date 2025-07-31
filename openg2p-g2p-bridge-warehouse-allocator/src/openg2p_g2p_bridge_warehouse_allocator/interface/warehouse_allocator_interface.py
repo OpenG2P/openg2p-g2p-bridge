@@ -1,5 +1,6 @@
-from openg2p_fastapi_common.service import BaseService
 from typing import Dict, List
+
+from openg2p_fastapi_common.service import BaseService
 
 
 class WarehouseAllocator(BaseService):
