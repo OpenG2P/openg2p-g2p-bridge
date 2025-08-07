@@ -5,7 +5,9 @@ from .config import Settings
 _config = Settings.get_config()
 
 
-def construct_db_datasource(db_driver, db_username, db_password, db_hostname, db_port, db_dbname) -> str:
+def construct_db_datasource(
+    db_driver, db_username, db_password, db_hostname, db_port, db_dbname
+) -> str:
     datasource = ""
     if db_driver:
         datasource += f"{db_driver}://"
@@ -18,6 +20,7 @@ def construct_db_datasource(db_driver, db_username, db_password, db_hostname, db
     if db_dbname:
         datasource += f"/{db_dbname}"
     return datasource
+
 
 def get_engine():
     db_datasource_registry = construct_db_datasource(

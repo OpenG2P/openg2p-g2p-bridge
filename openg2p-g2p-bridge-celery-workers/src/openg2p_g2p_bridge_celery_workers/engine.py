@@ -22,6 +22,7 @@ def construct_db_datasource(
 
     return datasource
 
+
 def get_engine():
     db_datasource_pbms = construct_db_datasource(
         _config.db_driver_pbms,

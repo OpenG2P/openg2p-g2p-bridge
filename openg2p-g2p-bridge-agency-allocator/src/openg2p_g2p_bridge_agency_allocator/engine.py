@@ -4,6 +4,7 @@ from .config import Settings
 
 _config = Settings.get_config()
 
+
 def construct_db_datasource(
     db_driver, db_username, db_password, db_hostname, db_port, db_dbname
 ) -> str:
@@ -21,9 +22,10 @@ def construct_db_datasource(
 
     return datasource
 
+
 def get_engine():
     db_datasource_pbms = construct_db_datasource(
-        _config.db_driver if hasattr(_config, 'db_driver') else None,
+        _config.db_driver if hasattr(_config, "db_driver") else None,
         _config.db_username_pbms,
         _config.db_password_pbms,
         _config.db_hostname_pbms,
