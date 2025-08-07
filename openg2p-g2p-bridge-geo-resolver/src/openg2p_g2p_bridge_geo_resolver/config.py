@@ -9,6 +9,10 @@ class Settings(BaseSettings):
 
     db_dbname: str = "openg2p_g2p_bridge_db"
 
-    db_engine_registry: str = (
-        "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
-    )
+    # Registry database connection settings
+    db_driver_registry: str = "postgresql"
+    db_username_registry: str = "postgres"
+    db_password_registry: str = "postgres"
+    db_hostname_registry: str = "localhost"
+    db_port_registry: int = 5432
+    db_dbname_registry: str = "registrydb"

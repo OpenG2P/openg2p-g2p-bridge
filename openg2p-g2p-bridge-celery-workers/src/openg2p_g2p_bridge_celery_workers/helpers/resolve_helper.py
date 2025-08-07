@@ -136,7 +136,7 @@ class ResolveHelper(BaseService):
         elif isinstance(payload, str):
             payload = payload.encode()
         cookies = {}
-        if _config.keymanager_auth_enabled:
+        if _config.oauth_enabled:
             cookies["Authorization"] = await self.get_keymanager_auth_token()
         current_time = self.get_current_isotimestamp()
         async with httpx.AsyncClient() as client:
@@ -170,10 +170,10 @@ class ResolveHelper(BaseService):
             and self._keymanager_auth_token_expiry > datetime.now(timezone.utc)
         ):
             return self._keymanager_auth_token
-        url = _config.keymanager_auth_url
+        url = _config.oauth_url
         payload = {
-            "client_id": _config.keymanager_auth_client_id,
-            "client_secret": _config.keymanager_auth_client_secret,
+            "client_id": _config.oauth_client_id,
+            "client_secret": _config.oauth_client_secret,
             "grant_type": "client_credentials",
         }
         async with httpx.AsyncClient() as client:

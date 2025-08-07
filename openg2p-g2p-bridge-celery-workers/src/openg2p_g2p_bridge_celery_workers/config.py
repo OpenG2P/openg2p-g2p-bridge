@@ -57,10 +57,10 @@ class Settings(
 
     keymanager_api_timeout: int = 10
     keymanager_api_base_url: str = ""
-    keymanager_auth_enabled: bool = True
-    keymanager_auth_url: str = ""
-    keymanager_auth_client_id: str = "openg2p-g2p-bridge"
-    keymanager_auth_client_secret: str = ""
+    oauth_enabled: bool = True
+    oauth_url: str = ""
+    oauth_client_id: str = "openg2p-g2p-bridge"
+    oauth_client_secret: str = ""
 
     agency_allocation_max_attempts: int = 3
     warehouse_allocation_max_attempts: int = 3
@@ -74,8 +74,10 @@ class Settings(
     warehouse_notification_max_attempts: int = 3
     beneficiary_notification_max_attempts: int = 3
 
-    # Other DB connection settings
-    db_datasource_farmer_registry: str = (
-        "postgresql://postgres:postgres@localhost:5432/socialregistrydb"
-    )
-    db_datasource_pbms_db: str = "postgresql://postgres:postgres@localhost:5432/pbmsdb"
+    # PBMS database connection settings
+    db_driver_pbms: str = "postgresql"
+    db_username_pbms: str = "postgres"
+    db_password_pbms: str = "postgres"
+    db_hostname_pbms: str = "localhost"
+    db_port_pbms: int = 5432
+    db_dbname_pbms: str = "pbmsdb"
