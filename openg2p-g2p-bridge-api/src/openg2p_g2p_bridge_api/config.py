@@ -28,3 +28,4 @@ class Settings(BaseSettings):
     ]
 
     jwt_validate_keymanager_app_id: str = "G2PBRIDGE"
+    keymanager_auth_enabled: bool = False
