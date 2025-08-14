@@ -39,13 +39,11 @@ def block_funds_with_bank_beat_producer():
                 select(DisbursementEnvelope)
                 .join(
                     EnvelopeBatchStatusForCash,
-                    DisbursementEnvelope.id
-                    == EnvelopeBatchStatusForCash.disbursement_envelope_id,
+                    DisbursementEnvelope.id == EnvelopeBatchStatusForCash.disbursement_envelope_id,
                 )
                 .filter(
                     date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.NOT_CANCELLED.value,
+                    DisbursementEnvelope.cancellation_status == CancellationStatus.NOT_CANCELLED.value,
                     EnvelopeBatchStatusForCash.funds_available_with_bank
                     == FundsAvailableWithBankEnum.FUNDS_AVAILABLE.value,
                     or_(
@@ -69,9 +67,7 @@ def block_funds_with_bank_beat_producer():
             _logger.info(f"Blocking funds with bank for envelope: {envelope.id}")
             envelope_batch_status_for_cash = (
                 session.query(EnvelopeBatchStatusForCash)
-                .filter(
-                    EnvelopeBatchStatusForCash.disbursement_envelope_id == envelope.id
-                )
+                .filter(EnvelopeBatchStatusForCash.disbursement_envelope_id == envelope.id)
                 .first()
             )
 

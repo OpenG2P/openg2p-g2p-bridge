@@ -62,9 +62,7 @@ class DisbursementBatchControlPayload(BaseModel):
     agency_allocation_timestamp: Optional[datetime.datetime] = None
     agency_allocation_latest_error_code: Optional[str] = None
     agency_allocation_attempts: Optional[int] = None
-    disbursement_batch_control_geos: Optional[
-        List[DisbursementBatchControlGeoPayload]
-    ] = None
+    disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
 
 class DisbursementBatchControlRequest(Request):

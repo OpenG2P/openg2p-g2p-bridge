@@ -16,18 +16,10 @@ class AccountStatement(BaseORMModelWithId):
     reference_number: Mapped[str] = mapped_column(String, nullable=True)
     statement_number: Mapped[str] = mapped_column(String, nullable=True)
     sequence_number: Mapped[str] = mapped_column(String, nullable=True)
-    statement_upload_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now
-    )
-    statement_process_status: Mapped[str] = mapped_column(
-        String, default=ProcessStatus.PENDING.value
-    )
-    statement_process_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, default=None
-    )
-    statement_process_error_code: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    statement_upload_timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    statement_process_status: Mapped[str] = mapped_column(String, default=ProcessStatus.PENDING.value)
+    statement_process_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=None)
+    statement_process_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     statement_process_attempts: Mapped[int] = mapped_column(Integer, default=0)
 
 
@@ -41,15 +33,11 @@ class DisbursementRecon(BaseORMModelWithId):
     __tablename__ = "disbursement_recons"
     disbursement_batch_control_id: Mapped[str] = mapped_column(String, index=True)
     disbursement_id: Mapped[str] = mapped_column(String, index=True, unique=True)
-    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
-        String, nullable=True, index=True
-    )
+    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(String, nullable=True, index=True)
     disbursement_envelope_id: Mapped[str] = mapped_column(String, nullable=True)
     beneficiary_name_from_bank: Mapped[str] = mapped_column(String, nullable=True)
 
-    remittance_reference_number: Mapped[str] = mapped_column(
-        String, nullable=True, unique=True
-    )
+    remittance_reference_number: Mapped[str] = mapped_column(String, nullable=True, unique=True)
     remittance_statement_id: Mapped[str] = mapped_column(String, nullable=True)
     remittance_statement_number: Mapped[str] = mapped_column(String, nullable=True)
     remittance_statement_sequence: Mapped[str] = mapped_column(String, nullable=True)
@@ -78,7 +66,5 @@ class DisbursementErrorRecon(BaseORMModelWithId):
     value_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     error_reason: Mapped[G2PBridgeErrorCodes] = mapped_column(String, nullable=True)
     reconciliation_id: Mapped[str] = mapped_column(String, index=True)
-    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(
-        String, nullable=True, index=True
-    )
+    disbursement_batch_control_geo_id: Mapped[str] = mapped_column(String, nullable=True, index=True)
     bank_reference_number: Mapped[str] = mapped_column(String, nullable=True)

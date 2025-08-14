@@ -23,8 +23,7 @@ def warehouse_allocation_beat_producer():
         result = session.execute(
             select(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.warehouse_allocation_status
-                == ProcessStatus.PENDING.value,
+                DisbursementBatchControl.warehouse_allocation_status == ProcessStatus.PENDING.value,
             )
             .limit(_config.no_of_tasks_to_process)
         )
@@ -34,9 +33,7 @@ def warehouse_allocation_beat_producer():
             _logger.info(
                 f"Sending warehouse_allocation_worker task for batch_control_id: {disbursement_batch_control.id}"
             )
-            disbursement_batch_control.warehouse_allocation_status = (
-                ProcessStatus.PROCESSING.value
-            )
+            disbursement_batch_control.warehouse_allocation_status = ProcessStatus.PROCESSING.value
             session.commit()
             celery_app.send_task(
                 "warehouse_allocation_worker",

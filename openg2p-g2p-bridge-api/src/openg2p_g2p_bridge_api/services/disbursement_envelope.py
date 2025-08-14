@@ -43,9 +43,9 @@ class DisbursementEnvelopeService(BaseService):
         disbursement_envelopes: list[DisbursementEnvelope] = []
         envelope_controls: list[EnvelopeControl] = []
         envelope_batch_status_for_cash_list: list[EnvelopeBatchStatusForCash] = []
-        disbursement_envelope_payloads: list[
-            DisbursementEnvelopePayload
-        ] = disbursement_envelope_request.message
+        disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = (
+            disbursement_envelope_request.message
+        )
 
         async with session_maker() as session:
             for disbursement_envelope_payload in disbursement_envelope_payloads:
@@ -59,24 +59,17 @@ class DisbursementEnvelopeService(BaseService):
                 disbursement_envelope_payload.id = disbursement_envelope.id
                 disbursement_envelopes.append(disbursement_envelope)
 
-                envelope_control = await self.construct_envelope_control(
-                    disbursement_envelope
-                )
+                envelope_control = await self.construct_envelope_control(disbursement_envelope)
                 envelope_controls.append(envelope_control)
 
                 if (
                     disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value
-                    or disbursement_envelope.benefit_type
-                    == BenefitType.CASH_PHYSICAL.value
+                    or disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value
                 ):
                     envelope_batch_status_for_cash: EnvelopeBatchStatusForCash = (
-                        await self.construct_envelope_batch_status_for_cash(
-                            disbursement_envelope
-                        )
+                        await self.construct_envelope_batch_status_for_cash(disbursement_envelope)
                     )
-                    envelope_batch_status_for_cash_list.append(
-                        envelope_batch_status_for_cash
-                    )
+                    envelope_batch_status_for_cash_list.append(envelope_batch_status_for_cash)
 
             session.add_all(disbursement_envelopes)
             session.add_all(envelope_controls)
@@ -91,41 +84,26 @@ class DisbursementEnvelopeService(BaseService):
         _logger.info("Cancelling disbursement envelope")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
-            disbursement_envelope_payload: DisbursementEnvelopePayload = (
-                disbursement_envelope_request.message
-            )
+            disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.message
             disbursement_envelope_id: str = disbursement_envelope_payload.id
 
             disbursement_envelope: DisbursementEnvelope = (
                 await session.execute(
-                    select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.id == disbursement_envelope_id
-                    )
+                    select(DisbursementEnvelope).where(DisbursementEnvelope.id == disbursement_envelope_id)
                 )
             ).scalar()
 
             if disbursement_envelope is None:
-                _logger.error(
-                    f"Disbursement envelope with ID {disbursement_envelope_id} not found"
-                )
-                raise DisbursementEnvelopeException(
-                    G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_NOT_FOUND
-                )
+                _logger.error(f"Disbursement envelope with ID {disbursement_envelope_id} not found")
+                raise DisbursementEnvelopeException(G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_NOT_FOUND)
 
-            if (
-                disbursement_envelope.cancellation_status
-                == CancellationStatus.CANCELLED.value
-            ):
-                _logger.error(
-                    f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled"
-                )
+            if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED.value:
+                _logger.error(f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled")
                 raise DisbursementEnvelopeException(
                     G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_ALREADY_CANCELED
                 )
 
-            disbursement_envelope.cancellation_status = (
-                CancellationStatus.CANCELLED.value
-            )
+            disbursement_envelope.cancellation_status = CancellationStatus.CANCELLED.value
             disbursement_envelope.cancellation_timestamp = datetime.now()
 
             await session.commit()
@@ -138,16 +116,14 @@ class DisbursementEnvelopeService(BaseService):
         disbursement_envelope_payloads: list[DisbursementEnvelopePayload],
     ) -> DisbursementEnvelopeResponse:
         _logger.info("Constructing disbursement envelope success response")
-        disbursement_envelope_response: DisbursementEnvelopeResponse = (
-            DisbursementEnvelopeResponse(
-                header=SyncResponseHeader(
-                    message_id=disbursement_envelope_request.header.message_id,
-                    message_ts=datetime.now().isoformat(),
-                    action=disbursement_envelope_request.header.action,
-                    status=StatusEnum.succ,
-                ),
-                message=disbursement_envelope_payloads,
-            )
+        disbursement_envelope_response: DisbursementEnvelopeResponse = DisbursementEnvelopeResponse(
+            header=SyncResponseHeader(
+                message_id=disbursement_envelope_request.header.message_id,
+                message_ts=datetime.now().isoformat(),
+                action=disbursement_envelope_request.header.action,
+                status=StatusEnum.succ,
+            ),
+            message=disbursement_envelope_payloads,
         )
         _logger.info("Disbursement envelope success response constructed")
         return disbursement_envelope_response
@@ -158,17 +134,15 @@ class DisbursementEnvelopeService(BaseService):
         error_code: G2PBridgeErrorCodes,
     ) -> DisbursementEnvelopeResponse:
         _logger.error("Constructing disbursement envelope error response")
-        disbursement_envelope_response: DisbursementEnvelopeResponse = (
-            DisbursementEnvelopeResponse(
-                header=SyncResponseHeader(
-                    message_id=disbursement_envelope_request.header.message_id,
-                    message_ts=datetime.now().isoformat(),
-                    action=disbursement_envelope_request.header.action,
-                    status=StatusEnum.rjct,
-                    status_reason_message=error_code.value,
-                ),
-                message=[],
-            )
+        disbursement_envelope_response: DisbursementEnvelopeResponse = DisbursementEnvelopeResponse(
+            header=SyncResponseHeader(
+                message_id=disbursement_envelope_request.header.message_id,
+                message_ts=datetime.now().isoformat(),
+                action=disbursement_envelope_request.header.action,
+                status=StatusEnum.rjct,
+                status_reason_message=error_code.value,
+            ),
+            message=[],
         )
         _logger.error("Disbursement envelope error response constructed")
         return disbursement_envelope_response
@@ -184,70 +158,51 @@ class DisbursementEnvelopeService(BaseService):
         ):
             _logger.error("Invalid benefit program id")
             raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_PROGRAM_ID)
-        if (
-            disbursement_envelope_payload.disbursement_frequency
-            not in DisbursementFrequency
-        ):
+        if disbursement_envelope_payload.disbursement_frequency not in DisbursementFrequency:
             _logger.error("Invalid disbursement frequency")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_FREQUENCY
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_FREQUENCY)
         if (
             disbursement_envelope_payload.cycle_code_mnemonic is None
             or disbursement_envelope_payload.cycle_code_mnemonic == ""
         ):
             _logger.error("Invalid cycle code mnemonic")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_CYCLE_CODE_MNEMONIC
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_CYCLE_CODE_MNEMONIC)
         if (
             disbursement_envelope_payload.number_of_beneficiaries is None
             or disbursement_envelope_payload.number_of_beneficiaries < 1
         ):
             _logger.error("Invalid number of beneficiaries")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_NO_OF_BENEFICIARIES
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_NO_OF_BENEFICIARIES)
         if (
             disbursement_envelope_payload.number_of_disbursements is None
             or disbursement_envelope_payload.number_of_disbursements < 1
         ):
             _logger.error("Invalid number of disbursements")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_NO_OF_DISBURSEMENTS
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_NO_OF_DISBURSEMENTS)
         if (
             disbursement_envelope_payload.total_disbursement_quantity is None
             or disbursement_envelope_payload.total_disbursement_quantity < 0
         ):
             _logger.error("Invalid total disbursement quantity")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY)
         if (
             disbursement_envelope_payload.benefit_code_id is None
             or disbursement_envelope_payload.benefit_code_id == ""
         ):
             _logger.error("Invalid benefit code ID")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID)
         if (
             disbursement_envelope_payload.target_registry is None
             or disbursement_envelope_payload.target_registry == ""
         ):
             _logger.error("Invalid target registry")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_TARGET_REGISTRY
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_TARGET_REGISTRY)
         if (
             disbursement_envelope_payload.benefit_code_id is None
             or disbursement_envelope_payload.benefit_code_id == ""
         ):
             _logger.error("Invalid benefit code id")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_BENEFIT_CODE_ID)
         _logger.info("Disbursement envelope payload validated!")
         return True
 
@@ -308,17 +263,10 @@ class DisbursementEnvelopeService(BaseService):
         self, disbursement_envelope_request: DisbursementEnvelopeRequest
     ) -> bool:
         _logger.info("Validating disbursement envelope amend request")
-        disbursement_envelope_payload: DisbursementEnvelopePayload = (
-            disbursement_envelope_request.message
-        )
-        if (
-            disbursement_envelope_payload.id is None
-            or disbursement_envelope_payload.id == ""
-        ):
+        disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.message
+        if disbursement_envelope_payload.id is None or disbursement_envelope_payload.id == "":
             _logger.error("Invalid disbursement envelope ID")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ENVELOPE_ID
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ENVELOPE_ID)
         if (
             disbursement_envelope_payload.benefir_program_id is None
             or disbursement_envelope_payload.benefit_program_id == ""
@@ -330,33 +278,25 @@ class DisbursementEnvelopeService(BaseService):
             or disbursement_envelope_payload.benefit_program_mnemonic == ""
         ):
             _logger.error("Invalid benefit program mnemonic")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_PROGRAM_MNEMONIC)
         if (
             disbursement_envelope_payload.number_of_beneficiaries is None
             or disbursement_envelope_payload.number_of_beneficiaries < 1
         ):
             _logger.error("Invalid number of beneficiaries")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_NO_OF_BENEFICIARIES
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_NO_OF_BENEFICIARIES)
         if (
             disbursement_envelope_payload.number_of_disbursements is None
             or disbursement_envelope_payload.number_of_disbursements < 1
         ):
             _logger.error("Invalid number of disbursements")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_NO_OF_DISBURSEMENTS
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_NO_OF_DISBURSEMENTS)
         if (
             disbursement_envelope_payload.total_disbursement_quantity is None
             or disbursement_envelope_payload.total_disbursement_quantity < 0
         ):
             _logger.error("Invalid total disbursement quantity")
-            raise DisbursementEnvelopeException(
-                G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
-            )
+            raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY)
         return True
 
     async def update_disbursement_envelope(
@@ -371,12 +311,8 @@ class DisbursementEnvelopeService(BaseService):
             )
         ).scalar()
 
-        disbursement_envelope.number_of_beneficiaries = (
-            disbursement_envelope_payload.number_of_beneficiaries
-        )
-        disbursement_envelope.number_of_disbursements = (
-            disbursement_envelope_payload.number_of_disbursements
-        )
+        disbursement_envelope.number_of_beneficiaries = disbursement_envelope_payload.number_of_beneficiaries
+        disbursement_envelope.number_of_disbursements = disbursement_envelope_payload.number_of_disbursements
         disbursement_envelope.total_disbursement_quantity = (
             disbursement_envelope_payload.total_disbursement_quantity
         )
@@ -395,15 +331,11 @@ class DisbursementEnvelopeService(BaseService):
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             try:
-                await self.validate_envelope_amend_request(
-                    disbursement_envelope_request
-                )
+                await self.validate_envelope_amend_request(disbursement_envelope_request)
             except DisbursementEnvelopeException as e:
                 raise e
 
-            disbursement_envelope_payload: DisbursementEnvelopePayload = (
-                disbursement_envelope_request.message
-            )
+            disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.message
             disbursement_envelope_id: str = disbursement_envelope_payload.id
 
             result = await session.execute(
@@ -414,33 +346,20 @@ class DisbursementEnvelopeService(BaseService):
             disbursement_envelope: DisbursementEnvelope = result.scalar_one_or_none()
 
             if disbursement_envelope is None:
-                _logger.error(
-                    f"Disbursement envelope with ID {disbursement_envelope_id} not found"
-                )
-                raise DisbursementEnvelopeException(
-                    G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_NOT_FOUND
-                )
+                _logger.error(f"Disbursement envelope with ID {disbursement_envelope_id} not found")
+                raise DisbursementEnvelopeException(G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_NOT_FOUND)
 
-            if (
-                disbursement_envelope.cancellation_status
-                == CancellationStatus.CANCELLED.value
-            ):
-                _logger.error(
-                    f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled"
-                )
+            if disbursement_envelope.cancellation_status == CancellationStatus.CANCELLED.value:
+                _logger.error(f"Disbursement envelope with ID {disbursement_envelope_id} already cancelled")
                 raise DisbursementEnvelopeException(
                     G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_ALREADY_CANCELED
                 )
 
-            if disbursement_envelope.disbursement_schedule_date <= datetime.date(
-                datetime.now()
-            ):
+            if disbursement_envelope.disbursement_schedule_date <= datetime.date(datetime.now()):
                 _logger.error(
                     f"Disbursement envelope with ID {disbursement_envelope_id} date is already passed"
                 )
-                raise DisbursementEnvelopeException(
-                    G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_DATE_PASSED
-                )
+                raise DisbursementEnvelopeException(G2PBridgeErrorCodes.DISBURSEMENT_ENVELOPE_DATE_PASSED)
 
             disbursement_envelope_payload.id = disbursement_envelope_id
             disbursement_envelope_payload.id = disbursement_envelope.id

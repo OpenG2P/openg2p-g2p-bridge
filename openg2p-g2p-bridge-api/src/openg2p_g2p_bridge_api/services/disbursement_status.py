@@ -46,10 +46,8 @@ class DisbursementStatusService(BaseService):
             try:
                 disbursement_status_payloads = []
                 for disbursement_id in disbursement_status_request.message:
-                    disbursement_recon_records = (
-                        await self.get_disbursement_recon_records(
-                            session, disbursement_id
-                        )
+                    disbursement_recon_records = await self.get_disbursement_recon_records(
+                        session, disbursement_id
                     )
                     disbursement_status_payload = DisbursementStatusPayload(
                         disbursement_id=disbursement_id,
@@ -61,18 +59,14 @@ class DisbursementStatusService(BaseService):
                 _logger.error("Error in getting disbursement status")
                 raise e
 
-    async def get_disbursement_recon_records(
-        self, session, disbursement_id: str
-    ) -> DisbursementReconRecords:
+    async def get_disbursement_recon_records(self, session, disbursement_id: str) -> DisbursementReconRecords:
         disbursement_recon_payloads = []
         disbursement_error_recon_payloads = []
 
         disbursement_recon_payloads_from_db = (
             (
                 await session.execute(
-                    select(DisbursementRecon).where(
-                        DisbursementRecon.disbursement_id == disbursement_id
-                    )
+                    select(DisbursementRecon).where(DisbursementRecon.disbursement_id == disbursement_id)
                 )
             )
             .scalars()
@@ -116,9 +110,7 @@ class DisbursementStatusService(BaseService):
             .all()
         )
 
-        for (
-            disbursement_error_recon_payload
-        ) in disbursement_error_recon_payloads_from_db:
+        for disbursement_error_recon_payload in disbursement_error_recon_payloads_from_db:
             disbursement_error_recon_payloads.append(
                 DisbursementErrorReconPayload(
                     statement_id=disbursement_error_recon_payload.statement_id,
@@ -150,8 +142,7 @@ class DisbursementStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id
-                            == disbursement_batch_control_request.message
+                            DisbursementBatchControl.id == disbursement_batch_control_request.message
                         )
                     )
                 )
@@ -176,8 +167,7 @@ class DisbursementStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.id
-                            == disbursement_batch_control.disbursement_envelope_id
+                            DisbursementEnvelope.id == disbursement_batch_control.disbursement_envelope_id
                         )
                     )
                 )
@@ -207,9 +197,7 @@ class DisbursementStatusService(BaseService):
                     warehouse_notification_status=str(
                         disbursement_batch_control_geo.warehouse_notification_status
                     ),
-                    agency_notification_status=str(
-                        disbursement_batch_control_geo.agency_notification_status
-                    ),
+                    agency_notification_status=str(disbursement_batch_control_geo.agency_notification_status),
                 )
                 for disbursement_batch_control_geo in disbursement_batch_control_geos
             ]
@@ -222,33 +210,23 @@ class DisbursementStatusService(BaseService):
                 disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
                 disbursement_cycle_code_mnemonic=disbursement_envelope.cycle_code_mnemonic,
                 disbursement_envelope_id=disbursement_batch_control.disbursement_envelope_id,
-                fa_resolution_status=str(
-                    disbursement_batch_control.fa_resolution_status
-                ),
+                fa_resolution_status=str(disbursement_batch_control.fa_resolution_status),
                 fa_resolution_timestamp=disbursement_batch_control.fa_resolution_timestamp,
                 fa_resolution_latest_error_code=disbursement_batch_control.fa_resolution_latest_error_code,
                 fa_resolution_attempts=disbursement_batch_control.fa_resolution_attempts,
-                sponsor_bank_dispatch_status=str(
-                    disbursement_batch_control.sponsor_bank_dispatch_status
-                ),
+                sponsor_bank_dispatch_status=str(disbursement_batch_control.sponsor_bank_dispatch_status),
                 sponsor_bank_dispatch_timestamp=disbursement_batch_control.sponsor_bank_dispatch_timestamp,
                 sponsor_bank_dispatch_latest_error_code=disbursement_batch_control.sponsor_bank_dispatch_latest_error_code,
                 sponsor_bank_dispatch_attempts=disbursement_batch_control.sponsor_bank_dispatch_attempts,
-                geo_resolution_status=str(
-                    disbursement_batch_control.geo_resolution_status
-                ),
+                geo_resolution_status=str(disbursement_batch_control.geo_resolution_status),
                 geo_resolution_timestamp=disbursement_batch_control.geo_resolution_timestamp,
                 geo_resolution_latest_error_code=disbursement_batch_control.geo_resolution_latest_error_code,
                 geo_resolution_attempts=disbursement_batch_control.geo_resolution_attempts,
-                warehouse_allocation_status=str(
-                    disbursement_batch_control.warehouse_allocation_status
-                ),
+                warehouse_allocation_status=str(disbursement_batch_control.warehouse_allocation_status),
                 warehouse_allocation_timestamp=disbursement_batch_control.warehouse_allocation_timestamp,
                 warehouse_allocation_latest_error_code=disbursement_batch_control.warehouse_allocation_latest_error_code,
                 warehouse_allocation_attempts=disbursement_batch_control.warehouse_allocation_attempts,
-                agency_allocation_status=str(
-                    disbursement_batch_control.agency_allocation_status
-                ),
+                agency_allocation_status=str(disbursement_batch_control.agency_allocation_status),
                 agency_allocation_timestamp=disbursement_batch_control.agency_allocation_timestamp,
                 agency_allocation_latest_error_code=disbursement_batch_control.agency_allocation_latest_error_code,
                 agency_allocation_attempts=disbursement_batch_control.agency_allocation_attempts,

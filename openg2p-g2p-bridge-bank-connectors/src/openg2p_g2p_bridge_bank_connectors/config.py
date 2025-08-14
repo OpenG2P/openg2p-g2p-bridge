@@ -12,9 +12,7 @@ class Settings(BaseSettings):
     funds_available_check_url_example_bank: str = (
         "https://example-bank.dev.openg2p.org/api/example-bank/check_funds"
     )
-    funds_block_url_example_bank: str = (
-        "https://example-bank.dev.openg2p.org/api/example-bank/block_funds"
-    )
+    funds_block_url_example_bank: str = "https://example-bank.dev.openg2p.org/api/example-bank/block_funds"
     funds_disbursement_url_example_bank: str = (
         "https://example-bank.dev.openg2p.org/api/example-bank/initiate_payment"
     )

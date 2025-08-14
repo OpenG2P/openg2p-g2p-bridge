@@ -23,8 +23,7 @@ def agency_allocation_beat_producer():
         result = session.execute(
             select(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.agency_allocation_status
-                == ProcessStatus.PENDING.value,
+                DisbursementBatchControl.agency_allocation_status == ProcessStatus.PENDING.value,
             )
             .limit(_config.no_of_tasks_to_process)
         )
@@ -33,9 +32,7 @@ def agency_allocation_beat_producer():
             _logger.info(
                 f"Sending agency_allocation_worker task for batch_control_id: {disbursement_batch_control.id}"
             )
-            disbursement_batch_control.agency_allocation_status = (
-                ProcessStatus.PROCESSING.value
-            )
+            disbursement_batch_control.agency_allocation_status = ProcessStatus.PROCESSING.value
             session.commit()
             celery_app.send_task(
                 "agency_allocation_worker",

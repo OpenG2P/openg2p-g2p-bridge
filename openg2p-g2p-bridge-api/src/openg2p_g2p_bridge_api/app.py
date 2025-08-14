@@ -7,13 +7,12 @@ from .config import Settings
 _config = Settings.get_config()
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
-from openg2p_g2pconnect_common_lib.jwt_validation_helper import JWTValidationHelper
 from openg2p_fastapi_common.utils.crypto import KeymanagerCryptoHelper
-
 from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     DisbursementEnvelope,
 )
+from openg2p_g2pconnect_common_lib.jwt_validation_helper import JWTValidationHelper
 
 from .controllers import (
     AccountStatementController,

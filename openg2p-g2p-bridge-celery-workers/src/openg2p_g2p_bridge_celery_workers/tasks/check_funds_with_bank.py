@@ -27,9 +27,7 @@ _engine = get_engine()
 @celery_app.task(name="check_funds_with_bank_worker")
 def check_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Checking funds with bank for envelope: {disbursement_envelope_id}")
-    session_maker = sessionmaker(
-        bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-    )
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         disbursement_envelope = (
@@ -39,17 +37,12 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not disbursement_envelope:
-            _logger.error(
-                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
-            )
+            _logger.error(f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}")
             return
 
         envelope_batch_status_for_cash = (
             session.query(EnvelopeBatchStatusForCash)
-            .filter(
-                EnvelopeBatchStatusForCash.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(EnvelopeBatchStatusForCash.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
@@ -90,19 +83,13 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                     FundsAvailableWithBankEnum.FUNDS_NOT_AVAILABLE.value
                 )
 
-            envelope_batch_status_for_cash.funds_available_latest_timestamp = (
-                datetime.now()
-            )
+            envelope_batch_status_for_cash.funds_available_latest_timestamp = datetime.now()
             envelope_batch_status_for_cash.funds_available_latest_error_code = None
             envelope_batch_status_for_cash.funds_available_attempts += 1
 
         except Exception as e:
-            _logger.error(
-                f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}"
-            )
-            envelope_batch_status_for_cash.funds_available_latest_timestamp = (
-                datetime.now()
-            )
+            _logger.error(f"Error checking funds with bank for envelope {disbursement_envelope_id}: {e}")
+            envelope_batch_status_for_cash.funds_available_latest_timestamp = datetime.now()
             envelope_batch_status_for_cash.funds_available_latest_error_code = str(e)
             envelope_batch_status_for_cash.funds_available_attempts += 1
             if (
@@ -116,7 +103,5 @@ def check_funds_with_bank_worker(disbursement_envelope_id: str):
                 envelope_batch_status_for_cash.funds_available_with_bank = (
                     FundsAvailableWithBankEnum.PENDING_CHECK.value
                 )
-        _logger.info(
-            f"Checked funds with bank for envelope: {disbursement_envelope_id}"
-        )
+        _logger.info(f"Checked funds with bank for envelope: {disbursement_envelope_id}")
         session.commit()

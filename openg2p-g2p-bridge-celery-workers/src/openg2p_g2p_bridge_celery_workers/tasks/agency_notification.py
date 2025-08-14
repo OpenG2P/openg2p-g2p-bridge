@@ -38,9 +38,7 @@ _logger = logging.getLogger("agency_notification_worker")
 
 @celery_app.task(name="agency_notification_worker")
 def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
-    session_maker = sessionmaker(
-        bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-    )
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         disbursement_batch_control_geo: Optional[DisbursementBatchControlGeo] = None
         try:
@@ -49,8 +47,7 @@ def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementBatchControlGeo).where(
-                            DisbursementBatchControlGeo.id
-                            == disbursement_batch_control_geo_id
+                            DisbursementBatchControlGeo.id == disbursement_batch_control_geo_id
                         )
                     )
                 )
@@ -63,8 +60,7 @@ def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
                 (
                     session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.id
-                            == disbursement_batch_control_geo.disbursement_envelope_id
+                            DisbursementEnvelope.id == disbursement_batch_control_geo.disbursement_envelope_id
                         )
                     )
                 )
@@ -97,48 +93,37 @@ def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
                 for disbursement_resolution_geo_address in disbursement_resolution_geo_addresses
             ]
             disbursements = (
-                session.execute(
-                    select(Disbursement).where(
-                        Disbursement.beneficiary_id.in_(beneficiary_ids)
-                    )
-                )
+                session.execute(select(Disbursement).where(Disbursement.beneficiary_id.in_(beneficiary_ids)))
                 .scalars()
                 .all()
             )
             disbursement_map = {(d.beneficiary_id, d.id): d for d in disbursements}
 
             beneficiary_entitlements = []
-            for (
-                disbursement_resolution_geo_address
-            ) in disbursement_resolution_geo_addresses:
+            for disbursement_resolution_geo_address in disbursement_resolution_geo_addresses:
                 # Try to find the matching Disbursement by beneficiary_id and disbursement_id if available
                 disbursement = disbursement_map.get(
                     (
                         disbursement_resolution_geo_address.beneficiary_id,
-                        getattr(
-                            disbursement_resolution_geo_address, "disbursement_id", None
-                        ),
+                        getattr(disbursement_resolution_geo_address, "disbursement_id", None),
                     )
                 )
                 beneficiary_entitlements.append(
                     BeneficiaryEntitlement(
                         beneficiary_id=disbursement_resolution_geo_address.beneficiary_id,
-                        beneficiary_name=getattr(disbursement, "beneficiary_name", None)
-                        if disbursement
-                        else None,
-                        total_quantity=getattr(
-                            disbursement, "disbursement_quantity", None
-                        )
-                        if disbursement
-                        else None,
+                        beneficiary_name=(
+                            getattr(disbursement, "beneficiary_name", None) if disbursement else None
+                        ),
+                        total_quantity=(
+                            getattr(disbursement, "disbursement_quantity", None) if disbursement else None
+                        ),
                     )
                 )
 
             disbursement_batch_control_geo_attributes = (
                 session.execute(
                     select(DisbursementBatchControlGeoAttributes).where(
-                        DisbursementBatchControlGeoAttributes.id
-                        == disbursement_batch_control_geo.id
+                        DisbursementBatchControlGeoAttributes.id == disbursement_batch_control_geo.id
                     )
                 )
                 .scalars()
@@ -188,15 +173,11 @@ def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
             )
 
             if notification_response.status == NotificationResponseStatus.FAILURE:
-                raise Exception(
-                    notification_response.error_message or "Notification failed"
-                )
+                raise Exception(notification_response.error_message or "Notification failed")
 
             notification_log.response = notification_response.response
             notification_log.processed_at = datetime.datetime.now()
-            disbursement_batch_control_geo.agency_notification_status = (
-                ProcessStatus.PROCESSED.value
-            )
+            disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PROCESSED.value
             session.add(notification_log)
             session.commit()
 
@@ -205,20 +186,14 @@ def agency_notification_worker(disbursement_batch_control_geo_id: str) -> None:
             _logger.error(f"Agency notification failed: {e}")
 
             disbursement_batch_control_geo.agency_notification_attempts += 1
-            disbursement_batch_control_geo.agency_notification_latest_error_code = str(
-                e
-            )
+            disbursement_batch_control_geo.agency_notification_latest_error_code = str(e)
             if (
                 disbursement_batch_control_geo.agency_notification_attempts
                 > _config.agency_notification_max_attempts
             ):
-                disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.ERROR.value
-                )
+                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.ERROR.value
             else:
-                disbursement_batch_control_geo.agency_notification_status = (
-                    ProcessStatus.PENDING.value
-                )
+                disbursement_batch_control_geo.agency_notification_status = ProcessStatus.PENDING.value
             session.commit()
 
 
@@ -229,49 +204,25 @@ def construct_agency_notification_payload(
     disbursement_batch_control_geo_attributes,
 ):
     notification_payload = AgencyNotificationPayload(
-        program_mnemonic=getattr(
-            disbursement_envelope, "benefit_program_mnemonic", None
-        ),
-        program_description=getattr(
-            disbursement_envelope, "benefit_program_description", None
-        ),
+        program_mnemonic=getattr(disbursement_envelope, "benefit_program_mnemonic", None),
+        program_description=getattr(disbursement_envelope, "benefit_program_description", None),
         target_registry=getattr(disbursement_envelope, "target_registry", None),
-        disbursement_cycle_mnemonic=getattr(
-            disbursement_batch_control_geo, "disbursement_cycle_id", None
-        ),
-        disbursement_date=str(
-            getattr(disbursement_envelope, "disbursement_schedule_date", None)
-        ),
+        disbursement_cycle_mnemonic=getattr(disbursement_batch_control_geo, "disbursement_cycle_id", None),
+        disbursement_date=str(getattr(disbursement_envelope, "disbursement_schedule_date", None)),
         benefit_code_id=getattr(disbursement_envelope, "benefit_code_id", None),
-        benefit_code_mnemonic=getattr(
-            disbursement_envelope, "benefit_code_mnemonic", None
-        ),
-        benefit_code_description=getattr(
-            disbursement_envelope, "benefit_code_description", None
-        ),
+        benefit_code_mnemonic=getattr(disbursement_envelope, "benefit_code_mnemonic", None),
+        benefit_code_description=getattr(disbursement_envelope, "benefit_code_description", None),
         benefit_type=getattr(disbursement_envelope, "benefit_type", None),
         measurement_unit=getattr(disbursement_envelope, "measurement_unit", None),
-        benefit_description=getattr(
-            disbursement_envelope, "benefit_code_description", None
-        ),
+        benefit_description=getattr(disbursement_envelope, "benefit_code_description", None),
         warehouse_id=getattr(disbursement_batch_control_geo, "warehouse_id", None),
-        warehouse_mnemonic=getattr(
-            disbursement_batch_control_geo, "warehouse_mnemonic", None
-        ),
-        warehouse_name=getattr(
-            disbursement_batch_control_geo_attributes, "warehouse_name", None
-        ),
+        warehouse_mnemonic=getattr(disbursement_batch_control_geo, "warehouse_mnemonic", None),
+        warehouse_name=getattr(disbursement_batch_control_geo_attributes, "warehouse_name", None),
         agency_id=getattr(disbursement_batch_control_geo, "agency_id", None),
-        agency_mnemonic=getattr(
-            disbursement_batch_control_geo, "agency_mnemonic", None
-        ),
-        agency_name=getattr(
-            disbursement_batch_control_geo_attributes, "agency_name", None
-        ),
+        agency_mnemonic=getattr(disbursement_batch_control_geo, "agency_mnemonic", None),
+        agency_name=getattr(disbursement_batch_control_geo_attributes, "agency_name", None),
         total_quantity=getattr(disbursement_batch_control_geo, "total_quantity", None),
-        no_of_bebeficiaries=getattr(
-            disbursement_batch_control_geo, "no_of_beneficiaries", None
-        ),
+        no_of_bebeficiaries=getattr(disbursement_batch_control_geo, "no_of_beneficiaries", None),
         administrative_zone_id_large=getattr(
             disbursement_batch_control_geo, "administrative_zone_id_large", None
         ),

@@ -102,13 +102,11 @@ def test_block_funds_with_bank_success(mock_session_maker, mock_bank_connector_f
         error_code="",
     )
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.block_funds_with_bank.WarehouseHelper.get_component",
@@ -130,13 +128,11 @@ def test_block_funds_with_bank_failure(mock_session_maker, mock_bank_connector_f
         error_code="TEST_ERROR",
     )
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.block_funds_with_bank.WarehouseHelper.get_component",
@@ -144,25 +140,18 @@ def test_block_funds_with_bank_failure(mock_session_maker, mock_bank_connector_f
     ):
         block_funds_with_bank_worker("test_envelope_id")
 
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.funds_blocked_with_bank
-        == "ERROR"
-    )
+    assert mock_session_maker.disbursement_envelope_batch_status.funds_blocked_with_bank == "ERROR"
     assert mock_session_maker.committed
 
 
-def test_block_funds_with_bank_exception(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_block_funds_with_bank_exception(mock_session_maker, mock_bank_connector_factory):
     mock_bank_connector_factory.block_funds.side_effect = Exception("TEST_EXCEPTION")
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.block_funds_with_bank.WarehouseHelper.get_component",
@@ -170,10 +159,7 @@ def test_block_funds_with_bank_exception(
     ):
         block_funds_with_bank_worker("test_envelope_id")
 
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.funds_blocked_with_bank
-        == "ERROR"
-    )
+    assert mock_session_maker.disbursement_envelope_batch_status.funds_blocked_with_bank == "ERROR"
     assert (
         mock_session_maker.disbursement_envelope_batch_status.funds_blocked_latest_error_code
         == "TEST_EXCEPTION"
@@ -181,18 +167,14 @@ def test_block_funds_with_bank_exception(
     assert mock_session_maker.committed
 
 
-def test_check_funds_with_bank_envelope_not_found(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_check_funds_with_bank_envelope_not_found(mock_session_maker, mock_bank_connector_factory):
     mock_session_maker.disbursement_envelope = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.block_funds_with_bank.WarehouseHelper.get_component",
@@ -208,13 +190,11 @@ def test_check_funds_with_bank_envelope_batch_status_not_found(
 ):
     mock_session_maker.disbursement_envelope_batch_status = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.block_funds_with_bank.WarehouseHelper.get_component",

@@ -181,12 +181,8 @@ def mock_bank_connector_factory():
 
 
 def test_mt940_processor_success(mock_session_maker, mock_bank_connector_factory):
-    mock_bank_connector_factory.retrieve_disbursement_id.return_value = (
-        "test_disbursement_id"
-    )
-    mock_bank_connector_factory.retrieve_beneficiary_name.return_value = (
-        "Test Beneficiary"
-    )
+    mock_bank_connector_factory.retrieve_disbursement_id.return_value = "test_disbursement_id"
+    mock_bank_connector_factory.retrieve_beneficiary_name.return_value = "Test Beneficiary"
     mock_warehouse_helper = MagicMock()
     mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = (
         mock_session_maker.benefit_program_configuration
@@ -197,42 +193,28 @@ def test_mt940_processor_success(mock_session_maker, mock_bank_connector_factory
     ):
         mt940_processor_worker("test_statement_id")
 
-    assert (
-        mock_session_maker.account_statement.statement_process_status
-        == ProcessStatus.PROCESSED.value
-    )
+    assert mock_session_maker.account_statement.statement_process_status == ProcessStatus.PROCESSED.value
     assert mock_session_maker.account_statement.statement_process_error_code is None
-    assert isinstance(
-        mock_session_maker.account_statement.statement_process_timestamp, datetime
-    )
+    assert isinstance(mock_session_maker.account_statement.statement_process_timestamp, datetime)
     assert mock_session_maker.committed
 
 
-def test_mt940_processor_invalid_account(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_mt940_processor_invalid_account(mock_session_maker, mock_bank_connector_factory):
     mock_session_maker.benefit_program_configuration = None
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = (
-        None
-    )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration_for_account_number.return_value = None
     with patch(
         "openg2p_g2p_bridge_celery_workers.tasks.mt940_processor.WarehouseHelper.get_component",
         return_value=mock_warehouse_helper,
     ):
         mt940_processor_worker("test_statement_id")
 
-    assert (
-        mock_session_maker.account_statement.statement_process_status
-        == ProcessStatus.ERROR.value
-    )
+    assert mock_session_maker.account_statement.statement_process_status == ProcessStatus.ERROR.value
     assert (
         mock_session_maker.account_statement.statement_process_error_code
         == G2PBridgeErrorCodes.INVALID_ACCOUNT_NUMBER.value
     )
-    assert isinstance(
-        mock_session_maker.account_statement.statement_process_timestamp, datetime
-    )
+    assert isinstance(mock_session_maker.account_statement.statement_process_timestamp, datetime)
     assert mock_session_maker.committed
 
 
@@ -252,9 +234,7 @@ def test_mt940_processor_lob_not_found(mock_session_maker):
     assert not mock_session_maker.committed
 
 
-def test_mt940_processor_exception(
-    mock_session_maker, mock_bank_connector_factory, caplog
-):
+def test_mt940_processor_exception(mock_session_maker, mock_bank_connector_factory, caplog):
     # Mock mt940.models.Transactions to raise an exception
     with patch("mt940.models.Transactions") as mock_transactions:
         mock_transactions.side_effect = Exception("TEST_ERROR")
@@ -270,17 +250,9 @@ def test_mt940_processor_exception(
                 mt940_processor_worker("test_statement_id")
 
         assert "TEST_ERROR" in caplog.text
-        assert (
-            mock_session_maker.account_statement.statement_process_status
-            == ProcessStatus.PENDING.value
-        )
-        assert (
-            mock_session_maker.account_statement.statement_process_error_code
-            == "TEST_ERROR"
-        )
-        assert isinstance(
-            mock_session_maker.account_statement.statement_process_timestamp, datetime
-        )
+        assert mock_session_maker.account_statement.statement_process_status == ProcessStatus.PENDING.value
+        assert mock_session_maker.account_statement.statement_process_error_code == "TEST_ERROR"
+        assert isinstance(mock_session_maker.account_statement.statement_process_timestamp, datetime)
         assert mock_session_maker.committed
 
 
@@ -292,9 +264,7 @@ def test_get_disbursement_envelope_id_success(mock_session_maker):
 
 def test_get_disbursement_envelope_id_not_found(mock_session_maker):
     mock_session_maker.disbursement = None
-    disbursement_envelope_id = get_disbursement_envelope_id(
-        "test_disbursement_id", mock_session_maker
-    )
+    disbursement_envelope_id = get_disbursement_envelope_id("test_disbursement_id", mock_session_maker)
 
     assert disbursement_envelope_id is None
 
@@ -310,12 +280,8 @@ def test_construct_parsed_transaction(mock_session_maker, mock_bank_connector_fa
         "date": datetime.now(),
     }
 
-    mock_bank_connector_factory.retrieve_disbursement_id.return_value = (
-        "test_disbursement_id"
-    )
-    mock_bank_connector_factory.retrieve_beneficiary_name.return_value = (
-        "Test Beneficiary"
-    )
+    mock_bank_connector_factory.retrieve_disbursement_id.return_value = "test_disbursement_id"
+    mock_bank_connector_factory.retrieve_beneficiary_name.return_value = "Test Beneficiary"
 
     result = construct_parsed_transaction(
         mock_bank_connector_factory, "D", 1, mock_transaction, mock_session_maker
@@ -329,9 +295,7 @@ def test_construct_parsed_transaction(mock_session_maker, mock_bank_connector_fa
     assert result["beneficiary_name_from_bank"] == "Test Beneficiary"
 
 
-def test_process_debit_transactions_success(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_process_debit_transactions_success(mock_session_maker, mock_bank_connector_factory):
     account_statement = AccountStatement(
         statement_id="test_statement_id", statement_number="123", sequence_number="1"
     )
@@ -367,9 +331,7 @@ def test_process_debit_transactions_success(
     assert disbursement_recons_d[0].disbursement_id == "test_disbursement_id"
 
 
-def test_process_debit_transactions_invalid_disbursement(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_process_debit_transactions_invalid_disbursement(mock_session_maker, mock_bank_connector_factory):
     # Set disbursement_batch_control to None for this test
     mock_session_maker.disbursement_batch_control = None
 
@@ -406,10 +368,7 @@ def test_process_debit_transactions_invalid_disbursement(
 
     assert len(disbursement_recons_d) == 0
     assert len(disbursement_error_recons) == 1
-    assert (
-        disbursement_error_recons[0].error_reason
-        == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID
-    )
+    assert disbursement_error_recons[0].error_reason == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID
 
 
 def test_process_debit_transactions_duplicate(mock_session_maker):
@@ -456,10 +415,7 @@ def test_process_debit_transactions_duplicate(mock_session_maker):
 
     assert len(disbursement_recons_d) == 0
     assert len(disbursement_error_recons) == 1
-    assert (
-        disbursement_error_recons[0].error_reason
-        == G2PBridgeErrorCodes.DUPLICATE_DISBURSEMENT
-    )
+    assert disbursement_error_recons[0].error_reason == G2PBridgeErrorCodes.DUPLICATE_DISBURSEMENT
 
 
 def test_process_reversal_of_debits_success(mock_session_maker):
@@ -522,10 +478,7 @@ def test_update_envelope_batch_status_reconciled(mock_session_maker):
 
     update_envelope_batch_status_reconciled(disbursement_recons, mock_session_maker)
 
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_reconciled
-        == 2
-    )
+    assert mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_reconciled == 2
     assert mock_session_maker.added
     assert mock_session_maker.committed
 
@@ -552,8 +505,5 @@ def test_update_envelope_batch_status_reversed(mock_session_maker):
 
     update_envelope_batch_status_reversed(disbursement_recons, mock_session_maker)
 
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_reversed
-        == 2
-    )
+    assert mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_reversed == 2
     assert mock_session_maker.added

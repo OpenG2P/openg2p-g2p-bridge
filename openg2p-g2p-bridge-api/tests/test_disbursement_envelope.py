@@ -22,9 +22,7 @@ from openg2p_g2pconnect_common_lib.schemas import (
 
 def mock_create_disbursement_envelope(is_valid, error_code=None):
     if not is_valid:
-        raise DisbursementEnvelopeException(
-            code=error_code, message=f"{error_code} error."
-        )
+        raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
         disbursement_envelope_id="env123",
@@ -52,14 +50,10 @@ def mock_create_disbursement_envelope(is_valid, error_code=None):
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_create_disbursement_envelope_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_create_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.create_disbursement_envelopes = AsyncMock(
@@ -71,9 +65,7 @@ async def test_create_disbursement_envelope_success(
 
     expected_response = mock_create_disbursement_envelope(True)
 
-    mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
-        expected_response
-    )
+    mock_service_instance.construct_disbursement_envelope_success_response.return_value = expected_response
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopePayload(
         benefit_program_mnemonic="TEST123",
@@ -115,14 +107,10 @@ async def test_create_disbursement_envelope_errors(
 ):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
-    mock_service_instance.create_disbursement_envelopes.side_effect = lambda request: (
-        _ for _ in ()
-    ).throw(
+    mock_service_instance.create_disbursement_envelopes.side_effect = lambda request: (_ for _ in ()).throw(
         DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
     )
     mock_service_instance.construct_disbursement_envelope_error_response = AsyncMock()
@@ -139,9 +127,7 @@ async def test_create_disbursement_envelope_errors(
         ),
     )
 
-    mock_service_instance.construct_disbursement_envelope_error_response.return_value = (
-        error_response
-    )
+    mock_service_instance.construct_disbursement_envelope_error_response.return_value = error_response
 
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopePayload(
@@ -168,20 +154,16 @@ async def test_create_disbursement_envelope_errors(
         message=[request_payload],
     )
 
-    actual_response = await controller.create_disbursement_envelopes(
-        request_payload, is_signature_valid=True
-    )
+    actual_response = await controller.create_disbursement_envelopes(request_payload, is_signature_valid=True)
 
-    assert (
-        actual_response == error_response
-    ), f"The response did not match the expected error response for {error_code}."
+    assert actual_response == error_response, (
+        f"The response did not match the expected error response for {error_code}."
+    )
 
 
 def mock_cancel_disbursement_envelope(is_valid, error_code=None):
     if not is_valid:
-        raise DisbursementEnvelopeException(
-            code=error_code, message=f"{error_code} error."
-        )
+        raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
         disbursement_envelope_id="env123",
@@ -209,14 +191,10 @@ def mock_cancel_disbursement_envelope(is_valid, error_code=None):
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_cancel_disbursement_envelope_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_cancel_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.cancel_disbursement_envelope = AsyncMock(
@@ -228,9 +206,7 @@ async def test_cancel_disbursement_envelope_success(
 
     expected_response = mock_cancel_disbursement_envelope(True)
 
-    mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
-        expected_response
-    )
+    mock_service_instance.construct_disbursement_envelope_success_response.return_value = expected_response
 
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopeRequest(
@@ -247,9 +223,7 @@ async def test_cancel_disbursement_envelope_success(
         message=[DisbursementEnvelopePayload(disbursement_envelope_id="env123")],
     )
 
-    actual_response = await controller.cancel_disbursement_envelope(
-        request_payload, is_signature_valid=True
-    )
+    actual_response = await controller.cancel_disbursement_envelope(request_payload, is_signature_valid=True)
     assert actual_response == expected_response
 
 
@@ -268,9 +242,7 @@ async def test_cancel_disbursement_envelope_failure(
 ):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_cancel_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_cancel_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.cancel_disbursement_envelope.side_effect = (
@@ -289,9 +261,7 @@ async def test_cancel_disbursement_envelope_failure(
             status_reason_message=error_code,
         ),
     )
-    mock_service_instance.construct_disbursement_envelope_error_response.return_value = (
-        error_response
-    )
+    mock_service_instance.construct_disbursement_envelope_error_response.return_value = error_response
 
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopePayload(
@@ -311,19 +281,15 @@ async def test_cancel_disbursement_envelope_failure(
         message=[request_payload],
     )
 
-    actual_response = await controller.cancel_disbursement_envelope(
-        request_payload, is_signature_valid=True
+    actual_response = await controller.cancel_disbursement_envelope(request_payload, is_signature_valid=True)
+    assert actual_response == error_response, (
+        f"The response for {error_code} did not match the expected error response."
     )
-    assert (
-        actual_response == error_response
-    ), f"The response for {error_code} did not match the expected error response."
 
 
 def mock_amend_disbursement_envelope(is_valid, error_code=None):
     if not is_valid:
-        raise DisbursementEnvelopeException(
-            code=error_code, message=f"{error_code} error."
-        )
+        raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
         disbursement_envelope_id="env123",
@@ -351,14 +317,10 @@ def mock_amend_disbursement_envelope(is_valid, error_code=None):
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_amend_disbursement_envelope_success(
-    mock_request_validation, mock_service_get_component
-):
+async def test_amend_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.amend_disbursement_envelope = AsyncMock(
@@ -370,9 +332,7 @@ async def test_amend_disbursement_envelope_success(
 
     expected_response = mock_amend_disbursement_envelope(True)
 
-    mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
-        expected_response
-    )
+    mock_service_instance.construct_disbursement_envelope_success_response.return_value = expected_response
 
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopePayload(
@@ -415,9 +375,7 @@ async def test_amend_disbursement_envelope_errors(
 ):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.amend_disbursement_envelope.side_effect = (
@@ -437,14 +395,10 @@ async def test_amend_disbursement_envelope_errors(
         ),
     )
 
-    mock_service_instance.construct_disbursement_envelope_error_response.return_value = (
-        error_response
-    )
+    mock_service_instance.construct_disbursement_envelope_error_response.return_value = error_response
 
     controller = DisbursementEnvelopeController()
-    request_payload = DisbursementEnvelopePayload(
-        disbursement_envelope_id="env123"  # Trigger the error
-    )
+    request_payload = DisbursementEnvelopePayload(disbursement_envelope_id="env123")  # Trigger the error
     request_payload = DisbursementEnvelopeRequest(
         header=RequestHeader(
             message_id="123",
@@ -459,13 +413,11 @@ async def test_amend_disbursement_envelope_errors(
         message=[request_payload],
     )
 
-    actual_response = await controller.amend_disbursement_envelope(
-        request_payload, is_signature_valid=True
-    )
+    actual_response = await controller.amend_disbursement_envelope(request_payload, is_signature_valid=True)
 
-    assert (
-        actual_response == error_response
-    ), f"The response did not match the expected error response for {error_code}."
+    assert actual_response == error_response, (
+        f"The response did not match the expected error response for {error_code}."
+    )
 
 
 @pytest.mark.asyncio
@@ -483,9 +435,7 @@ async def test_create_envelope_various_benefit_types(
 ):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     mock_service_instance = AsyncMock()
     mock_service_instance.create_disbursement_envelopes = AsyncMock(
@@ -494,15 +444,17 @@ async def test_create_envelope_various_benefit_types(
     mock_service_instance.construct_disbursement_envelope_success_response = AsyncMock()
     mock_service_get_component.return_value = mock_service_instance
 
-    mock_service_instance.construct_disbursement_envelope_success_response.return_value = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
-        ),
-        message=[DisbursementEnvelopePayload(benefit_type=benefit_type)],
+    mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
+        DisbursementEnvelopeResponse(
+            header=SyncResponseHeader(
+                message_id="",
+                message_ts=datetime.now().isoformat(),
+                action="",
+                status=StatusEnum.succ,
+                status_reason_message="",
+            ),
+            message=[DisbursementEnvelopePayload(benefit_type=benefit_type)],
+        )
     )
 
     controller = DisbursementEnvelopeController()
@@ -529,23 +481,17 @@ async def test_create_envelope_various_benefit_types(
         ),
         message=[payload],
     )
-    actual_response = await controller.create_disbursement_envelopes(
-        request, is_signature_valid=True
-    )
+    actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
     assert actual_response.message[0].benefit_type == benefit_type
 
 
 @pytest.mark.asyncio
 @patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
 @patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
-async def test_bulk_create_mixed_benefit_types(
-    mock_request_validation, mock_service_get_component
-):
+async def test_bulk_create_mixed_benefit_types(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
-    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = (
-        None
-    )
+    mock_request_validation.validate_create_disbursement_envelope_request_header.return_value = None
 
     payloads = [
         DisbursementEnvelopePayload(
@@ -590,21 +536,21 @@ async def test_bulk_create_mixed_benefit_types(
         ),
     ]
     mock_service_instance = AsyncMock()
-    mock_service_instance.create_disbursement_envelopes = AsyncMock(
-        return_value=payloads
-    )
+    mock_service_instance.create_disbursement_envelopes = AsyncMock(return_value=payloads)
     mock_service_instance.construct_disbursement_envelope_success_response = AsyncMock()
     mock_service_get_component.return_value = mock_service_instance
 
-    mock_service_instance.construct_disbursement_envelope_success_response.return_value = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
-        ),
-        message=payloads,
+    mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
+        DisbursementEnvelopeResponse(
+            header=SyncResponseHeader(
+                message_id="",
+                message_ts=datetime.now().isoformat(),
+                action="",
+                status=StatusEnum.succ,
+                status_reason_message="",
+            ),
+            message=payloads,
+        )
     )
 
     controller = DisbursementEnvelopeController()
@@ -621,9 +567,7 @@ async def test_bulk_create_mixed_benefit_types(
         ),
         message=payloads,
     )
-    actual_response = await controller.create_disbursement_envelopes(
-        request, is_signature_valid=True
-    )
+    actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
     assert len(actual_response.message) == 4
     assert actual_response.message[0].benefit_type == BenefitType.CASH_DIGITAL
     assert actual_response.message[1].benefit_type == BenefitType.CASH_PHYSICAL
