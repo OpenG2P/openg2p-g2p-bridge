@@ -7,6 +7,7 @@ from .config import Settings
 _config = Settings.get_config()
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
+from openg2p_g2pconnect_common_lib.jwt_validation_helper import JWTValidationHelper
 from openg2p_g2p_bridge_models.models import (
     AccountStatement,
     DisbursementEnvelope,
@@ -40,6 +41,7 @@ class Initializer(BaseInitializer):
         AccountStatementService()
         DisbursementStatusService()
         DisbursementEnvelopeStatusService()
+        JWTValidationHelper()
         DisbursementEnvelopeController().post_init()
         DisbursementController().post_init()
         AccountStatementController().post_init()
