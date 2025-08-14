@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     db_dbname: str = "openg2p_g2p_bridge_db"
 
     # PBMS Database
+    db_driver_pbms: str = "postgresql"
     db_username_pbms: str = "postgres"
     db_password_pbms: str = "postgres"
     db_hostname_pbms: str = "localhost"
