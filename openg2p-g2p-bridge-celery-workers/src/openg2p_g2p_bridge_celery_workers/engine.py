@@ -30,8 +30,16 @@ def get_engine():
         _config.db_port_pbms,
         _config.db_dbname_pbms,
     )
+    db_datasource_bridge = construct_db_datasource(
+        _config.db_driver,
+        _config.db_username,
+        _config.db_password,
+        _config.db_hostname,
+        _config.db_port,
+        _config.db_dbname,
+    )
     db_engine_pbms = create_engine(db_datasource_pbms)
-    db_engine_bridge = create_engine(_config.db_datasource)
+    db_engine_bridge = create_engine(db_datasource_bridge)
     return {
         "db_engine_pbms": db_engine_pbms,
         "db_engine_bridge": db_engine_bridge,
