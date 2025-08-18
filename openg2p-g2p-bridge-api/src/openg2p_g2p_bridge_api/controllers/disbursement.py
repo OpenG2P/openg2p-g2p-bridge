@@ -69,6 +69,9 @@ class DisbursementController(BaseController):
                     disbursement_request, e.code, e.disbursement_payloads
                 )
             )
+            _logger.debug(
+                "Disbursement exception details: %s", e, exc_info=True
+            )
             return error_response
 
         disbursement_response: DisbursementResponse = (

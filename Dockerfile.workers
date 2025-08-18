@@ -41,4 +41,4 @@ USER ${container_user}
 
 ENV PYTHONUNBUFFERED=1
 
-CMD celery -A main.celery_app worker -Q g2p_bridge_celery_worker_tasks --loglevel=info
+CMD celery -A main.celery_app worker -Q g2p_bridge_celery_worker_tasks --loglevel=debug
