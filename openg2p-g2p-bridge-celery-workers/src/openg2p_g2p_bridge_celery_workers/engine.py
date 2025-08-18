@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from .config import Settings
 
 _config = Settings.get_config()
+_logger = _config.get_logger("openg2p_g2p_bridge_celery_workers.engine")
 
 
 def construct_db_datasource(db_driver, db_username, db_password, db_hostname, db_port, db_dbname) -> str:
@@ -17,7 +18,9 @@ def construct_db_datasource(db_driver, db_username, db_password, db_hostname, db
         datasource += f":{db_port}"
     if db_dbname:
         datasource += f"/{db_dbname}"
-
+    _logger.debug(
+        "Constructed database datasource: %s", datasource
+    ) 
     return datasource
 
 
