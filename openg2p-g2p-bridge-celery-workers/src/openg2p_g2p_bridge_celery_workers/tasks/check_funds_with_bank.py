@@ -27,6 +27,7 @@ _engine = get_engine()
 @celery_app.task(name="check_funds_with_bank_worker")
 def check_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Checking funds with bank for envelope: {disbursement_envelope_id}")
+    _logger.debug(f"DB HOSTNAME: {_config.db_hostname}")
     session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
