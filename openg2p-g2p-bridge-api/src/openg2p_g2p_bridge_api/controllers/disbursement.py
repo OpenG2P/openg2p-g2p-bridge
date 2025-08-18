@@ -48,9 +48,7 @@ class DisbursementController(BaseController):
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
-            _logger.debug(
-                "Disbursement request received: %s", disbursement_request
-            )
+            _logger.debug("Disbursement request received: %s", disbursement_request)
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
@@ -72,9 +70,7 @@ class DisbursementController(BaseController):
                     disbursement_request, e.code, e.disbursement_payloads
                 )
             )
-            _logger.debug(
-                "Disbursement exception details: %s", e, exc_info=True
-            )
+            _logger.debug("Disbursement exception details: %s", e, exc_info=True)
             return error_response
 
         disbursement_response: DisbursementResponse = (
