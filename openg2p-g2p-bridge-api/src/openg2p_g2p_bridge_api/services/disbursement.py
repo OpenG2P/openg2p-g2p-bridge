@@ -236,7 +236,7 @@ class DisbursementService(BaseService):
                 _logger.debug(
                     f"Invalid Disbursement Envelope ID: {disbursement_payload.disbursement_envelope_id}"
                 )
-            if disbursement_payload.disbursement_quantity <= 0:
+            if disbursement_payload.disbursement_quantity < 0:
                 disbursement_payload.response_error_codes.append(
                     G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY
                 )
