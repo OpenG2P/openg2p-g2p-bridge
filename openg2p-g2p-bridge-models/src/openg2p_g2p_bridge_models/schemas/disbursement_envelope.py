@@ -87,9 +87,7 @@ class DisbursementErrorReconPayload(BaseModel):
 
 class DisbursementReconRecords(BaseModel):
     disbursement_recon_payloads: Optional[List[DisbursementReconPayload]] = None
-    disbursement_error_recon_payloads: Optional[
-        List[DisbursementErrorReconPayload]
-    ] = None
+    disbursement_error_recon_payloads: Optional[List[DisbursementErrorReconPayload]] = None
 
 
 class DisbursementStatusPayload(BaseModel):
@@ -160,9 +158,7 @@ class DisbursementEnvelopeStatusPayload(BaseModel):
     no_of_agencies_notified: Optional[int] = None
     no_of_beneficiaries_notified: Optional[int] = None
     no_of_pods_received: Optional[int] = None
-    disbursement_batch_control_geos: Optional[
-        List[DisbursementBatchControlGeoPayload]
-    ] = None
+    disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
 
 class DisbursementEnvelopeStatusResponse(SyncResponse):

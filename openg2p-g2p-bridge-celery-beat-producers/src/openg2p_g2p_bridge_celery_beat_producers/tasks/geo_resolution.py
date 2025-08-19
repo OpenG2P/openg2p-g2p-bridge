@@ -22,10 +22,7 @@ def geo_resolution_beat_producer():
         disbursement_batch_controls = (
             session.execute(
                 select(DisbursementBatchControl)
-                .filter(
-                    DisbursementBatchControl.geo_resolution_status
-                    == ProcessStatus.PENDING.value
-                )
+                .filter(DisbursementBatchControl.geo_resolution_status == ProcessStatus.PENDING.value)
                 .limit(_config.no_of_tasks_to_process)
             )
             .scalars()
@@ -33,13 +30,9 @@ def geo_resolution_beat_producer():
         )
 
         for disbursement_batch_control in disbursement_batch_controls:
-            _logger.info(
-                f"Sending geo resolution task for batch: {disbursement_batch_control.id}"
-            )
+            _logger.info(f"Sending geo resolution task for batch: {disbursement_batch_control.id}")
 
-            disbursement_batch_control.geo_resolution_status = (
-                ProcessStatus.PROCESSING.value
-            )
+            disbursement_batch_control.geo_resolution_status = ProcessStatus.PROCESSING.value
             session.commit()
             celery_app.send_task(
                 "geo_resolution_worker",
@@ -47,6 +40,4 @@ def geo_resolution_beat_producer():
                 queue="g2p_bridge_celery_worker_tasks",
             )
 
-        _logger.info(
-            "Completed checking for disbursement batches to perform geo resolution"
-        )
+        _logger.info("Completed checking for disbursement batches to perform geo resolution")

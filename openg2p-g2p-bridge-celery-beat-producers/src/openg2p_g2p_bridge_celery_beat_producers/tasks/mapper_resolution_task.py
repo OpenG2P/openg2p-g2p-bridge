@@ -25,15 +25,12 @@ def mapper_resolution_beat_producer():
     session_maker = sessionmaker(bind=_engine, expire_on_commit=False)
     with session_maker() as session:
         # Get the setting for stale tasks
-        stale_at = datetime.now() - timedelta(
-            minutes=_config.task_stale_threshold_minutes
-        )
+        stale_at = datetime.now() - timedelta(minutes=_config.task_stale_threshold_minutes)
         # 1. Reset tasks that are in progress for too long (stale)
         session.execute(
             update(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.fa_resolution_status
-                == ProcessStatus.PROCESSING.value,
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PROCESSING.value,
                 DisbursementBatchControl.updated_at > stale_at,
             )
             .values(fa_resolution_status=ProcessStatus.PENDING.value)
@@ -43,8 +40,7 @@ def mapper_resolution_beat_producer():
         disbursement_batch_controls = session.scalars(
             select(DisbursementBatchControl)
             .where(
-                DisbursementBatchControl.fa_resolution_status
-                == ProcessStatus.PENDING.value,
+                DisbursementBatchControl.fa_resolution_status == ProcessStatus.PENDING.value,
             )
             .limit(_config.no_of_tasks_to_process)
         ).all()
@@ -55,9 +51,7 @@ def mapper_resolution_beat_producer():
 
         for disbursement_batch_control in disbursement_batch_controls:
             # 3. Mark as in progress
-            disbursement_batch_control.fa_resolution_status = (
-                ProcessStatus.PROCESSING.value
-            )
+            disbursement_batch_control.fa_resolution_status = ProcessStatus.PROCESSING.value
             session.add(disbursement_batch_control)
             session.commit()
 

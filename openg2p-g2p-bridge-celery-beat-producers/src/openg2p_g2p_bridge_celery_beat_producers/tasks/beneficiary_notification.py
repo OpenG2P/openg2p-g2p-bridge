@@ -29,9 +29,7 @@ def beneficiary_notification_beat_producer():
             .limit(_config.no_of_tasks_to_process)
         )
         disbursement_resolution_geo_addresses = result.scalars().all()
-        for (
-            disbursement_resolution_geo_address
-        ) in disbursement_resolution_geo_addresses:
+        for disbursement_resolution_geo_address in disbursement_resolution_geo_addresses:
             _logger.info(
                 f"Sending beneficiary_notification_worker task for disbursement_id: {disbursement_resolution_geo_address.disbursement_id}"
             )

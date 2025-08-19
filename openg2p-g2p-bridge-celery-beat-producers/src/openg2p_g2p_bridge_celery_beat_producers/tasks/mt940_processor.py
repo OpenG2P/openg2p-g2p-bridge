@@ -26,8 +26,7 @@ def mt940_processor_beat_producer():
                 select(AccountStatement)
                 .filter(
                     and_(
-                        AccountStatement.statement_process_status
-                        == ProcessStatus.PENDING.value,
+                        AccountStatement.statement_process_status == ProcessStatus.PENDING.value,
                     )
                 )
                 .limit(_config.no_of_tasks_to_process)
@@ -38,9 +37,7 @@ def mt940_processor_beat_producer():
 
         for statement in account_statements:
             statement.statement_process_status = ProcessStatus.PROCESSING.value
-            _logger.info(
-                f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}"
-            )
+            _logger.info(f"Sending mt940_processor_worker task for statement_id: {statement.statement_id}")
             session.commit()
             celery_app.send_task(
                 "mt940_processor_worker",

@@ -38,8 +38,7 @@ def check_funds_with_bank_beat_producer():
                 select(DisbursementEnvelope)
                 .join(
                     EnvelopeBatchStatusForCash,
-                    DisbursementEnvelope.id
-                    == EnvelopeBatchStatusForCash.disbursement_envelope_id,
+                    DisbursementEnvelope.id == EnvelopeBatchStatusForCash.disbursement_envelope_id,
                 )
                 .join(
                     EnvelopeControl,
@@ -47,8 +46,7 @@ def check_funds_with_bank_beat_producer():
                 )
                 .filter(
                     date_condition,
-                    DisbursementEnvelope.cancellation_status
-                    == CancellationStatus.NOT_CANCELLED.value,
+                    DisbursementEnvelope.cancellation_status == CancellationStatus.NOT_CANCELLED.value,
                     DisbursementEnvelope.number_of_disbursements
                     == EnvelopeControl.number_of_disbursements_received,
                     DisbursementEnvelope.total_disbursement_quantity
@@ -71,15 +69,10 @@ def check_funds_with_bank_beat_producer():
         )
 
         for disbursement_envelope in disbursement_envelopes:
-            _logger.info(
-                f"Sending task to check funds with bank for envelope {disbursement_envelope.id}"
-            )
+            _logger.info(f"Sending task to check funds with bank for envelope {disbursement_envelope.id}")
             envelope_batch_status_for_cash = (
                 session.query(EnvelopeBatchStatusForCash)
-                .filter(
-                    EnvelopeBatchStatusForCash.disbursement_envelope_id
-                    == disbursement_envelope.id
-                )
+                .filter(EnvelopeBatchStatusForCash.disbursement_envelope_id == disbursement_envelope.id)
                 .first()
             )
 

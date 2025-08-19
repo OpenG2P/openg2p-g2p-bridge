@@ -5,5 +5,5 @@ from ..interface import WarehouseAllocator
 
 
 class WarehouseAllocatorFactory(BaseService):
-    def get_warehouse_allocator(self, warehouse_type) -> WarehouseAllocator:
+    def get_warehouse_allocator(self) -> WarehouseAllocator:
         return WarehouseAllocatorRefImpl.get_component()

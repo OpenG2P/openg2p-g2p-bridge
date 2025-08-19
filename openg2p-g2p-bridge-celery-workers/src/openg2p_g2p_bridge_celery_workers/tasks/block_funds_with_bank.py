@@ -29,9 +29,7 @@ _engine = get_engine()
 @celery_app.task(name="block_funds_with_bank_worker")
 def block_funds_with_bank_worker(disbursement_envelope_id: str):
     _logger.info(f"Blocking funds with bank for envelope: {disbursement_envelope_id}")
-    session_maker = sessionmaker(
-        bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-    )
+    session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 
     with session_maker() as session:
         disbursement_envelope = (
@@ -41,17 +39,12 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         if not disbursement_envelope:
-            _logger.error(
-                f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}"
-            )
+            _logger.error(f"Disbursement Envelope not found for envelope id: {disbursement_envelope_id}")
             return
 
         envelope_batch_status_for_cash = (
             session.query(EnvelopeBatchStatusForCash)
-            .filter(
-                EnvelopeBatchStatusForCash.disbursement_envelope_id
-                == disbursement_envelope_id
-            )
+            .filter(EnvelopeBatchStatusForCash.disbursement_envelope_id == disbursement_envelope_id)
             .first()
         )
 
@@ -69,10 +62,8 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
         )
 
         total_funds_needed = disbursement_envelope.total_disbursement_quantity
-        bank_connector: BankConnectorInterface = (
-            BankConnectorFactory.get_component().get_bank_connector(
-                sponsor_bank_configuration.sponsor_bank_code
-            )
+        bank_connector: BankConnectorInterface = BankConnectorFactory.get_component().get_bank_connector(
+            sponsor_bank_configuration.sponsor_bank_code
         )
 
         try:
@@ -96,26 +87,18 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 )
                 envelope_batch_status_for_cash.funds_blocked_reference_number = ""
-                envelope_batch_status_for_cash.funds_blocked_latest_error_code = (
-                    funds_blocked.error_code
-                )
+                envelope_batch_status_for_cash.funds_blocked_latest_error_code = funds_blocked.error_code
                 raise ValueError(
                     f"Failed to block funds with bank for envelope {disbursement_envelope_id}: {funds_blocked.error_code}"
                 )
 
-            envelope_batch_status_for_cash.funds_blocked_latest_timestamp = (
-                datetime.now()
-            )
+            envelope_batch_status_for_cash.funds_blocked_latest_timestamp = datetime.now()
 
             envelope_batch_status_for_cash.funds_blocked_attempts += 1
 
         except Exception as e:
-            _logger.error(
-                f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}"
-            )
-            envelope_batch_status_for_cash.funds_blocked_latest_timestamp = (
-                datetime.now()
-            )
+            _logger.error(f"Error blocking funds with bank for envelope {disbursement_envelope_id}: {str(e)}")
+            envelope_batch_status_for_cash.funds_blocked_latest_timestamp = datetime.now()
             envelope_batch_status_for_cash.funds_blocked_latest_error_code = str(e)
             envelope_batch_status_for_cash.funds_blocked_attempts += 1
             envelope_batch_status_for_cash.funds_blocked_reference_number = ""
@@ -127,12 +110,8 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
                     FundsBlockedWithBankEnum.FUNDS_BLOCK_FAILURE.value
                 )
             else:
-                envelope_batch_status_for_cash.funds_blocked_with_bank = (
-                    FundsBlockedWithBankEnum.ERROR.value
-                )
+                envelope_batch_status_for_cash.funds_blocked_with_bank = FundsBlockedWithBankEnum.ERROR.value
             session.commit()
 
         session.commit()
-        _logger.info(
-            f"Completed blocking funds with bank for envelope: {disbursement_envelope_id}"
-        )
+        _logger.info(f"Completed blocking funds with bank for envelope: {disbursement_envelope_id}")

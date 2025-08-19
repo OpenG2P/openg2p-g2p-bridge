@@ -92,9 +92,7 @@ class ResolveHelper(BaseService):
         if regex_res:
             regex_res = regex_res.groupdict()
             try:
-                deconstructed_list = [
-                    KeyValuePair(key=k, value=v) for k, v in regex_res.items()
-                ]
+                deconstructed_list = [KeyValuePair(key=k, value=v) for k, v in regex_res.items()]
             except Exception as e:
                 _logger.error(f"Error while deconstructing ID/FA: {e}")
                 raise ValueError("Error while deconstructing ID/FA") from e
@@ -106,9 +104,7 @@ class ResolveHelper(BaseService):
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
-            deconstructed_fa = {
-                pair.key.value: pair.value for pair in deconstructed_pairs
-            }
+            deconstructed_fa = {pair.key.value: pair.value for pair in deconstructed_pairs}
             return deconstructed_fa
         return {}
 
@@ -136,7 +132,7 @@ class ResolveHelper(BaseService):
         elif isinstance(payload, str):
             payload = payload.encode()
         cookies = {}
-        if _config.keymanager_auth_enabled:
+        if _config.oauth_enabled:
             cookies["Authorization"] = await self.get_keymanager_auth_token()
         current_time = self.get_current_isotimestamp()
         async with httpx.AsyncClient() as client:
@@ -170,21 +166,17 @@ class ResolveHelper(BaseService):
             and self._keymanager_auth_token_expiry > datetime.now(timezone.utc)
         ):
             return self._keymanager_auth_token
-        url = _config.keymanager_auth_url
+        url = _config.oauth_url
         payload = {
-            "client_id": _config.keymanager_auth_client_id,
-            "client_secret": _config.keymanager_auth_client_secret,
+            "client_id": _config.oauth_client_id,
+            "client_secret": _config.oauth_client_secret,
             "grant_type": "client_credentials",
         }
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url, data=payload, timeout=_config.keymanager_api_timeout
-            )
+            response = await client.post(url, data=payload, timeout=_config.keymanager_api_timeout)
         response_data = response.json()
         expires_in = response_data.get("expires_in", 900)
-        self._keymanager_auth_token_expiry = datetime.now(timezone.utc) + timedelta(
-            seconds=expires_in
-        )
+        self._keymanager_auth_token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         self._keymanager_auth_token = response_data["access_token"]
         return self._keymanager_auth_token
 
@@ -192,4 +184,4 @@ class ResolveHelper(BaseService):
         return base64.urlsafe_b64encode(input_data).decode().rstrip("=")
 
     def get_current_isotimestamp(self):
-        return f'{datetime.now().isoformat(timespec = "milliseconds")}Z'
+        return f"{datetime.now().isoformat(timespec='milliseconds')}Z"

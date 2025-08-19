@@ -107,10 +107,7 @@ class MockSession:
 
             def first(self):
                 # Return the first batch control or disbursement depending on context
-                if (
-                    hasattr(self, "disbursement_batch_controls")
-                    and self.disbursement_batch_controls
-                ):
+                if hasattr(self, "disbursement_batch_controls") and self.disbursement_batch_controls:
                     return self.disbursement_batch_controls[0]
                 if hasattr(self, "disbursements") and self.disbursements:
                     return self.disbursements[0]
@@ -211,9 +208,7 @@ def mock_resolve_client():
         yield mock_mapper_resolve_client
 
 
-def test_mapper_resolution_worker_success(
-    mock_session_maker, mock_resolve_helper, mock_resolve_client
-):
+def test_mapper_resolution_worker_success(mock_session_maker, mock_resolve_helper, mock_resolve_client):
     mock_response = MagicMock()
     mock_response.message.resolve_response = [
         MagicMock(
@@ -249,9 +244,7 @@ def test_mapper_resolution_worker_success(
     assert mock_session_maker.committed
 
 
-def test_mapper_resolution_worker_failure(
-    mock_session_maker, mock_resolve_helper, mock_resolve_client
-):
+def test_mapper_resolution_worker_failure(mock_session_maker, mock_resolve_helper, mock_resolve_client):
     mock_resolve_client.resolve_request.side_effect = Exception("TEST_ERROR")
 
     mock_resolve_helper.create_jwt_token.return_value = "mocked_jwt_token"
@@ -264,10 +257,7 @@ def test_mapper_resolution_worker_failure(
     )
     assert update_values is not None
     assert update_values["fa_resolution_status"] == ProcessStatus.PENDING
-    assert (
-        "Failed to resolve the request: TEST_ERROR"
-        in update_values["fa_resolution_latest_error_code"]
-    )
+    assert "Failed to resolve the request: TEST_ERROR" in update_values["fa_resolution_latest_error_code"]
 
     assert mock_session_maker.committed
 
@@ -335,9 +325,7 @@ def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_h
         "branch_code": "001",
     }
 
-    process_and_store_resolution(
-        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
-    )
+    process_and_store_resolution("test_batch_control_id", mock_response, beneficiary_map, mock_session_maker)
 
     assert len(mock_session_maker.details_list) == 1
     update_values = next(
@@ -354,14 +342,10 @@ def test_process_and_store_resolution_success(mock_session_maker, mock_resolve_h
 
 def test_process_and_store_resolution_failure(mock_session_maker, mock_resolve_helper):
     mock_response = MagicMock()
-    mock_response.message.resolve_response = [
-        MagicMock(id="test_beneficiary_id", fa=None)
-    ]
+    mock_response.message.resolve_response = [MagicMock(id="test_beneficiary_id", fa=None)]
     beneficiary_map = {"test_beneficiary_id": "test_disbursement_id"}
 
-    process_and_store_resolution(
-        "test_batch_control_id", mock_response, beneficiary_map, mock_session_maker
-    )
+    process_and_store_resolution("test_batch_control_id", mock_response, beneficiary_map, mock_session_maker)
 
     update_values = next(
         (item for item in mock_session_maker.updates if "fa_resolution_status" in item),

@@ -25,14 +25,10 @@ class DisbursementBatchControlGeo(BaseORMModelWithId):
     agency_additional_attributes: Mapped[str] = mapped_column(String, nullable=True)
     warehouse_notification_status: Mapped[str] = mapped_column(String)
     warehouse_notification_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    warehouse_notification_latest_error_code: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    warehouse_notification_latest_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     agency_notification_status: Mapped[ProcessStatus] = mapped_column(String)
     agency_notification_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    agency_notification_latest_error_code: Mapped[str] = mapped_column(
-        String, nullable=True, default=None
-    )
+    agency_notification_latest_error_code: Mapped[str] = mapped_column(String, nullable=True, default=None)
     __table_args__ = (
         # Unique index on (disbursement_batch_control_id, administrative_zone_id_large, administrative_zone_small)
         {"sqlite_autoincrement": True},

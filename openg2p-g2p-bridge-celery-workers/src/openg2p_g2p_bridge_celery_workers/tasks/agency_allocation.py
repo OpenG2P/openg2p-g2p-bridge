@@ -25,9 +25,7 @@ from ..engine import get_engine
 _logger = logging.getLogger("agency_allocation_worker")
 _engine = get_engine()
 _config = Settings.get_config()
-session_maker = sessionmaker(
-    bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-)
+session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
 # Remove session_maker_pbms and pbms_session
 
 
@@ -66,8 +64,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_envelope = (
                 session.execute(
                     select(DisbursementEnvelope).where(
-                        DisbursementEnvelope.id
-                        == disbursement_batch_control.disbursement_envelope_id
+                        DisbursementEnvelope.id == disbursement_batch_control.disbursement_envelope_id
                     )
                 )
                 .scalars()
@@ -93,9 +90,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             benefit_code_id = disbursement_envelope.benefit_code_id
             program_id = disbursement_envelope.benefit_program_id
 
-            agency_allocator = (
-                AgencyAllocatorFactory.get_component().get_agency_allocator()
-            )
+            agency_allocator = AgencyAllocatorFactory.get_component().get_agency_allocator()
             allocation_results: List[Dict[str, Any]] = agency_allocator.allocate_agency(
                 small_geo_list, benefit_code_id, program_id
             )
@@ -116,16 +111,11 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 # Bulk update DisbursementBatchControlGeo
                 session.execute(
                     update(DisbursementBatchControlGeo)
-                    .where(
-                        DisbursementBatchControlGeo.id
-                        == disbursement_batch_control_geo.id
-                    )
+                    .where(DisbursementBatchControlGeo.id == disbursement_batch_control_geo.id)
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
-                        agency_additional_attributes=allocation.get(
-                            "agency_additional_attributes", {}
-                        ),
+                        agency_additional_attributes=allocation.get("agency_additional_attributes", {}),
                         warehouse_notification_status=warehouse_notification_status,
                         agency_notification_status=agency_notification_status,
                     )
@@ -148,10 +138,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 # Update DisbursementBatchControlGeoAttributes
                 session.execute(
                     update(DisbursementBatchControlGeoAttributes)
-                    .where(
-                        DisbursementBatchControlGeoAttributes.id
-                        == disbursement_batch_control_geo.id
-                    )
+                    .where(DisbursementBatchControlGeoAttributes.id == disbursement_batch_control_geo.id)
                     .values(
                         agency_name=allocation.get("agency_name", None),
                         agency_admin_name=allocation.get("agency_admin_name", None),
@@ -161,14 +148,10 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 )
 
             # Update batch control status
-            disbursement_batch_control.agency_allocation_status = (
-                ProcessStatus.PROCESSED.value
-            )
+            disbursement_batch_control.agency_allocation_status = ProcessStatus.PROCESSED.value
 
             if disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
-                disbursement_batch_control.sponsor_bank_dispatch_status = (
-                    ProcessStatus.PENDING.value
-                )
+                disbursement_batch_control.sponsor_bank_dispatch_status = ProcessStatus.PENDING.value
 
             disbursement_batch_control.agency_allocation_attempts += 1
             disbursement_batch_control.agency_allocation_latest_error_code = None
@@ -184,11 +167,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                 disbursement_batch_control.agency_allocation_attempts
                 >= _config.agency_allocation_max_attempts
             ):
-                disbursement_batch_control.agency_allocation_status = (
-                    ProcessStatus.ERROR.value
-                )
+                disbursement_batch_control.agency_allocation_status = ProcessStatus.ERROR.value
             else:
-                disbursement_batch_control.agency_allocation_status = (
-                    ProcessStatus.PENDING.value
-                )
+                disbursement_batch_control.agency_allocation_status = ProcessStatus.PENDING.value
             session.commit()

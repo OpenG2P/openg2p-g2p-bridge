@@ -22,10 +22,7 @@ def warehouse_notification_beat_producer():
     with session_maker() as session:
         result = session.execute(
             select(DisbursementBatchControlGeo)
-            .where(
-                DisbursementBatchControlGeo.warehouse_notification_status
-                == ProcessStatus.PENDING.value
-            )
+            .where(DisbursementBatchControlGeo.warehouse_notification_status == ProcessStatus.PENDING.value)
             .limit(_config.no_of_tasks_to_process)
         )
         disbursement_batch_control_geos = result.scalars().all()
@@ -33,9 +30,7 @@ def warehouse_notification_beat_producer():
             _logger.info(
                 f"Sending warehouse_notification_worker task for disbursement_control_geo_id: {disbursement_batch_control_geo.id}"
             )
-            disbursement_batch_control_geo.warehouse_notification_status = (
-                ProcessStatus.PROCESSING.value
-            )
+            disbursement_batch_control_geo.warehouse_notification_status = ProcessStatus.PROCESSING.value
             session.commit()
             celery_app.send_task(
                 "warehouse_notification_worker",

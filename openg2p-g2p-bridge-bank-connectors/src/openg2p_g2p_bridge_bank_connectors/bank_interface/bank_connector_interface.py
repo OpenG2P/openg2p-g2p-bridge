@@ -67,9 +67,7 @@ class BankConnectorInterface(BaseService):
     def block_funds(self, account_number, currency, amount) -> BlockFundsResponse:
         raise NotImplementedError()
 
-    def initiate_payment(
-        self, payment_payloads: List[DisbursementPaymentPayload]
-    ) -> PaymentResponse:
+    def initiate_payment(self, payment_payloads: List[DisbursementPaymentPayload]) -> PaymentResponse:
         raise NotImplementedError()
 
     def retrieve_reconciliation_id(

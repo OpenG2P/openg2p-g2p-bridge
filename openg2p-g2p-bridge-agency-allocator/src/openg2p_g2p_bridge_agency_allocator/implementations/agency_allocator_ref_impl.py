@@ -51,13 +51,9 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                     .all()
                 }
                 # 3. Intersect both sets
-                agency_ids_intersected = list(
-                    program_benefit_agency_ids & geo_agency_ids
-                )
+                agency_ids_intersected = list(program_benefit_agency_ids & geo_agency_ids)
                 g2p_agencies = (
-                    pbms_session.query(G2PAgency)
-                    .filter(G2PAgency.id.in_(agency_ids_intersected))
-                    .all()
+                    pbms_session.query(G2PAgency).filter(G2PAgency.id.in_(agency_ids_intersected)).all()
                 )
                 g2p_agency = random.choice(g2p_agencies) if g2p_agencies else None
                 agency_additional_attributes = None
@@ -68,25 +64,18 @@ class AgencyAllocatorRefImpl(AgencyAllocator):
                         .filter(
                             G2PAgencyProgramBenefitCode.agency_id == g2p_agency.id,
                             G2PAgencyProgramBenefitCode.program_id == program_id,
-                            G2PAgencyProgramBenefitCode.benefit_code_id
-                            == benefit_code_id,
+                            G2PAgencyProgramBenefitCode.benefit_code_id == benefit_code_id,
                         )
                         .first()
                     )
                     agency_additional_attributes = (
-                        benefit_code_entry.additional_info
-                        if benefit_code_entry
-                        else None
+                        benefit_code_entry.additional_info if benefit_code_entry else None
                     )
                     results.append(
                         {
                             "batch_control_geo_id": geo["batch_control_geo_id"],
-                            "administrative_zone_id_small": geo[
-                                "administrative_zone_id_small"
-                            ],
-                            "administrative_zone_mnemonic_small": geo[
-                                "administrative_zone_mnemonic_small"
-                            ],
+                            "administrative_zone_id_small": geo["administrative_zone_id_small"],
+                            "administrative_zone_mnemonic_small": geo["administrative_zone_mnemonic_small"],
                             "benefit_code_id": benefit_code_id,
                             "program_id": program_id,
                             "agency_id": g2p_agency.id,

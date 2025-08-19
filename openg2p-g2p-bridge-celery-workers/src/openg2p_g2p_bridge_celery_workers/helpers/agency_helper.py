@@ -28,9 +28,7 @@ class AgencyHelper(BaseService):
         """
         Retrieve the agency financial address details from g2p_agency_program_benefit_codes, parsing additional_info for BANK, BRANCH, ACCOUNT, TYPE. Also fetch agency_admin_email and agency_admin_phone from DisbursementBatchControlGeoAttributes using agency_id.
         """
-        pbms_session_maker = sessionmaker(
-            bind=_engine.get("db_engine_pbms"), expire_on_commit=False
-        )
+        pbms_session_maker = sessionmaker(bind=_engine.get("db_engine_pbms"), expire_on_commit=False)
         with pbms_session_maker() as session:
             record = (
                 session.query(G2PAgencyProgramBenefitCode)

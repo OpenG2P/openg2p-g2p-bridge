@@ -22,16 +22,12 @@ def extract(tag, data):
 
 
 class WarehouseHelper(BaseService):
-    def retrieve_sponsor_bank_configuration(
-        self, benefit_program_id: int, benefit_code_id: int
-    ):
+    def retrieve_sponsor_bank_configuration(self, benefit_program_id: int, benefit_code_id: int):
         """
         Retrieve the sponsor bank configuration for the given benefit program and code from g2p_warehouse_program_benefit_codes.
         Parses additional_info for BANK, BRANCH, ACCOUNT and returns a SponsorBankConfiguration model (fields set to None if missing).
         """
-        pbms_session_maker = sessionmaker(
-            bind=_engine.get("db_engine_pbms"), expire_on_commit=False
-        )
+        pbms_session_maker = sessionmaker(bind=_engine.get("db_engine_pbms"), expire_on_commit=False)
         with pbms_session_maker() as session:
             record = (
                 session.query(G2PWarehouseProgramBenefitCode)
@@ -66,22 +62,16 @@ class WarehouseHelper(BaseService):
         """
         Retrieve the sponsor bank configuration for the given account number by searching additional_info LIKE '%#ACCOUNT#{account_number}%'.
         """
-        pbms_session_maker = sessionmaker(
-            bind=_engine.get("db_engine_pbms"), expire_on_commit=False
-        )
+        pbms_session_maker = sessionmaker(bind=_engine.get("db_engine_pbms"), expire_on_commit=False)
         with pbms_session_maker() as session:
             like_pattern = f"%#ACCOUNT#{account_number}%"
             record = (
                 session.query(G2PWarehouseProgramBenefitCode)
-                .filter(
-                    G2PWarehouseProgramBenefitCode.additional_info.like(like_pattern)
-                )
+                .filter(G2PWarehouseProgramBenefitCode.additional_info.like(like_pattern))
                 .first()
             )
             if not record or not record.additional_info:
-                _logger.error(
-                    f"No SponsorBankConfiguration found for account number {account_number}"
-                )
+                _logger.error(f"No SponsorBankConfiguration found for account number {account_number}")
                 return None
             info = record.additional_info
             return SponsorBankConfiguration(

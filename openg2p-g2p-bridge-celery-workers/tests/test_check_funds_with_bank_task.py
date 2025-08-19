@@ -143,9 +143,7 @@ def test_check_funds_with_bank_failure(mock_session_maker, mock_bank_connector_f
     assert mock_session_maker.committed
 
 
-def test_check_funds_with_bank_exception(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_check_funds_with_bank_exception(mock_session_maker, mock_bank_connector_factory):
     mock_bank_connector_factory.check_funds.side_effect = Exception("TEST_EXCEPTION")
     mock_warehouse_helper = MagicMock()
     mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
@@ -168,9 +166,7 @@ def test_check_funds_with_bank_exception(
     assert mock_session_maker.committed
 
 
-def test_check_funds_with_bank_envelope_not_found(
-    mock_session_maker, mock_bank_connector_factory
-):
+def test_check_funds_with_bank_envelope_not_found(mock_session_maker, mock_bank_connector_factory):
     mock_session_maker.disbursement_envelope = None
     mock_warehouse_helper = MagicMock()
     mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (

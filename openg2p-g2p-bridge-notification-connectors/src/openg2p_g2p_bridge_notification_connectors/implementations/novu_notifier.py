@@ -39,9 +39,7 @@ class NovuNotifier(NotificationInterface):
             _logger.info(
                 f"Sending notification with ID {notification_id} to {recipient.recipient_email} via Novu"
             )
-            _logger.info(
-                f"Using API key: {_config.novu_api_key} with workflow ID: {workflow_id}"
-            )
+            _logger.info(f"Using API key: {_config.novu_api_key} with workflow ID: {workflow_id}")
             novu_response = novu.trigger(
                 trigger_event_request_dto=novu_py.TriggerEventRequestDto(
                     workflow_id=workflow_id,
@@ -54,8 +52,10 @@ class NovuNotifier(NotificationInterface):
             notification_response = NotificationResponse(
                 notification_id=notification_id,
                 response=str(novu_response.result),
-                status=NotificationResponseStatus.SUCCESS
-                if novu_response.result.status.value == "processed"
-                else NotificationResponseStatus.FAILURE,
+                status=(
+                    NotificationResponseStatus.SUCCESS
+                    if novu_response.result.status.value == "processed"
+                    else NotificationResponseStatus.FAILURE
+                ),
             )
             return notification_response

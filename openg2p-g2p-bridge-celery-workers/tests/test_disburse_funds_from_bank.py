@@ -83,15 +83,13 @@ class MockSession:
             warehouse_allocation_status=ProcessStatus.PROCESSED,
             agency_allocation_status=ProcessStatus.PROCESSED,
         )
-        self.disbursement_resolution_financial_address = (
-            DisbursementResolutionFinancialAddress(
-                disbursement_id="test_disbursement_id",
-                bank_account_number="test_bank_account",
-                bank_code="test_bank",
-                branch_code="test_branch",
-                mobile_number="1234567890",
-                email_address="test@example.com",
-            )
+        self.disbursement_resolution_financial_address = DisbursementResolutionFinancialAddress(
+            disbursement_id="test_disbursement_id",
+            bank_account_number="test_bank_account",
+            bank_code="test_bank",
+            branch_code="test_branch",
+            mobile_number="1234567890",
+            email_address="test@example.com",
         )
 
     def __enter__(self):
@@ -130,10 +128,7 @@ class MockSession:
         if self.query_args[0] is DisbursementEnvelope:
             return self.disbursement_envelope
         elif self.query_args[0] is EnvelopeBatchStatusForCash:
-            if (
-                hasattr(self.filter_args[0], "right")
-                and self.filter_args[0].right.value == "test_batch_id"
-            ):
+            if hasattr(self.filter_args[0], "right") and self.filter_args[0].right.value == "test_batch_id":
                 return self.bank_disbursement_batch_status
             else:
                 return self.disbursement_envelope_batch_status
@@ -206,13 +201,11 @@ def patch_bank_connector_factory_global():
 
 def get_mock_warehouse_helper():
     mock_warehouse_helper = MagicMock()
-    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = (
-        SponsorBankConfiguration(
-            program_account_number="test_account_number",
-            program_account_type=None,
-            program_account_branch_code="test_branch",
-            sponsor_bank_code="EXAMPLE",
-        )
+    mock_warehouse_helper.retrieve_sponsor_bank_configuration.return_value = SponsorBankConfiguration(
+        program_account_number="test_account_number",
+        program_account_type=None,
+        program_account_branch_code="test_branch",
+        sponsor_bank_code="EXAMPLE",
     )
     return mock_warehouse_helper
 
@@ -232,14 +225,8 @@ def test_disburse_funds_success(mock_session_maker, mock_bank_connector_factory)
         mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_status
         == ProcessStatus.PROCESSED.value
     )
-    assert (
-        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
-        is None
-    )
-    assert (
-        mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped
-        == 1
-    )
+    assert mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code is None
+    assert mock_session_maker.disbursement_envelope_batch_status.number_of_disbursements_shipped == 1
     assert mock_session_maker.committed
 
 
@@ -259,18 +246,13 @@ def test_disburse_funds_failure(mock_session_maker, mock_bank_connector_factory)
         == ProcessStatus.PENDING.value
     )
     assert (
-        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
-        == "TEST_ERROR"
+        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code == "TEST_ERROR"
     )
     assert mock_session_maker.committed
 
 
-def test_disburse_funds_exception(
-    mock_session_maker, mock_bank_connector_factory, caplog
-):
-    mock_bank_connector_factory.initiate_payment.side_effect = Exception(
-        "TEST_EXCEPTION"
-    )
+def test_disburse_funds_exception(mock_session_maker, mock_bank_connector_factory, caplog):
+    mock_bank_connector_factory.initiate_payment.side_effect = Exception("TEST_EXCEPTION")
     with patch(
         "openg2p_g2p_bridge_celery_workers.helpers.warehouse_helper.WarehouseHelper.get_component",
         return_value=get_mock_warehouse_helper(),
@@ -287,9 +269,7 @@ def test_disburse_funds_exception(
         mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_latest_error_code
         == "TEST_EXCEPTION"
     )
-    assert (
-        mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_attempts == 1
-    )
+    assert mock_session_maker.disbursement_batch_status.sponsor_bank_dispatch_attempts == 1
     assert mock_session_maker.committed
 
 
