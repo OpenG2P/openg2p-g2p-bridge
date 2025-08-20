@@ -83,8 +83,13 @@ def mt940_processor_worker(statement_id: str):
             account_statement.statement_number = mt940_statement.data.get("statement_number", "")
             account_statement.sequence_number = mt940_statement.data.get("sequence_number", "")
             _logger.info("Parsed account statement header")
-            _logger.info(f"Account number: {account_statement.account_number}, Reference number: {account_statement.reference_number}, 
-                         Statement number: {account_statement.statement_number}, Sequence number: {account_statement.sequence_number}")
+            _logger.info(
+                "Account number: %s, Reference number: %s, Statement number: %s, Sequence number: %s",
+                account_statement.account_number,
+                account_statement.reference_number,
+                account_statement.statement_number,
+                account_statement.sequence_number,
+            )
 
             # Get the benefit program configuration
             sponsor_bank_configuration: SponsorBankConfiguration = (
