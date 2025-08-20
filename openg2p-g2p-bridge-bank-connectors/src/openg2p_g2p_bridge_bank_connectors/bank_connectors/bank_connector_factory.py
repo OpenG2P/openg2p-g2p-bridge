@@ -12,4 +12,4 @@ class BankConnectorFactory(BaseService):
         if sponsor_bank_code == _config.bank_simulator_code:
             return ExampleBankConnector.get_component()
         else:
-            raise NotImplementedError(f"Bank {sponsor_bank_code} is not supported")
+            raise NotImplementedError(f"Bank {sponsor_bank_code} is not supported. Supported bank: {_config.bank_simulator_code}")
