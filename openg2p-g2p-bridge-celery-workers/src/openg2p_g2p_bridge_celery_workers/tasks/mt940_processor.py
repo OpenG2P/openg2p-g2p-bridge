@@ -125,6 +125,7 @@ def mt940_processor_worker(statement_id: str):
                 debit_credit_indicator = transaction.data["status"]
 
                 if debit_credit_indicator in ["D"]:
+                    _logger.info(f"This is a Debit Transaction With Reference :{transaction.data["customer_reference"]}")
                     parsed_transaction = construct_parsed_transaction(
                         bank_connector,
                         debit_credit_indicator,
@@ -135,6 +136,7 @@ def mt940_processor_worker(statement_id: str):
                     parsed_transactions_d.append(parsed_transaction)
 
                 if debit_credit_indicator in ["RD"]:
+                    _logger.info(f"This is a Reverse Debit Transaction With Reference :{transaction.data["customer_reference"]}")
                     parsed_transaction = construct_parsed_transaction(
                         bank_connector,
                         debit_credit_indicator,
