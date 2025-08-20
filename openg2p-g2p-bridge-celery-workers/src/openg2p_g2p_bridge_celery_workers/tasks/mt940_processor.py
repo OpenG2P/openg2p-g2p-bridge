@@ -63,6 +63,7 @@ def mt940_processor_worker(statement_id: str):
             transaction_reference_parser = mt940.tags.TransactionReferenceNumber()
 
             statement_parser = mt940.tags.Statement()
+            _logger.info(f"Parsing MT940 statement for statement id: {statement_id}")
             mt940_statement = mt940.models.Transactions(
                 processors={
                     "pre_statement": [mt940.processors.add_currency_pre_processor("")],
@@ -82,6 +83,9 @@ def mt940_processor_worker(statement_id: str):
             account_statement.statement_number = mt940_statement.data.get("statement_number", "")
             account_statement.sequence_number = mt940_statement.data.get("sequence_number", "")
             _logger.info("Parsed account statement header")
+            _logger.info(f"Account number: {account_statement.account_number}, Reference number: {account_statement.reference_number}, 
+                         Statement number: {account_statement.statement_number}, Sequence number: {account_statement.sequence_number}")
+
             # Get the benefit program configuration
             sponsor_bank_configuration: SponsorBankConfiguration = (
                 WarehouseHelper.get_component().retrieve_sponsor_bank_configuration_for_account_number(
@@ -208,6 +212,7 @@ def process_reversal_of_debits(
     for parsed_transaction in parsed_transactions_rd:
         disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
+        _logger.info(f"Disbursement ID from parsed_transaction: {disbursement}")
 
         if not disbursement:
             disbursement_batch_control_geo = check_valid_disbursement_batch_control_geo_id(
@@ -259,7 +264,7 @@ def process_debit_transactions(
     for parsed_transaction in parsed_transactions_d:
         disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
-
+        _logger.info(f"Disbursement ID from parsed_transaction: {disbursement}")
         if not disbursement:
             disbursement_batch_control_geo = check_valid_disbursement_batch_control_geo_id(
                 parsed_transaction, session
@@ -389,6 +394,8 @@ def construct_new_disbursement_recon(
     statement_sequence,
     session,
 ):
+    if disbursement:
+        _logger.info(f"Disbursement ID For Recon: {disbursement.id}")
     disbursement_recon = DisbursementRecon(
         # If disbursement is present, then it is for DIGITAL CASH
         disbursement_batch_control_id=disbursement.disbursement_batch_control_id if disbursement else None,
@@ -424,6 +431,7 @@ def construct_parsed_transaction(
     reconciliation_id = bank_connector.retrieve_reconciliation_id(
         remittance_reference_number, customer_reference, narratives
     )
+    _logger.info(f"Customer Reference: {customer_reference}, ")
     beneficiary_name_from_bank = None
     remittance_entry_sequence = None
     remittance_entry_date = None
@@ -452,7 +460,6 @@ def construct_parsed_transaction(
     parsed_transaction.update(
         {
             "reconciliation_id": reconciliation_id,
-            # "disbursement_envelope_id": disbursement_envelope_id,
             "transaction_amount": transaction_amount,
             "debit_credit_indicator": debit_credit_indicator,
             "beneficiary_name_from_bank": beneficiary_name_from_bank,
