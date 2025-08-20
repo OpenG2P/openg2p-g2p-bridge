@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     db_dbname: str = "openg2p_g2p_bridge_db"
 
+
     funds_available_check_url_example_bank: str = (
         "https://example-bank.dev.openg2p.org/api/example-bank/check_funds"
     )
@@ -16,3 +17,4 @@ class Settings(BaseSettings):
     funds_disbursement_url_example_bank: str = (
         "https://example-bank.dev.openg2p.org/api/example-bank/initiate_payment"
     )
+    bank_simulator_code: str = "EXAMPLE-BANK"
