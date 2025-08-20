@@ -123,7 +123,7 @@ def mt940_processor_worker(statement_id: str):
             for transaction in mt940_statement:
                 entry_sequence += 1
                 debit_credit_indicator = transaction.data["status"]
-
+                _logger.info(f"Debit/Credit Indicator:{transaction.data["status"]}")
                 if debit_credit_indicator in ["D"]:
                     _logger.info(f"This is a Debit Transaction With Reference :{transaction.data["customer_reference"]}")
                     parsed_transaction = construct_parsed_transaction(
