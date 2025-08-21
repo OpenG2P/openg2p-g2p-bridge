@@ -185,6 +185,12 @@ def construct_disbursement_payloads_for_digital_cash(
     disbursement_payment_payloads = []
 
     for disbursement in disbursements:
+        # If disbursement quantity is less than or equal to 0, don't send
+        if disbursement.disbursement_quantity <=0:
+            _logger.warning(
+                f"Skipping disbursement {disbursement.id} with non-positive quantity: {disbursement.disbursement_quantity}"
+            )
+            continue
         disbursement_resolution_financial_address = (
             session.query(DisbursementResolutionFinancialAddress)
             .filter(DisbursementResolutionFinancialAddress.disbursement_id == disbursement.id)
@@ -265,6 +271,11 @@ def construct_disbursement_payloads_for_physical_cash(
     disbursement_payloads = []
 
     for disbursement_batch_control_geo in disbursement_batch_control_geos:
+        if disbursement_batch_control_geo.total_quantity <= 0:
+            _logger.warning(
+                f"Skipping disbursement for geo {disbursement_batch_control_geo.id} with non-positive quantity"
+            )
+            continue
         agency_detail_for_payment: AgencyDetailForPayment = (
             AgencyHelper.get_component().retrieve_agency_details(
                 disbursement_batch_control_geo.agency_id,

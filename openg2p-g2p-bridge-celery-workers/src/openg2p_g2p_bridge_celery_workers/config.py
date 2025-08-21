@@ -79,3 +79,5 @@ class Settings(
     db_hostname_pbms: str = "localhost"
     db_port_pbms: int = 5432
     db_dbname_pbms: str = "pbmsdb"
+
+    suppress_notifications: bool = False

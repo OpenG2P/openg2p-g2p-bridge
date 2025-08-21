@@ -121,7 +121,7 @@ def geo_resolution_worker(disbursement_batch_control_id: str):
             for (admin_large_id, admin_small_id), data in batch_control_geo_map.items():
                 disbursement_batch_control_geo_id = str(
                     generate(size=16)
-                )  # TODO: Use a more robust ID generation strategy if needed
+                )
                 disbursement_batch_control_geo = DisbursementBatchControlGeo(
                     id=disbursement_batch_control_geo_id,
                     disbursement_cycle_id=disbursement_batch_control.disbursement_cycle_id,
