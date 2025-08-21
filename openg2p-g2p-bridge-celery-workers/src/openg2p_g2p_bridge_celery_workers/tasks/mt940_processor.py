@@ -367,7 +367,7 @@ def construct_disbursement_error_recon(
         entry_sequence=parsed_transaction["remittance_entry_sequence"],
         entry_date=parsed_transaction["remittance_entry_date"],
         value_date=parsed_transaction["remittance_value_date"],
-        error_reason=g2p_bridge_error_code,
+        error_reason=g2p_bridge_error_code.value,
         reconciliation_id=parsed_transaction["reconciliation_id"],
         bank_reference_number=parsed_transaction["remittance_reference_number"],
     )
