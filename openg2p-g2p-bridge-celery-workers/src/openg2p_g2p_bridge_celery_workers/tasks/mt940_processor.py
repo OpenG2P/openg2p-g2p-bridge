@@ -313,6 +313,7 @@ def process_debit_transactions(
 
 
 def get_disbursement_recon(parsed_transaction, session):
+    _logger.info(f"Looking up DisbursementRecon for reconciliation_id: {parsed_transaction['reconciliation_id']}")
     disbursement_recon = (
         session.query(DisbursementRecon)
         .filter(DisbursementRecon.disbursement_id == parsed_transaction["reconciliation_id"])
@@ -326,6 +327,7 @@ def get_disbursement_recon(parsed_transaction, session):
             )
             .first()
         )
+    _logger.info(f"DisbursementRecon found: {disbursement_recon}")
     return disbursement_recon
 
 
