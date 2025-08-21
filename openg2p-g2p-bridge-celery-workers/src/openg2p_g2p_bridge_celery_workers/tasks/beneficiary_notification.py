@@ -16,6 +16,8 @@ from openg2p_g2p_bridge_models.schemas import (
 )
 from openg2p_g2p_bridge_notification_connectors.factory import NotificationFactory
 from openg2p_g2p_bridge_notification_connectors.models import (
+    NotificationResponse,
+    NotificationResponseStatus,
     NotificationType,
     Recipient,
 )
@@ -107,20 +109,19 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
             notification_id = str(uuid.uuid4())
 
             # Send to notification microservice
-            NotificationFactory.get_component().get_notifier()
-            Recipient(
+            notifier = NotificationFactory.get_component().get_notifier()
+            recipient = Recipient(
                 recipient_id=disbursement_resolution_geo_address.beneficiary_id,
                 recipient_name=disbursement_resolution_geo_address.beneficiary_name,
                 recipient_email=disbursement_resolution_geo_address.beneficiary_email,
                 recipient_phone=disbursement_resolution_geo_address.beneficiary_phone,
             )
-            # TODO : Disabled notification sending for now
-            # notification_response: NotificationResponse = notifier.send_notification(
-            #     notification_id=notification_id,
-            #     payload=notification_payload.model_dump(),
-            #     notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
-            #     recipient=recipient
-            # )
+            notification_response: NotificationResponse = notifier.send_notification(
+                notification_id=notification_id,
+                payload=notification_payload.model_dump(),
+                notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
+                recipient=recipient
+            )
 
             # Create NotificationLog entry (PENDING)
             notification_log = NotificationLog(
@@ -130,10 +131,10 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 payload=str(notification_payload.model_dump()),
                 sent_at=datetime.datetime.now(),
             )
-            # if notification_response.status == NotificationResponseStatus.FAILURE:
-            #     raise Exception(notification_response.error_message or "Notification failed")
+            if notification_response.status == NotificationResponseStatus.FAILURE:
+                raise Exception(notification_response.error_message or "Notification failed")
 
-            # notification_log.response = notification_response.response
+            notification_log.response = notification_response.response
             notification_log.processed_at = datetime.datetime.now()
             disbursement_resolution_geo_address.beneficiary_notification_status = (
                 ProcessStatus.PROCESSED.value

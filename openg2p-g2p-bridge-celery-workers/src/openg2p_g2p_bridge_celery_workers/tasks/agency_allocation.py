@@ -116,8 +116,8 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
                         agency_additional_attributes=allocation.get("agency_additional_attributes", {}),
-                        warehouse_notification_status=ProcessStatus.PROCESSED.value,  # TODO: Disabled for demo and made processed,
-                        agency_notification_status=ProcessStatus.PROCESSED.value,  # TODO: Disabled for demo and made processed,
+                        warehouse_notification_status=warehouse_notification_status if not _config.suppress_notifications else ProcessStatus.PROCESSED.value,
+                        agency_notification_status=agency_notification_status if not _config.suppress_notifications else ProcessStatus.PROCESSED.value,
                     )
                 )
 
@@ -131,7 +131,7 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
                     .values(
                         agency_id=allocation["agency_id"],
                         agency_mnemonic=allocation["agency_mnemonic"],
-                        beneficiary_notification_status=ProcessStatus.PROCESSED.value,  # TODO: Disabled for demo and made processed
+                        beneficiary_notification_status= ProcessStatus.PENDING.value if not _config.suppress_notifications else ProcessStatus.PROCESSED.value,
                     )
                 )
 
