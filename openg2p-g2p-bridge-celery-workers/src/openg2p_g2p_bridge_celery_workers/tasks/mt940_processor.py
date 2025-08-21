@@ -125,7 +125,6 @@ def mt940_processor_worker(statement_id: str):
                 debit_credit_indicator = transaction.data["status"]
                 _logger.info(f"Debit/Credit Indicator:{transaction.data["status"]}")
                 if debit_credit_indicator in ["D"]:
-                    _logger.info(f"This is a Debit Transaction With Reference :{transaction.data["customer_reference"]}")
                     parsed_transaction = construct_parsed_transaction(
                         bank_connector,
                         debit_credit_indicator,
@@ -136,7 +135,6 @@ def mt940_processor_worker(statement_id: str):
                     parsed_transactions_d.append(parsed_transaction)
 
                 if debit_credit_indicator in ["RD"]:
-                    _logger.info(f"This is a Reverse Debit Transaction With Reference :{transaction.data["customer_reference"]}")
                     parsed_transaction = construct_parsed_transaction(
                         bank_connector,
                         debit_credit_indicator,
@@ -438,7 +436,6 @@ def construct_parsed_transaction(
     reconciliation_id = bank_connector.retrieve_reconciliation_id(
         remittance_reference_number, customer_reference, narratives
     )
-    _logger.info(f"Customer Reference: {customer_reference}, ")
     beneficiary_name_from_bank = None
     remittance_entry_sequence = None
     remittance_entry_date = None
@@ -556,7 +553,6 @@ def update_envelope_batch_status_reversed(disbursement_recons: List[Disbursement
 
     # Update the disbursement envelope batch status
     for disbursement_envelope_id, count in disbursement_envelope_id_count.items():
-        _logger.info(f"Disbursement envelope id: {disbursement_envelope_id}, count: {count}")
 
         max_retries = 5
         last_exc = None

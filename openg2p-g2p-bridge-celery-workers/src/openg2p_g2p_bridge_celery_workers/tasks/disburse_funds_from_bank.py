@@ -185,6 +185,9 @@ def construct_disbursement_payloads_for_digital_cash(
     disbursement_payment_payloads = []
 
     for disbursement in disbursements:
+        # If disbursement quantity is less than or equal to 0, don't send
+        if disbursement.disbursement_quantity <=0:
+            continue
         disbursement_resolution_financial_address = (
             session.query(DisbursementResolutionFinancialAddress)
             .filter(DisbursementResolutionFinancialAddress.disbursement_id == disbursement.id)
