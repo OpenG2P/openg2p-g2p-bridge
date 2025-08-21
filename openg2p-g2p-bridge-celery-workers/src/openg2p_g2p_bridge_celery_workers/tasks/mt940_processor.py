@@ -158,9 +158,6 @@ def mt940_processor_worker(statement_id: str):
                 statement_id,
             )
 
-            # Add disbursement_recons_d to session before processing reversal transactions
-            session.add_all(disbursement_recons_d)
-
             # Start processing reversal transactions - rd
             disbursement_recons_rd = []
             process_reversal_of_debits(
@@ -171,8 +168,6 @@ def mt940_processor_worker(statement_id: str):
                 session,
                 statement_id,
             )
-
-            session.add_all(disbursement_recons_rd)
 
             update_envelope_batch_status_reconciled(disbursement_recons_d, session)
             update_envelope_batch_status_reversed(disbursement_recons_rd, session)
@@ -255,6 +250,7 @@ def process_reversal_of_debits(
                 account_statement.statement_number,
                 account_statement.sequence_number,
             )
+            session.add(disbursement_recon)
             disbursement_recons_rd.append(disbursement_recon)
 
 
@@ -309,7 +305,9 @@ def process_debit_transactions(
             account_statement.sequence_number,
             session,
         )
+        session.add(disbursement_recon)
         disbursement_recons_d.append(disbursement_recon)
+
 
 
 def get_disbursement_recon(parsed_transaction, session):
