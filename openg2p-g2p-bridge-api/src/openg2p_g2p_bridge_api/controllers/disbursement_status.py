@@ -54,9 +54,9 @@ class DisbursementStatusController(BaseController):
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_status_request)
 
-            disbursement_status_payloads: List[
-                DisbursementStatusPayload
-            ] = await self.disbursement_service.get_disbursement_status_payloads(disbursement_status_request)
+            disbursement_status_payloads: List[DisbursementStatusPayload] = (
+                await self.disbursement_service.get_disbursement_status_payloads(disbursement_status_request)
+            )
             disbursement_status_response: DisbursementStatusResponse = (
                 await self.disbursement_service.construct_disbursement_status_success_response(
                     disbursement_status_request, disbursement_status_payloads

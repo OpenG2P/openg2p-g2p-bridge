@@ -120,7 +120,7 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
                 notification_id=notification_id,
                 payload=notification_payload.model_dump(),
                 notification_type=NotificationType.BENEFICIARY_NOTIFICATION.value,
-                recipient=recipient
+                recipient=recipient,
             )
 
             # Create NotificationLog entry (PENDING)

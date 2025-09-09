@@ -54,11 +54,11 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             )
             return
 
-        sponsor_bank_configuration: SponsorBankConfiguration = (
-            WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
-                disbursement_envelope.benefit_program_id,
-                disbursement_envelope.benefit_code_id,
-            )
+        sponsor_bank_configuration: (
+            SponsorBankConfiguration
+        ) = WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
+            disbursement_envelope.benefit_program_id,
+            disbursement_envelope.benefit_code_id,
         )
 
         total_funds_needed = disbursement_envelope.total_disbursement_quantity
