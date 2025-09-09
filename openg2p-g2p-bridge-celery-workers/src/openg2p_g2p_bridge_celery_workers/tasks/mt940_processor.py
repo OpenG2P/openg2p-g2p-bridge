@@ -123,7 +123,7 @@ def mt940_processor_worker(statement_id: str):
             for transaction in mt940_statement:
                 entry_sequence += 1
                 debit_credit_indicator = transaction.data["status"]
-                _logger.info(f"Debit/Credit Indicator:{transaction.data["status"]}")
+                _logger.info(f"Debit/Credit Indicator:{transaction.data['status']}")
                 if debit_credit_indicator in ["D"]:
                     parsed_transaction = construct_parsed_transaction(
                         bank_connector,
@@ -309,9 +309,10 @@ def process_debit_transactions(
         disbursement_recons_d.append(disbursement_recon)
 
 
-
 def get_disbursement_recon(parsed_transaction, session):
-    _logger.info(f"Looking up DisbursementRecon for reconciliation_id: {parsed_transaction['reconciliation_id']}")
+    _logger.info(
+        f"Looking up DisbursementRecon for reconciliation_id: {parsed_transaction['reconciliation_id']}"
+    )
     disbursement_recon = (
         session.query(DisbursementRecon)
         .filter(DisbursementRecon.disbursement_id == parsed_transaction["reconciliation_id"])
@@ -553,7 +554,6 @@ def update_envelope_batch_status_reversed(disbursement_recons: List[Disbursement
 
     # Update the disbursement envelope batch status
     for disbursement_envelope_id, count in disbursement_envelope_id_count.items():
-
         max_retries = 5
         last_exc = None
 

@@ -16,8 +16,8 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementBatchControl,
     DisbursementBatchControlGeo,
     DisbursementBatchControlGeoAttributes,
-    DisbursementRecon,
     DisbursementEnvelope,
+    DisbursementRecon,
     DisbursementResolutionFinancialAddress,
     EnvelopeBatchStatusForCash,
     ProcessStatus,
@@ -81,21 +81,25 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
         disbursement_payment_payloads: List[DisbursementPaymentPayload]
 
         if disbursement_envelope.benefit_type == BenefitType.CASH_DIGITAL.value:
-            disbursement_payment_payloads, zero_quantity_reconciled_count = construct_disbursement_payloads_for_digital_cash(
-                disbursement_batch_control_id,
-                session,
-                disbursement_envelope,
-                envelope_batch_status_for_cash,
-                sponsor_bank_configuration,
+            disbursement_payment_payloads, zero_quantity_reconciled_count = (
+                construct_disbursement_payloads_for_digital_cash(
+                    disbursement_batch_control_id,
+                    session,
+                    disbursement_envelope,
+                    envelope_batch_status_for_cash,
+                    sponsor_bank_configuration,
+                )
             )
 
         elif disbursement_envelope.benefit_type == BenefitType.CASH_PHYSICAL.value:
-            disbursement_payment_payloads, zero_quantity_reconciled_count = construct_disbursement_payloads_for_physical_cash(
-                disbursement_batch_control_id,
-                session,
-                disbursement_envelope,
-                envelope_batch_status_for_cash,
-                sponsor_bank_configuration,
+            disbursement_payment_payloads, zero_quantity_reconciled_count = (
+                construct_disbursement_payloads_for_physical_cash(
+                    disbursement_batch_control_id,
+                    session,
+                    disbursement_envelope,
+                    envelope_batch_status_for_cash,
+                    sponsor_bank_configuration,
+                )
             )
 
         bank_connector: BankConnectorInterface = BankConnectorFactory.get_component().get_bank_connector(
@@ -129,9 +133,13 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
                     disbursement_batch_control.sponsor_bank_dispatch_latest_error_code = None
                     disbursement_batch_control.sponsor_bank_dispatch_timestamp = datetime.now()
                     disbursement_batch_control.sponsor_bank_dispatch_attempts += 1
-                    envelope_batch_status_for_cash.number_of_disbursements_shipped += len(disbursement_payment_payloads)
+                    envelope_batch_status_for_cash.number_of_disbursements_shipped += len(
+                        disbursement_payment_payloads
+                    )
                     if zero_quantity_reconciled_count:
-                        envelope_batch_status_for_cash.number_of_disbursements_reconciled += zero_quantity_reconciled_count
+                        envelope_batch_status_for_cash.number_of_disbursements_reconciled += (
+                            zero_quantity_reconciled_count
+                        )
                 else:
                     raise ValueError(
                         f"Payment failed for envelope {disbursement_envelope.id}: {payment_response.error_code}"
@@ -188,7 +196,7 @@ def construct_disbursement_payloads_for_digital_cash(
 
     for disbursement in disbursements:
         # If disbursement quantity is less than or equal to 0, don't send
-        if disbursement.disbursement_quantity <=0:
+        if disbursement.disbursement_quantity <= 0:
             _logger.warning(
                 f"Skipping disbursement {disbursement.id} with non-positive quantity: {disbursement.disbursement_quantity}"
             )
