@@ -185,6 +185,7 @@ def construct_disbursement_payloads_for_digital_cash(
     envelope_batch_status_for_digital_cash,
     sponsor_bank_configuration,
 ) -> tuple[List[DisbursementPaymentPayload], int]:
+    _logger.info(f"Constructing disbursement payloads for digital cash: {disbursement_batch_control_id}")
     disbursements = (
         session.query(Disbursement)
         .filter(Disbursement.disbursement_batch_control_id == disbursement_batch_control_id)
@@ -271,6 +272,9 @@ def construct_disbursement_payloads_for_digital_cash(
             )
         )
 
+    _logger.info(
+        f"Digital cash disbursement payloads constructed: {len(disbursement_payment_payloads)} payloads"
+    )
     return disbursement_payment_payloads, zero_quantity_reconciled_count
 
 
@@ -281,6 +285,7 @@ def construct_disbursement_payloads_for_physical_cash(
     envelope_batch_status_for_digital_cash,
     sponsor_bank_configuration,
 ) -> tuple[List[DisbursementPaymentPayload], int]:
+    _logger.info(f"Constructing disbursement payloads for physical cash: {disbursement_batch_control_id}")
     disbursement_batch_control_geos: List[DisbursementBatchControlGeo] = (
         session.query(DisbursementBatchControlGeo)
         .filter(DisbursementBatchControlGeo.disbursement_batch_control_id == disbursement_batch_control_id)
@@ -362,4 +367,5 @@ def construct_disbursement_payloads_for_physical_cash(
         )
         disbursement_payloads.append(disbursement_payload)
 
+    _logger.info(f"Physical cash disbursement payloads constructed: {len(disbursement_payloads)} payloads")
     return disbursement_payloads, zero_quantity_reconciled_count

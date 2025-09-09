@@ -241,10 +241,12 @@ class DisbursementEnvelopeService(BaseService):
         self, disbursement_envelope: DisbursementEnvelope
     ) -> EnvelopeControl:
         _logger.info("Constructing envelope control")
-        return EnvelopeControl(
+        envelope_control = EnvelopeControl(
             id=disbursement_envelope.id,
             disbursement_envelope_id=disbursement_envelope.id,
         )
+        _logger.info("Envelope control constructed successfully")
+        return envelope_control
 
     # noinspection PyMethodMayBeStatic
     async def construct_envelope_batch_status_for_cash(
@@ -257,6 +259,7 @@ class DisbursementEnvelopeService(BaseService):
             funds_available_with_bank=FundsAvailableWithBankEnum.PENDING_CHECK.value,
             funds_blocked_with_bank=FundsBlockedWithBankEnum.PENDING_CHECK.value,
         )
+        _logger.info("Envelope batch status for digital cash constructed successfully")
         return envelope_batch_status_for_cash
 
     async def validate_envelope_amend_request(
@@ -297,6 +300,7 @@ class DisbursementEnvelopeService(BaseService):
         ):
             _logger.error("Invalid total disbursement quantity")
             raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_QUANTITY)
+        _logger.info("Disbursement envelope amend request validated successfully")
         return True
 
     async def update_disbursement_envelope(

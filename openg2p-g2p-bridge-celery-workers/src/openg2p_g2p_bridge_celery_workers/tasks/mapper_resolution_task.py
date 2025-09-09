@@ -85,6 +85,9 @@ def mapper_resolution_worker(disbursement_batch_control_id: str):
                 beneficiary_disbursement_map,
                 session,
             )
+            _logger.info(
+                f"Mapper resolution completed successfully for batch: {disbursement_batch_control_id}"
+            )
 
         except Exception as e:
             disbursement_batch_control.fa_resolution_latest_error_code = str(e)
@@ -110,6 +113,7 @@ async def make_resolve_request(disbursements):
     resolve_client = MapperResolveClient.get_component()
     try:
         resolve_response = await resolve_client.resolve_request(resolve_request)
+        _logger.info("Resolve request completed successfully")
         return resolve_response, None
     except Exception as e:
         _logger.error(f"Failed to resolve the request: {e}")

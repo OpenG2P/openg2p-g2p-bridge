@@ -191,13 +191,15 @@ class DisbursementEnvelopeStatusService(BaseService):
                     .all()
                 )
 
-            return await self.construct_batch_status_payload(
+            payload = await self.construct_batch_status_payload(
                 envelope=envelope,
                 envelope_control=envelope_control,
                 digital_cash_status=envelope_batch_status_for_digital_cash,
                 beneficiary_notified_count=beneficiary_notified_count,
                 disbursement_batch_control_geos=disbursement_batch_control_geos,
             )
+            _logger.info("Disbursement envelope status retrieved successfully")
+            return payload
 
     async def construct_batch_status_payload(
         self,
@@ -207,6 +209,7 @@ class DisbursementEnvelopeStatusService(BaseService):
         beneficiary_notified_count=None,
         disbursement_batch_control_geos=None,
     ) -> DisbursementEnvelopeStatusPayload:
+        _logger.info("Constructing batch status payload")
         warehouse_ids = (
             {geo.warehouse_id for geo in disbursement_batch_control_geos if geo.warehouse_id}
             if disbursement_batch_control_geos
@@ -235,8 +238,8 @@ class DisbursementEnvelopeStatusService(BaseService):
             if disbursement_batch_control_geos
             else set()
         )
-        _logger.info(f"{envelope.id}")
-        return DisbursementEnvelopeStatusPayload(
+        _logger.info(f"Processing envelope {envelope.id}")
+        payload = DisbursementEnvelopeStatusPayload(
             disbursement_envelope_id=envelope.id,
             benefit_code_id=envelope.benefit_code_id,
             benefit_code_mnemonic=envelope.benefit_code_mnemonic,
@@ -291,12 +294,15 @@ class DisbursementEnvelopeStatusService(BaseService):
             no_of_pods_received=None,
             disbursement_batch_control_geos=disbursement_batch_control_geos,
         )
+        _logger.info("Batch status payload constructed successfully")
+        return payload
 
     async def construct_disbursement_envelope_status_error_response(
         self,
         disbursement_envelope_status_request: DisbursementEnvelopeStatusRequest,
         code: str,
     ) -> DisbursementEnvelopeStatusResponse:
+        _logger.info("Constructing disbursement envelope status error response")
         response = DisbursementEnvelopeStatusResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_envelope_status_request.header.message_id,
@@ -307,6 +313,7 @@ class DisbursementEnvelopeStatusService(BaseService):
             ),
             message=None,
         )
+        _logger.info("Disbursement envelope status error response constructed")
         return response
 
     async def construct_disbursement_envelope_status_success_response(
@@ -317,6 +324,7 @@ class DisbursementEnvelopeStatusService(BaseService):
         """
         Returns a DisbursementEnvelopeStatusResponse with the correct payload type (digital or physical).
         """
+        _logger.info("Constructing disbursement envelope status success response")
         response = DisbursementEnvelopeStatusResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_envelope_status_request.header.message_id,
@@ -326,4 +334,5 @@ class DisbursementEnvelopeStatusService(BaseService):
             ),
             message=disbursement_envelope_batch_status_payload,
         )
+        _logger.info("Disbursement envelope status success response constructed")
         return response

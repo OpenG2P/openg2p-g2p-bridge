@@ -35,6 +35,7 @@ _engine = get_engine()
 
 @celery_app.task(name="beneficiary_notification_worker")
 def beneficiary_notification_worker(disbursement_id: str) -> None:
+    _logger.info(f"Starting beneficiary notification for disbursement: {disbursement_id}")
     session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_commit=False)
     with session_maker() as session:
         try:
@@ -142,6 +143,9 @@ def beneficiary_notification_worker(disbursement_id: str) -> None:
 
             session.add(notification_log)
             session.commit()
+            _logger.info(
+                f"Beneficiary notification completed successfully for disbursement: {disbursement_id}"
+            )
 
         except Exception as e:
             session.rollback()
@@ -170,6 +174,7 @@ def construct_beneficiary_notification_payload(
     disbursement,
     disbursement_batch_control_geo_attributes,
 ):
+    _logger.info("Constructing beneficiary notification payload")
     notification_payload = BeneficiaryNotificationPayload(
         beneficiary_id=disbursement_resolution_geo_address.beneficiary_id,
         beneficiary_name=getattr(disbursement, "beneficiary_name", None),
@@ -208,4 +213,5 @@ def construct_beneficiary_notification_payload(
         ),
     )
 
+    _logger.info("Beneficiary notification payload constructed successfully")
     return notification_payload

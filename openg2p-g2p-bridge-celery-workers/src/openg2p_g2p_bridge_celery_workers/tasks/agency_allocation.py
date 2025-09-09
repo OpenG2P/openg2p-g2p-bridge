@@ -31,6 +31,7 @@ session_maker = sessionmaker(bind=_engine.get("db_engine_bridge"), expire_on_com
 
 @celery_app.task(name="agency_allocation_worker")
 def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
+    _logger.info(f"Starting agency allocation for batch: {disbursement_batch_control_id}")
     with session_maker() as session:
         try:
             # Fetch the batch control record
@@ -170,6 +171,9 @@ def agency_allocation_worker(disbursement_batch_control_id: str) -> None:
             disbursement_batch_control.agency_allocation_timestamp = datetime.now()
 
             session.commit()
+            _logger.info(
+                f"Agency allocation completed successfully for batch: {disbursement_batch_control_id}"
+            )
         except Exception as e:
             session.rollback()
             _logger.error(f"Agency allocation failed: {e}")
