@@ -52,9 +52,9 @@ class DisbursementController(BaseController):
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
-            disbursement_payloads: List[
-                DisbursementPayload
-            ] = await self.disbursement_service.create_disbursements(disbursement_request)
+            disbursement_payloads: List[DisbursementPayload] = (
+                await self.disbursement_service.create_disbursements(disbursement_request)
+            )
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: DisbursementResponse = (
@@ -92,9 +92,9 @@ class DisbursementController(BaseController):
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
-            disbursement_payloads: List[
-                DisbursementPayload
-            ] = await self.disbursement_service.cancel_disbursements(disbursement_request)
+            disbursement_payloads: List[DisbursementPayload] = (
+                await self.disbursement_service.cancel_disbursements(disbursement_request)
+            )
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: DisbursementResponse = (

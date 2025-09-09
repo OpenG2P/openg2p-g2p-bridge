@@ -49,24 +49,30 @@ class DisbursementEnvelopeStatusController(BaseController):
                     disbursement_envelope_status_request
                 )
             )
-            disbursement_status_response: DisbursementEnvelopeStatusResponse = await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_success_response(
-                disbursement_envelope_status_request,
-                disbursement_envelope_status_payload,
+            disbursement_status_response: DisbursementEnvelopeStatusResponse = (
+                await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_success_response(
+                    disbursement_envelope_status_request,
+                    disbursement_envelope_status_payload,
+                )
             )
             return disbursement_status_response
 
         except RequestValidationException as e:
             _logger.error("Error validating request")
-            error_response: DisbursementEnvelopeStatusResponse = await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_error_response(
-                disbursement_envelope_status_request,
-                e.code,
+            error_response: DisbursementEnvelopeStatusResponse = (
+                await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_error_response(
+                    disbursement_envelope_status_request,
+                    e.code,
+                )
             )
             return error_response
 
         except DisbursementStatusException as e:
             _logger.error(f"Error in getting disbursement envelope status: {e}")
-            error_response: DisbursementEnvelopeStatusResponse = await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_error_response(
-                disbursement_envelope_status_request,
-                e.code,
+            error_response: DisbursementEnvelopeStatusResponse = (
+                await self.disbursement_envelope_status_service.construct_disbursement_envelope_status_error_response(
+                    disbursement_envelope_status_request,
+                    e.code,
+                )
             )
             return error_response

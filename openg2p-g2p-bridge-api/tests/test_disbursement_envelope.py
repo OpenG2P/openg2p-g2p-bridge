@@ -156,9 +156,9 @@ async def test_create_disbursement_envelope_errors(
 
     actual_response = await controller.create_disbursement_envelopes(request_payload, is_signature_valid=True)
 
-    assert actual_response == error_response, (
-        f"The response did not match the expected error response for {error_code}."
-    )
+    assert (
+        actual_response == error_response
+    ), f"The response did not match the expected error response for {error_code}."
 
 
 def mock_cancel_disbursement_envelope(is_valid, error_code=None):
@@ -282,9 +282,9 @@ async def test_cancel_disbursement_envelope_failure(
     )
 
     actual_response = await controller.cancel_disbursement_envelope(request_payload, is_signature_valid=True)
-    assert actual_response == error_response, (
-        f"The response for {error_code} did not match the expected error response."
-    )
+    assert (
+        actual_response == error_response
+    ), f"The response for {error_code} did not match the expected error response."
 
 
 def mock_amend_disbursement_envelope(is_valid, error_code=None):
@@ -415,9 +415,9 @@ async def test_amend_disbursement_envelope_errors(
 
     actual_response = await controller.amend_disbursement_envelope(request_payload, is_signature_valid=True)
 
-    assert actual_response == error_response, (
-        f"The response did not match the expected error response for {error_code}."
-    )
+    assert (
+        actual_response == error_response
+    ), f"The response did not match the expected error response for {error_code}."
 
 
 @pytest.mark.asyncio

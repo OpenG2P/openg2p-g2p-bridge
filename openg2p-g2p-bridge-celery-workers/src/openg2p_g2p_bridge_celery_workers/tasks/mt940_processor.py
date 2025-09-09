@@ -92,10 +92,10 @@ def mt940_processor_worker(statement_id: str):
             )
 
             # Get the benefit program configuration
-            sponsor_bank_configuration: SponsorBankConfiguration = (
-                WarehouseHelper.get_component().retrieve_sponsor_bank_configuration_for_account_number(
-                    account_statement.account_number
-                )
+            sponsor_bank_configuration: (
+                SponsorBankConfiguration
+            ) = WarehouseHelper.get_component().retrieve_sponsor_bank_configuration_for_account_number(
+                account_statement.account_number
             )
 
             if not sponsor_bank_configuration:

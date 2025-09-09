@@ -71,11 +71,11 @@ def disburse_funds_from_bank_worker(disbursement_batch_control_id: str):
             _logger.error("No EnvelopeBatchStatusForDigitalCash found")
             return
 
-        sponsor_bank_configuration: SponsorBankConfiguration = (
-            WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
-                disbursement_envelope.benefit_program_id,
-                disbursement_envelope.benefit_code_id,
-            )
+        sponsor_bank_configuration: (
+            SponsorBankConfiguration
+        ) = WarehouseHelper.get_component().retrieve_sponsor_bank_configuration(
+            disbursement_envelope.benefit_program_id,
+            disbursement_envelope.benefit_code_id,
         )
 
         disbursement_payment_payloads: List[DisbursementPaymentPayload]
@@ -305,12 +305,12 @@ def construct_disbursement_payloads_for_physical_cash(
             session.add(disbursement_recon)
             zero_quantity_reconciled_count += 1
             continue
-        agency_detail_for_payment: AgencyDetailForPayment = (
-            AgencyHelper.get_component().retrieve_agency_details(
-                disbursement_batch_control_geo.agency_id,
-                envelope.benefit_program_id,
-                envelope.benefit_code_id,
-            )
+        agency_detail_for_payment: (
+            AgencyDetailForPayment
+        ) = AgencyHelper.get_component().retrieve_agency_details(
+            disbursement_batch_control_geo.agency_id,
+            envelope.benefit_program_id,
+            envelope.benefit_code_id,
         )
         # Fetch agency_admin_email and agency_admin_phone from DisbursementBatchControlGeoAttributes
         disbursement_batch_control_geo_attributes = (
