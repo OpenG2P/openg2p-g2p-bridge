@@ -247,7 +247,7 @@ class DisbursementService(BaseService):
 
             if len(disbursement_payload.response_error_codes) > 0:
                 absolutely_no_error = False
-        _logger.info("Disbursement Request Validated!")
+        _logger.info("Disbursement request validated!")
         return absolutely_no_error
 
     async def validate_disbursement_envelope(self, session, disbursement_payloads: List[DisbursementPayload]):
@@ -320,7 +320,7 @@ class DisbursementService(BaseService):
                 G2PBridgeErrorCodes.TOTAL_DISBURSEMENT_QUANTITY_EXCEEDS_DECLARED,
                 disbursement_payloads,
             )
-        _logger.info("Disbursement Envelope Validated!")
+        _logger.info("Disbursement envelope validated!")
         return True
 
     async def construct_disbursement_error_response(

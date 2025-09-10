@@ -41,6 +41,7 @@ class DisbursementStatusService(BaseService):
     async def get_disbursement_status_payloads(
         self, disbursement_status_request: DisbursementStatusRequest
     ) -> List[DisbursementStatusPayload]:
+        _logger.info("Getting disbursement status payloads")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             try:
@@ -54,12 +55,14 @@ class DisbursementStatusService(BaseService):
                         disbursement_recon_records=disbursement_recon_records,
                     )
                     disbursement_status_payloads.append(disbursement_status_payload)
+                _logger.info("Disbursement status payloads retrieved successfully")
                 return disbursement_status_payloads
             except DisbursementStatusException as e:
                 _logger.error("Error in getting disbursement status")
                 raise e
 
     async def get_disbursement_recon_records(self, session, disbursement_id: str) -> DisbursementReconRecords:
+        _logger.info(f"Getting disbursement recon records for disbursement ID: {disbursement_id}")
         disbursement_recon_payloads = []
         disbursement_error_recon_payloads = []
 
@@ -130,11 +133,13 @@ class DisbursementStatusService(BaseService):
             disbursement_error_recon_payloads=disbursement_error_recon_payloads,
         )
 
+        _logger.info(f"Disbursement recon records retrieved for disbursement ID: {disbursement_id}")
         return disbursement_recon_records
 
     async def get_disbursement_batch_control_payload(
         self, disbursement_batch_control_request: DisbursementBatchControlRequest
     ) -> DisbursementBatchControlPayload:
+        _logger.info("Getting disbursement batch control payload")
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             disbursement_batch_control_payload = None
@@ -150,6 +155,7 @@ class DisbursementStatusService(BaseService):
                 .first()
             )
             if not disbursement_batch_control:
+                _logger.warning("Disbursement batch control not found")
                 return
             disbursement_batch_control_geos = (
                 (
@@ -233,6 +239,7 @@ class DisbursementStatusService(BaseService):
                 disbursement_batch_control_geos=disbursement_batch_control_geo_payloads,
             )
 
+        _logger.info("Disbursement batch control payload retrieved successfully")
         return disbursement_batch_control_payload
 
     async def construct_disbursement_status_error_response(
@@ -240,6 +247,7 @@ class DisbursementStatusService(BaseService):
         disbursement_status_request: DisbursementStatusRequest,
         code: str,
     ) -> DisbursementStatusResponse:
+        _logger.info("Constructing disbursement status error response")
         response = DisbursementStatusResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_status_request.header.message_id,
@@ -251,6 +259,7 @@ class DisbursementStatusService(BaseService):
             message={},
         )
 
+        _logger.info("Disbursement status error response constructed")
         return response
 
     async def construct_disbursement_status_success_response(
@@ -258,6 +267,7 @@ class DisbursementStatusService(BaseService):
         disbursement_status_request: DisbursementStatusRequest,
         disbursement_status_payloads: List[DisbursementStatusPayload],
     ) -> DisbursementStatusResponse:
+        _logger.info("Constructing disbursement status success response")
         response = DisbursementStatusResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_status_request.header.message_id,
@@ -267,6 +277,7 @@ class DisbursementStatusService(BaseService):
             ),
             message=disbursement_status_payloads,
         )
+        _logger.info("Disbursement status success response constructed")
         return response
 
     async def construct_disbursement_batch_control_success_response(
@@ -274,6 +285,7 @@ class DisbursementStatusService(BaseService):
         disbursement_batch_control_request: DisbursementBatchControlRequest,
         disbursement_batch_control_payload: DisbursementBatchControlPayload,
     ) -> DisbursementBatchControlResponse:
+        _logger.info("Constructing disbursement batch control success response")
         response = DisbursementBatchControlResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_batch_control_request.header.message_id,
@@ -283,6 +295,7 @@ class DisbursementStatusService(BaseService):
             ),
             message=disbursement_batch_control_payload,
         )
+        _logger.info("Disbursement batch control success response constructed")
         return response
 
     async def construct_disbursement_batch_control_error_response(
@@ -290,6 +303,7 @@ class DisbursementStatusService(BaseService):
         disbursement_batch_control_request: DisbursementBatchControlRequest,
         code: str,
     ) -> DisbursementBatchControlResponse:
+        _logger.info("Constructing disbursement batch control error response")
         response = DisbursementBatchControlResponse(
             header=SyncResponseHeader(
                 message_id=disbursement_batch_control_request.header.message_id,
@@ -300,4 +314,5 @@ class DisbursementStatusService(BaseService):
             ),
             message={},
         )
+        _logger.info("Disbursement batch control error response constructed")
         return response

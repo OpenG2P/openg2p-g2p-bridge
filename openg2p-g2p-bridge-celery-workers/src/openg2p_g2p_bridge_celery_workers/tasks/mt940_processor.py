@@ -209,6 +209,7 @@ def process_reversal_of_debits(
     session,
     statement_id,
 ):
+    _logger.info(f"Processing reversal of debits for statement: {statement_id}")
     for parsed_transaction in parsed_transactions_rd:
         disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
@@ -262,6 +263,7 @@ def process_debit_transactions(
     session,
     statement_id,
 ):
+    _logger.info(f"Processing debit transactions for statement: {statement_id}")
     for parsed_transaction in parsed_transactions_d:
         disbursement: Disbursement | None = check_valid_disbursement_id(parsed_transaction, session)
         disbursement_batch_control_geo: DisbursementBatchControlGeo | None = None
