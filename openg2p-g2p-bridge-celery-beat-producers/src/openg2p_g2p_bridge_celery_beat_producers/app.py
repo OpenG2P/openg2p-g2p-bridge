@@ -10,8 +10,6 @@ from openg2p_fastapi_common.exception import BaseExceptionHandler
 from openg2p_g2p_bridge_bank_connectors.app import (
     Initializer as BankConnectorInitializer,
 )
-from openg2p_g2pconnect_mapper_lib.app import Initializer as MapperInitializer
-from sqlalchemy import create_engine
 
 
 class Initializer(BaseInitializer):
@@ -21,13 +19,6 @@ class Initializer(BaseInitializer):
         BaseExceptionHandler()
 
         BankConnectorInitializer()
-        MapperInitializer()
-
-
-def get_engine():
-    if _config.db_datasource:
-        db_engine = create_engine(_config.db_datasource)
-        return db_engine
 
 
 celery_app = Celery(
@@ -57,6 +48,30 @@ celery_app.conf.beat_schedule = {
     "mt940_processor_beat_producer": {
         "task": "mt940_processor_beat_producer",
         "schedule": _config.mt940_processor_frequency,
+    },
+    "geo_resolution_beat_producer": {
+        "task": "geo_resolution_beat_producer",
+        "schedule": _config.geo_resolution_frequency,
+    },
+    "warehouse_allocation_beat_producer": {
+        "task": "warehouse_allocation_beat_producer",
+        "schedule": _config.warehouse_allocation_frequency,
+    },
+    "agency_allocation_beat_producer": {
+        "task": "agency_allocation_beat_producer",
+        "schedule": _config.agency_allocation_frequency,
+    },
+    "warehouse_notification_beat_producer": {
+        "task": "warehouse_notification_beat_producer",
+        "schedule": _config.warehouse_notification_frequency,
+    },
+    "agency_notification_beat_producer": {
+        "task": "agency_notification_beat_producer",
+        "schedule": _config.agency_notification_frequency,
+    },
+    "beneficiary_notification_beat_producer": {
+        "task": "beneficiary_notification_beat_producer",
+        "schedule": _config.beneficiary_notification_frequency,
     },
 }
 celery_app.conf.timezone = "UTC"

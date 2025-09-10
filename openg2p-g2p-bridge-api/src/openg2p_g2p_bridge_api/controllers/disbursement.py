@@ -44,17 +44,16 @@ class DisbursementController(BaseController):
     async def create_disbursements(
         self,
         disbursement_request: DisbursementRequest,
-        is_signature_valid: Annotated[bool, Depends(JWTSignatureValidator())],
+        is_signature_valid=Annotated[bool, Depends(JWTSignatureValidator())],
     ) -> DisbursementResponse:
         _logger.info("Creating disbursements")
         try:
+            _logger.debug("Disbursement request received: %s", disbursement_request)
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
-            disbursement_payloads: List[
-                DisbursementPayload
-            ] = await self.disbursement_service.create_disbursements(
-                disbursement_request
+            disbursement_payloads: List[DisbursementPayload] = (
+                await self.disbursement_service.create_disbursements(disbursement_request)
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")
@@ -71,6 +70,7 @@ class DisbursementController(BaseController):
                     disbursement_request, e.code, e.disbursement_payloads
                 )
             )
+            _logger.debug("Disbursement exception details: %s", e, exc_info=True)
             return error_response
 
         disbursement_response: DisbursementResponse = (
@@ -92,10 +92,8 @@ class DisbursementController(BaseController):
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_request)
 
-            disbursement_payloads: List[
-                DisbursementPayload
-            ] = await self.disbursement_service.cancel_disbursements(
-                disbursement_request
+            disbursement_payloads: List[DisbursementPayload] = (
+                await self.disbursement_service.cancel_disbursements(disbursement_request)
             )
         except RequestValidationException as e:
             _logger.error("Error validating request")

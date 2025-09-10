@@ -6,3 +6,4 @@ class ProcessStatus(enum.Enum):
     PROCESSING = "PROCESSING"
     PROCESSED = "PROCESSED"
     ERROR = "ERROR"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
