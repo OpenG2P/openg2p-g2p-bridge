@@ -10,7 +10,19 @@ from openg2p_fastapi_common.app import Initializer as BaseInitializer
 from openg2p_fastapi_common.utils.crypto import KeymanagerCryptoHelper
 from openg2p_g2p_bridge_models.models import (
     AccountStatement,
+    AccountStatementLob,
+    Disbursement,
+    DisbursementBatchControl,
+    DisbursementBatchControlGeo,
+    DisbursementBatchControlGeoAttributes,
     DisbursementEnvelope,
+    DisbursementErrorRecon,
+    DisbursementRecon,
+    DisbursementResolutionFinancialAddress,
+    DisbursementResolutionGeoAddress,
+    EnvelopeBatchStatusForCash,
+    EnvelopeControl,
+    NotificationLog,
 )
 from openg2p_g2pconnect_common_lib.jwt_validation_helper import JWTValidationHelper
 
@@ -55,7 +67,19 @@ class Initializer(BaseInitializer):
 
         async def migrate():
             _logger.info("Migrating database")
-            await DisbursementEnvelope.create_migrate()
             await AccountStatement.create_migrate()
+            await AccountStatementLob.create_migrate()
+            await Disbursement.create_migrate()
+            await DisbursementBatchControl.create_migrate()
+            await DisbursementBatchControlGeo.create_migrate()
+            await DisbursementBatchControlGeoAttributes.create_migrate()
+            await DisbursementEnvelope.create_migrate()
+            await DisbursementErrorRecon.create_migrate()
+            await DisbursementRecon.create_migrate()
+            await DisbursementResolutionFinancialAddress.create_migrate()
+            await DisbursementResolutionGeoAddress.create_migrate()
+            await EnvelopeBatchStatusForCash.create_migrate()
+            await EnvelopeControl.create_migrate()
+            await NotificationLog.create_migrate()
 
         asyncio.run(migrate())
