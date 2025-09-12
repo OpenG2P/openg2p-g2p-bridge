@@ -10,6 +10,9 @@ from openg2p_g2p_bridge_models.models import (
 )
 from openg2p_g2pconnect_mapper_lib.client import MapperResolveClient
 from openg2p_g2pconnect_mapper_lib.schemas import ResolveRequest
+
+from openg2p_g2p_bridge_mapper_connectors.factory import MapperFactory
+
 from sqlalchemy import exists, select
 from sqlalchemy.orm import sessionmaker
 
@@ -110,15 +113,10 @@ async def make_resolve_request(disbursements):
     ]
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(single_resolve_requests)
 
-    resolve_client = MapperResolveClient.get_component()
-    try:
-        resolve_response = await resolve_client.resolve_request(resolve_request)
-        _logger.info("Resolve request completed successfully")
-        return resolve_response, None
-    except Exception as e:
-        _logger.error(f"Failed to resolve the request: {e}")
-        error_msg = f"Failed to resolve the request: {e}"
-        return None, error_msg
+    mapper = MapperFactory.get_component().get_mapper()
+    resolve_response: ResolveResponse | None = mapper.resolve(resolve_request)
+    if not resolve_response:
+        return None, "Failed to resolve the request"
 
 
 def process_and_store_resolution(
