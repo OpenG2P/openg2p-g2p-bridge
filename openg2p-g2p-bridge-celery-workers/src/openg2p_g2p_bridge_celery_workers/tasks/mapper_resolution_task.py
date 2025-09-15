@@ -117,6 +117,7 @@ async def make_resolve_request(disbursements):
     resolve_response: ResolveResponse | None = mapper.resolve(resolve_request)
     if not resolve_response:
         return None, "Failed to resolve the request"
+    return resolve_response, None
 
 
 def process_and_store_resolution(
