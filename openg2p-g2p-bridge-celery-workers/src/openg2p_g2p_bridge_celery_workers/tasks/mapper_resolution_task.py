@@ -136,6 +136,7 @@ def process_and_store_resolution(
         if disbursement_id and single_response.fa:
             _logger.info(f"Resolved the request for beneficiary: {single_response.id}")
             deconstructed_fa = resolve_helper.deconstruct_fa(single_response.fa)
+            _logger.info(f"Deconstructed FA To Store: {deconstructed_fa}")
             disbursement_resolution_financial_address = DisbursementResolutionFinancialAddress(
                 disbursement_batch_control_id=disbursement_batch_control_id,
                 disbursement_id=disbursement_id,
