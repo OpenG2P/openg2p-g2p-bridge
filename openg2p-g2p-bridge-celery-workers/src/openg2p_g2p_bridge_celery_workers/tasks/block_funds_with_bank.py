@@ -60,7 +60,9 @@ def block_funds_with_bank_worker(disbursement_envelope_id: str):
             disbursement_envelope.benefit_program_id,
             disbursement_envelope.benefit_code_id,
         )
-        _logger.info(f"Sponsor bank configuration retrieved for: {sponsor_bank_configuration.sponsor_bank_code}")
+        _logger.info(
+            f"Sponsor bank configuration retrieved for: {sponsor_bank_configuration.sponsor_bank_code}"
+        )
 
         total_funds_needed = disbursement_envelope.total_disbursement_quantity
         bank_connector: BankConnectorInterface = BankConnectorFactory.get_component().get_bank_connector(
