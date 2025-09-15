@@ -102,9 +102,11 @@ class ResolveHelper(BaseService):
     def deconstruct_fa(self, fa: str) -> dict:
         _logger.info("Deconstructing FA")
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
+        _logger.info(f"Deconstruction strategy: {deconstruct_strategy}")
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
             deconstructed_fa = {pair.key.value: pair.value for pair in deconstructed_pairs}
+            _logger.info(f"Deconstructed FA Returning: {deconstructed_fa}")
             return deconstructed_fa
         return {}
 
