@@ -157,6 +157,7 @@ class DisbursementService(BaseService):
                 beneficiary_id=disbursement_payload.beneficiary_id,
                 beneficiary_name=disbursement_payload.beneficiary_name,
                 disbursement_quantity=disbursement_payload.disbursement_quantity,
+                compute_elements=disbursement_payload.compute_elements,
                 narrative=disbursement_payload.narrative,
                 disbursement_cycle_id=disbursement_payload.disbursement_cycle_id,
                 disbursement_batch_control_id=disbursement_batch_control_id,

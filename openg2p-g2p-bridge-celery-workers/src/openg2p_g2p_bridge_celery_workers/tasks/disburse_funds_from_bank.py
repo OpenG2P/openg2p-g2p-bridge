@@ -225,6 +225,7 @@ def construct_disbursement_payloads_for_digital_cash(
                 remitting_account_type=sponsor_bank_configuration.program_account_type,
                 remitting_account_branch_code=sponsor_bank_configuration.program_account_branch_code,
                 payment_amount=disbursement.disbursement_quantity,
+                compute_elements=disbursement.compute_elements,
                 funds_blocked_reference_number=envelope_batch_status_for_digital_cash.funds_blocked_reference_number,
                 beneficiary_account=(
                     disbursement_resolution_financial_address.bank_account_number
