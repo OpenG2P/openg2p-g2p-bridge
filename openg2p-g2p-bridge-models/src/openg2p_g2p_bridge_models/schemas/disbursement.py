@@ -14,6 +14,7 @@ class DisbursementPayload(BaseModel):
     beneficiary_id: Optional[str] = None
     beneficiary_name: Optional[str] = None
     disbursement_quantity: Optional[float] = None
+    compute_elements: Optional[dict] = None
     narrative: Optional[str] = None
     receipt_time_stamp: Optional[datetime.datetime] = None
     cancellation_status: Optional[DisbursementCancellationStatus] = None
