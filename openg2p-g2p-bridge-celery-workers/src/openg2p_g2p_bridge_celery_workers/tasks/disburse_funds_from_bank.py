@@ -216,6 +216,15 @@ def construct_disbursement_payloads_for_digital_cash(
             .filter(DisbursementResolutionFinancialAddress.disbursement_id == disbursement.id)
             .first()
         )
+        beneficiary_name = "N/A"
+        if disbursement.beneficiary_name and len(disbursement.beneficiary_name) > 0:
+            beneficiary_name = disbursement.beneficiary_name
+        elif disbursement_resolution_financial_address and disbursement_resolution_financial_address.mapper_resolved_name:
+            beneficiary_name = disbursement_resolution_financial_address.mapper_resolved_name
+        else:
+            _logger.warning(
+                f"Disbursement {disbursement.id} has no beneficiary name or resolved name, using 'N/A'"
+            )
 
         disbursement_payment_payloads.append(
             DisbursementPaymentPayload(
@@ -245,7 +254,7 @@ def construct_disbursement_payloads_for_digital_cash(
                 ),
                 payment_date=str(datetime.date(datetime.now())),
                 beneficiary_id=disbursement.beneficiary_id,
-                beneficiary_name=disbursement.beneficiary_name if disbursement.beneficiary_name else "N/A",
+                beneficiary_name=beneficiary_name,
                 beneficiary_account_type=disbursement_resolution_financial_address.mapper_resolved_fa_type,
                 beneficiary_phone_no=(
                     disbursement_resolution_financial_address.mobile_number
