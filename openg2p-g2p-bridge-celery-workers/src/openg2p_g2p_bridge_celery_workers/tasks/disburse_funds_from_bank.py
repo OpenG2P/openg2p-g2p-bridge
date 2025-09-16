@@ -219,7 +219,10 @@ def construct_disbursement_payloads_for_digital_cash(
         beneficiary_name = "N/A"
         if disbursement.beneficiary_name and len(disbursement.beneficiary_name) > 0:
             beneficiary_name = disbursement.beneficiary_name
-        elif disbursement_resolution_financial_address and disbursement_resolution_financial_address.mapper_resolved_name:
+        elif (
+            disbursement_resolution_financial_address
+            and disbursement_resolution_financial_address.mapper_resolved_name
+        ):
             beneficiary_name = disbursement_resolution_financial_address.mapper_resolved_name
         else:
             _logger.warning(
