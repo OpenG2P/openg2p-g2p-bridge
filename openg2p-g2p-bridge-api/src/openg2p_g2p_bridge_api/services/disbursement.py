@@ -163,7 +163,7 @@ class DisbursementService(BaseService):
                 disbursement_batch_control_id=disbursement_batch_control_id,
             )
             disbursements.append(disbursement)
-            _logger.ingo(f"Compute elements for this disbursements: {disbursement.compute_elements}")
+            _logger.info(f"Compute elements for this disbursements: {disbursement.compute_elements}")
         _logger.info("Disbursements Constructed!")
         return disbursements
 
