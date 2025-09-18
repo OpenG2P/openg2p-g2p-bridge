@@ -92,7 +92,11 @@ class ResolveHelper(BaseService):
         if regex_res:
             regex_res = regex_res.groupdict()
             try:
-                deconstructed_list = [KeyValuePair(key=k, value=v) for k, v in regex_res.items()]
+                # Coalesce None (from optional groups) to empty strings
+                deconstructed_list = [
+                    KeyValuePair(key=FAKeys(k), value=(v if v is not None else ""))
+                    for k, v in regex_res.items()
+                ]
             except Exception as e:
                 _logger.error(f"Error while deconstructing ID/FA: {e}")
                 raise ValueError("Error while deconstructing ID/FA") from e
@@ -102,9 +106,11 @@ class ResolveHelper(BaseService):
     def deconstruct_fa(self, fa: str) -> dict:
         _logger.info("Deconstructing FA")
         deconstruct_strategy = self._get_deconstruct_strategy(fa)
+        _logger.info(f"Deconstruction strategy: {deconstruct_strategy}")
         if deconstruct_strategy:
             deconstructed_pairs = self._deconstruct(fa, deconstruct_strategy)
             deconstructed_fa = {pair.key.value: pair.value for pair in deconstructed_pairs}
+            _logger.info(f"Deconstructed FA Returning: {deconstructed_fa}")
             return deconstructed_fa
         return {}
 
