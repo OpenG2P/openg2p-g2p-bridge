@@ -1,0 +1,49 @@
+import logging
+
+from openg2p_fastapi_common.controller import BaseController
+from openg2p_g2p_bridge_models.errors import BridgeException
+from openg2p_g2p_bridge_models.schemas import (
+    DisbursementRequestForPortal,
+    DisbursementResponseForPortal,
+)
+
+from ..config import Settings
+from ..services import DisbursementService
+
+_config = Settings.get_config()
+_logger = logging.getLogger(_config.logging_default_logger_name)
+
+
+class DisbursementController(BaseController):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.router.tags += ["Bridge Bene Portal - Disbursements"]
+        self.disbursement_service = DisbursementService.get_component()
+        self.router.prefix = "/disbursement"
+
+        self.router.add_api_route(
+            "/get_all_disbursements",
+            self.get_all_disbursements,
+            responses={200: {"model": DisbursementResponseForPortal}},
+            methods=["POST"],
+        )
+
+    async def get_all_disbursements(
+        self, disbursement_request: DisbursementRequestForPortal
+    ) -> DisbursementResponseForPortal:
+        _logger.debug("Get All Disbursements Request: %s", disbursement_request)
+        try:
+            disbursement_response: DisbursementResponseForPortal = (
+                await self.disbursement_service.get_all_disbursements(
+                    disbursement_request
+                )
+            )
+            _logger.info("Disbursements retrieved successfully")
+            _logger.debug("Get All Disbursements Response: %s", disbursement_response)
+            return disbursement_response
+        except BridgeException as e:
+            error_response: DisbursementResponseForPortal = await self.disbursement_service.construct_disbursement_failure_response(
+                disbursement_request, e.code, e.message
+            )
+            return error_response

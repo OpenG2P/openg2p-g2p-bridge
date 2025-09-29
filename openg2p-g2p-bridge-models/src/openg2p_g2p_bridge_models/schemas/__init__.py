@@ -7,6 +7,12 @@ from .disbursement import (
     DisbursementRequest,
     DisbursementResponse,
 )
+from .disbursement_portal import (
+    Disbursement as DisbursementSchemaForPortal,
+    DisbursementRequest as DisbursementRequestForPortal,
+    DisbursementResponse as DisbursementResponseForPortal,
+    DisbursementResponseBody
+)
 from .disbursement_envelope import (
     DisbursementBatchControlGeoPayload,
     DisbursementEnvelopePayload,

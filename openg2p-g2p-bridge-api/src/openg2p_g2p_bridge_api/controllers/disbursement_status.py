@@ -67,7 +67,7 @@ class DisbursementStatusController(BaseController):
         except RequestValidationException as e:
             _logger.error("Error validating request")
             error_response: DisbursementStatusResponse = (
-                await self.disbursement_envelope_service.construct_disbursement_envelope_error_response(
+                await self.disbursement_service.construct_disbursement_status_error_response(
                     disbursement_status_request, e.code
                 )
             )
