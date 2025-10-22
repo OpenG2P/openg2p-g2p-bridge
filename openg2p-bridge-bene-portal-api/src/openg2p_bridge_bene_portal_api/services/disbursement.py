@@ -25,7 +25,7 @@ from ..config import Settings
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
-_engine = dbengine.get_engine()
+_engine = dbengine.get()
 
 
 class DisbursementService(BaseService):

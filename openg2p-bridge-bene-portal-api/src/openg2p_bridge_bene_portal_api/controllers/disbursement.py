@@ -1,4 +1,9 @@
 import logging
+from typing import Annotated
+from fastapi import Depends
+
+from openg2p_fastapi_auth.auth.factory import AuthFactory
+from openg2p_fastapi_auth_models.schemas import AuthCredentials
 
 from openg2p_fastapi_common.controller import BaseController
 from openg2p_g2p_bridge_models.errors import BridgeException
@@ -30,7 +35,7 @@ class DisbursementController(BaseController):
         )
 
     async def get_all_disbursements(
-        self, disbursement_request: DisbursementRequestForPortal
+        self, auth: Annotated[AuthCredentials, Depends(AuthFactory())], disbursement_request: DisbursementRequestForPortal
     ) -> DisbursementResponseForPortal:
         _logger.debug("Get All Disbursements Request: %s", disbursement_request)
         try:
