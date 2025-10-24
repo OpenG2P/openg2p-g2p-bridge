@@ -10,6 +10,8 @@ from openg2p_g2p_bridge_models.errors import BridgeException
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementRequestForPortal,
     DisbursementResponseForPortal,
+    DisbursementSummaryRequest,
+    DisbursementSummaryResponse,
 )
 
 from ..config import Settings
@@ -34,6 +36,13 @@ class DisbursementController(BaseController):
             methods=["POST"],
         )
 
+        self.router.add_api_route(
+            "/get_disbursement_summary_till_date",
+            self.get_disbursement_summary_till_date,
+            responses={200: {"model": DisbursementSummaryResponse}},
+            methods=["POST"],
+        )
+
     async def get_all_disbursements(
         self, auth: Annotated[AuthCredentials, Depends(AuthFactory())], disbursement_request: DisbursementRequestForPortal
     ) -> DisbursementResponseForPortal:
@@ -41,7 +50,7 @@ class DisbursementController(BaseController):
         try:
             disbursement_response: DisbursementResponseForPortal = (
                 await self.disbursement_service.get_all_disbursements(
-                    disbursement_request
+                    disbursement_request, auth
                 )
             )
             _logger.info("Disbursements retrieved successfully")
@@ -50,5 +59,24 @@ class DisbursementController(BaseController):
         except BridgeException as e:
             error_response: DisbursementResponseForPortal = await self.disbursement_service.construct_disbursement_failure_response(
                 disbursement_request, e.code, e.message
+            )
+            return error_response
+
+    async def get_disbursement_summary_till_date(
+        self, auth: Annotated[AuthCredentials, Depends(AuthFactory())], disbursement_summary_request: DisbursementSummaryRequest
+    ) -> DisbursementSummaryResponse:
+        _logger.debug("Get Disbursement Summary Till Date Request: %s", disbursement_summary_request)
+        try:
+            disbursement_summary_response: DisbursementSummaryResponse = (
+                await self.disbursement_service.get_disbursement_summary_till_date(
+                    disbursement_summary_request, auth
+                )
+            )
+            _logger.info("Disbursement summary retrieved successfully")
+            _logger.debug("Get Disbursement Summary Till Date Response: %s", disbursement_summary_response)
+            return disbursement_summary_response
+        except BridgeException as e:
+            error_response: DisbursementSummaryResponse = await self.disbursement_service.construct_disbursement_summary_failure_response(
+                disbursement_summary_request, e.code, e.message
             )
             return error_response

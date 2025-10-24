@@ -17,6 +17,13 @@ class Disbursement(BaseModel):
     measurement_unit: str
     disbursement_schedule_date: date
 
+
+class DisbursementSummary(BaseModel):
+    benefit_code_mnemonic: str
+    benefit_type: str # TODO: Add ENUM
+    measurement_unit: str
+    total_quantity_received: float
+
 class DisbursementRequestBody(BaseModel):
     g2p_pagination_request: Optional[G2PPaginationRequest] = None
     g2p_request_payload: Optional[dict] = None
@@ -32,3 +39,21 @@ class DisbursementResponse(BaseModel):
 class DisbursementResponseBody(BaseModel):
     g2p_pagination_response: Optional[G2PPaginationResponse] = None
     g2p_response_payload: List[Disbursement]
+
+
+class DisbursementSummaryRequestBody(BaseModel):
+    g2p_request_payload: Optional[dict] = None
+
+
+class DisbursementSummaryRequest(BaseModel):
+    g2p_request_header: G2PRequestHeader
+    g2p_request_body: Optional[DisbursementSummaryRequestBody] = None
+
+
+class DisbursementSummaryResponse(BaseModel):
+    g2p_response_header: G2PResponseHeader
+    g2p_response_body: "DisbursementSummaryResponseBody"
+
+
+class DisbursementSummaryResponseBody(BaseModel):
+    g2p_response_payload: List[DisbursementSummary]

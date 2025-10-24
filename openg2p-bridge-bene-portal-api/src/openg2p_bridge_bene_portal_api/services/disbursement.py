@@ -6,6 +6,7 @@ from openg2p_fastapi_common.context import dbengine
 
 from openg2p_fastapi_common.schemas import G2PResponseStatus
 from openg2p_fastapi_common.service import BaseService
+from openg2p_fastapi_auth_models.schemas import AuthCredentials
 from openg2p_g2p_bridge_models.errors import BridgeException
 from openg2p_g2p_bridge_models.models import (
     Disbursement,
@@ -17,6 +18,10 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementRequestForPortal,
     DisbursementResponseForPortal,
     DisbursementResponseBody,
+    DisbursementSummary,
+    DisbursementSummaryRequest,
+    DisbursementSummaryResponse,
+    DisbursementSummaryResponseBody,
 )
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -30,7 +35,7 @@ _engine = dbengine.get()
 
 class DisbursementService(BaseService):
     async def get_all_disbursements(
-        self, disbursement_request: DisbursementRequestForPortal
+        self, disbursement_request: DisbursementRequestForPortal, auth: AuthCredentials
     ) -> DisbursementResponseForPortal:
         _logger.info("Get All Disbursements Request")
         
@@ -45,8 +50,8 @@ class DisbursementService(BaseService):
         current_page = pagination.current_page if pagination else 1
         offset = (current_page - 1) * page_size
 
-        # TODO: Extract beneficiary_id from auth context
-        beneficiary_id: str = "1346"
+        # Extract beneficiary_id from auth.sub
+        beneficiary_id: str = auth.sub
 
         session_maker_bridge = async_sessionmaker(
             bind=_engine.get("db_engine_bridge"), expire_on_commit=False
@@ -159,3 +164,98 @@ class DisbursementService(BaseService):
             ),
         )
         return disbursement_response
+
+    async def get_disbursement_summary_till_date(
+        self, disbursement_summary_request: DisbursementSummaryRequest, auth: AuthCredentials
+    ) -> DisbursementSummaryResponse:
+        _logger.info("Get Disbursement Summary Till Date Request")
+        
+        # Extract beneficiary_id from auth.sub
+        beneficiary_id: str = auth.sub
+
+        session_maker_bridge = async_sessionmaker(
+            bind=_engine.get("db_engine_bridge"), expire_on_commit=False
+        )
+
+        async with session_maker_bridge() as session_bridge:
+            # Query to get disbursement summary grouped by benefit_code_mnemonic
+            summary_query = (
+                select(
+                    DisbursementEnvelope.benefit_code_mnemonic,
+                    DisbursementEnvelope.benefit_type,
+                    DisbursementEnvelope.measurement_unit,
+                    func.sum(Disbursement.disbursement_quantity).label("total_quantity_received"),
+                )
+                .join(
+                    DisbursementEnvelope,
+                    DisbursementEnvelope.id == Disbursement.disbursement_envelope_id,
+                )
+                .where(Disbursement.beneficiary_id == beneficiary_id)
+                .group_by(
+                    DisbursementEnvelope.benefit_code_mnemonic,
+                    DisbursementEnvelope.benefit_type,
+                    DisbursementEnvelope.measurement_unit,
+                )
+            )
+
+            summary_result = await session_bridge.execute(summary_query)
+            summary_data = summary_result.all()
+
+            if not summary_data:
+                raise BridgeException(
+                    code="DISBURSEMENT_SUMMARY_NOT_FOUND",
+                    message="No disbursement summary found for the beneficiary",
+                )
+
+            # Map to disbursement summary format
+            disbursement_summaries: List[DisbursementSummary] = []
+            for row in summary_data:
+                disbursement_summaries.append(
+                    DisbursementSummary(
+                        benefit_code_mnemonic=row.benefit_code_mnemonic,
+                        benefit_type=row.benefit_type.value,
+                        measurement_unit=row.measurement_unit,
+                        total_quantity_received=float(row.total_quantity_received),
+                    )
+                )
+
+        return await self.construct_disbursement_summary_success_response(
+            disbursement_summary_request, disbursement_summaries
+        )
+
+    async def construct_disbursement_summary_success_response(
+        self,
+        disbursement_summary_request: DisbursementSummaryRequest,
+        disbursement_summaries: List[DisbursementSummary],
+    ) -> DisbursementSummaryResponse:
+        disbursement_summary_response = DisbursementSummaryResponse(
+            g2p_response_header={
+                "request_id": disbursement_summary_request.g2p_request_header.request_id,
+                "response_status": G2PResponseStatus.SUCCESS.value,
+                "response_timestamp": datetime.now(),
+            },
+            g2p_response_body=DisbursementSummaryResponseBody(
+                g2p_response_payload=disbursement_summaries,
+            ),
+        )
+        return disbursement_summary_response
+
+    async def construct_disbursement_summary_failure_response(
+        self,
+        disbursement_summary_request: DisbursementSummaryRequest,
+        error_code: str,
+        error_message: str | None = None,
+    ) -> DisbursementSummaryResponse:
+        disbursement_summary_response = DisbursementSummaryResponse(
+            g2p_response_header={
+                "request_id": disbursement_summary_request.g2p_request_header.request_id,
+                "response_status": G2PResponseStatus.ERROR.value,
+                "response_error_code": error_code,
+                "response_error_message": error_message,
+                "response_timestamp": datetime.now(),
+            },
+            g2p_response_body=DisbursementSummaryResponseBody(
+                g2p_response_payload=[],
+            ),
+        )
+        return disbursement_summary_response
