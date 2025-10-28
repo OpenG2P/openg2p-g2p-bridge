@@ -38,7 +38,7 @@ class DisbursementService(BaseService):
         self, disbursement_request: DisbursementRequestForPortal, auth: AuthCredentials
     ) -> DisbursementResponseForPortal:
         _logger.info("Get All Disbursements Request")
-        
+
         pagination = (
             disbursement_request.g2p_request_body.g2p_pagination_request
             if disbursement_request.g2p_request_body
@@ -60,9 +60,7 @@ class DisbursementService(BaseService):
         async with session_maker_bridge() as session_bridge:
             # Count total disbursements for the beneficiary
             total_count_result = await session_bridge.execute(
-                select(func.count(Disbursement.id)).where(
-                    Disbursement.beneficiary_id == beneficiary_id
-                )
+                select(func.count(Disbursement.id)).where(Disbursement.beneficiary_id == beneficiary_id)
             )
             total_count = total_count_result.scalar()
             total_pages = (total_count + page_size - 1) // page_size
@@ -169,7 +167,7 @@ class DisbursementService(BaseService):
         self, disbursement_summary_request: DisbursementSummaryRequest, auth: AuthCredentials
     ) -> DisbursementSummaryResponse:
         _logger.info("Get Disbursement Summary Till Date Request")
-        
+
         # Extract beneficiary_id from auth.sub
         beneficiary_id: str = auth.sub
 

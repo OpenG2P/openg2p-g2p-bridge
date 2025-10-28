@@ -5,9 +5,7 @@ from . import __version__
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_prefix="bridge_bene_portal_api_", env_file=".env", extra="allow"
-    )
+    model_config = SettingsConfigDict(env_prefix="bridge_bene_portal_api_", env_file=".env", extra="allow")
 
     openapi_title: str = "OpenG2P Bridge Bene Portal API"
     openapi_description: str = """
@@ -20,5 +18,3 @@ class Settings(BaseSettings):
 
     # Bridge Database
     db_dbname: str = "bridgedb"
-
-

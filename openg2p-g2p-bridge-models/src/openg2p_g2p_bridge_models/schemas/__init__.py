@@ -15,7 +15,7 @@ from .disbursement_portal import (
     DisbursementSummary,
     DisbursementSummaryRequest,
     DisbursementSummaryResponse,
-    DisbursementSummaryResponseBody
+    DisbursementSummaryResponseBody,
 )
 from .disbursement_envelope import (
     DisbursementBatchControlGeoPayload,

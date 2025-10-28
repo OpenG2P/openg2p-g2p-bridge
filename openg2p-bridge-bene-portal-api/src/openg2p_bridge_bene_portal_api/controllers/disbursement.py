@@ -44,26 +44,30 @@ class DisbursementController(BaseController):
         )
 
     async def get_all_disbursements(
-        self, auth: Annotated[AuthCredentials, Depends(AuthFactory())], disbursement_request: DisbursementRequestForPortal
+        self,
+        auth: Annotated[AuthCredentials, Depends(AuthFactory())],
+        disbursement_request: DisbursementRequestForPortal,
     ) -> DisbursementResponseForPortal:
         _logger.debug("Get All Disbursements Request: %s", disbursement_request)
         try:
             disbursement_response: DisbursementResponseForPortal = (
-                await self.disbursement_service.get_all_disbursements(
-                    disbursement_request, auth
-                )
+                await self.disbursement_service.get_all_disbursements(disbursement_request, auth)
             )
             _logger.info("Disbursements retrieved successfully")
             _logger.debug("Get All Disbursements Response: %s", disbursement_response)
             return disbursement_response
         except BridgeException as e:
-            error_response: DisbursementResponseForPortal = await self.disbursement_service.construct_disbursement_failure_response(
-                disbursement_request, e.code, e.message
+            error_response: DisbursementResponseForPortal = (
+                await self.disbursement_service.construct_disbursement_failure_response(
+                    disbursement_request, e.code, e.message
+                )
             )
             return error_response
 
     async def get_disbursement_summary_till_date(
-        self, auth: Annotated[AuthCredentials, Depends(AuthFactory())], disbursement_summary_request: DisbursementSummaryRequest
+        self,
+        auth: Annotated[AuthCredentials, Depends(AuthFactory())],
+        disbursement_summary_request: DisbursementSummaryRequest,
     ) -> DisbursementSummaryResponse:
         _logger.debug("Get Disbursement Summary Till Date Request: %s", disbursement_summary_request)
         try:
@@ -76,7 +80,9 @@ class DisbursementController(BaseController):
             _logger.debug("Get Disbursement Summary Till Date Response: %s", disbursement_summary_response)
             return disbursement_summary_response
         except BridgeException as e:
-            error_response: DisbursementSummaryResponse = await self.disbursement_service.construct_disbursement_summary_failure_response(
-                disbursement_summary_request, e.code, e.message
+            error_response: DisbursementSummaryResponse = (
+                await self.disbursement_service.construct_disbursement_summary_failure_response(
+                    disbursement_summary_request, e.code, e.message
+                )
             )
             return error_response
