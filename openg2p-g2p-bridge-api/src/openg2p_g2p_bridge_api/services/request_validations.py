@@ -3,7 +3,7 @@ import magic
 from fastapi import UploadFile
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.exceptions import RequestValidationException
-from openg2p_g2pconnect_common_lib.schemas import SyncResponseStatusReasonCodeEnum
+from openg2p_g2p_bridge_models.schemas import SyncResponseStatusReasonCodeEnum
 
 from ..config import Settings
 

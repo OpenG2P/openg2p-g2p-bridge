@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Optional
 
-from openg2p_g2pconnect_common_lib.schemas import Request, SyncResponse
+from .bridge_schemas import Request, SyncResponse
 from pydantic import BaseModel
 
 from ..models import DisbursementCancellationStatus

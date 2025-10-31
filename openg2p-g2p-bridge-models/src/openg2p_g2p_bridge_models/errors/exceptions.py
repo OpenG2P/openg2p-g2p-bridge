@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from ..schemas import DisbursementPayload
+if TYPE_CHECKING:
+    from ..schemas import DisbursementPayload
 from .codes import G2PBridgeErrorCodes
 
 
@@ -22,12 +23,12 @@ class DisbursementException(Exception):
     def __init__(
         self,
         code: G2PBridgeErrorCodes,
-        disbursement_payloads: List[DisbursementPayload],
+        disbursement_payloads: List["DisbursementPayload"],
         message: Optional[str] = None,
     ):
         self.code: G2PBridgeErrorCodes = code
         self.message: Optional[str] = message
-        self.disbursement_payloads: List[DisbursementPayload] = disbursement_payloads
+        self.disbursement_payloads: List["DisbursementPayload"] = disbursement_payloads
         super().__init__(code, self.message)
 
 
