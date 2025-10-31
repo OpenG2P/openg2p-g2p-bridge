@@ -8,8 +8,7 @@ from openg2p_g2p_bridge_models.models import (
     DisbursementResolutionFinancialAddress,
     ProcessStatus,
 )
-from openg2p_g2pconnect_mapper_lib.client import MapperResolveClient
-from openg2p_g2pconnect_mapper_lib.schemas import ResolveRequest
+from openg2p_g2p_bridge_mapper_connectors.schemas import ResolveRequest, ResolveResponse
 
 from openg2p_g2p_bridge_mapper_connectors.factory import MapperFactory
 
@@ -108,13 +107,11 @@ async def make_resolve_request(disbursements):
     _logger.info("Making resolve request")
     resolve_helper = ResolveHelper.get_component()
 
-    single_resolve_requests = [
-        resolve_helper.construct_single_resolve_request(d.beneficiary_id) for d in disbursements
-    ]
-    resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(single_resolve_requests)
+    beneficiary_ids = [d.beneficiary_id for d in disbursements]
+    resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(beneficiary_ids)
 
     mapper = MapperFactory.get_component().get_mapper()
-    resolve_response: ResolveResponse | None = mapper.resolve(resolve_request)
+    resolve_response: ResolveResponse  = mapper.resolve(resolve_request)
     if not resolve_response:
         return None, "Failed to resolve the request"
     return resolve_response, None

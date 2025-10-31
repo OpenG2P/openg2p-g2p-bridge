@@ -10,11 +10,8 @@ import httpx
 import orjson
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.models import MapperResolvedFaType
-from openg2p_g2pconnect_common_lib.schemas import RequestHeader
-from openg2p_g2pconnect_mapper_lib.schemas import (
+from openg2p_g2p_bridge_mapper_connectors.schemas import (
     ResolveRequest,
-    ResolveRequestMessage,
-    SingleResolveRequest,
 )
 from pydantic import BaseModel
 
@@ -47,41 +44,17 @@ class ResolveHelper(BaseService):
         self._keymanager_auth_token: str = None
         self._keymanager_auth_token_expiry: datetime = None
 
-    def construct_single_resolve_request(self, id: str) -> SingleResolveRequest:
-        _logger.info(f"Constructing single resolve request for ID: {id}")
-        single_resolve_request = SingleResolveRequest(
-            reference_id=str(uuid.uuid4()),
-            timestamp=str(datetime.now()),
-            id=id,
-            scope="details",
-        )
-        _logger.info(f"Constructed single resolve request for ID: {id}")
-        return single_resolve_request
-
     def construct_resolve_request(
-        self, single_resolve_requests: List[SingleResolveRequest]
+        self, beneficiary_ids: List[str]
     ) -> ResolveRequest:
         _logger.info(
-            f"Constructing resolve request for {len(single_resolve_requests)} single resolve requests"
+            f"Constructing resolve request for {len(beneficiary_ids)} beneficiary IDs"
         )
-        resolve_request_message = ResolveRequestMessage(
-            transaction_id=str(uuid.uuid4()),
-            resolve_request=single_resolve_requests,
-        )
-
         resolve_request = ResolveRequest(
-            header=RequestHeader(
-                message_id=str(uuid.uuid4()),
-                message_ts=str(datetime.now()),
-                action="resolve",
-                sender_id=_config.mapper_request_sender_id,
-                sender_uri="",
-                total_count=len(single_resolve_requests),
-            ),
-            message=resolve_request_message,
+            beneficiary_ids = beneficiary_ids,
         )
         _logger.info(
-            f"Constructed resolve request for {len(single_resolve_requests)} single resolve requests"
+            f"Constructed resolve request for {len(beneficiary_ids)} single resolve requests"
         )
         return resolve_request
 
