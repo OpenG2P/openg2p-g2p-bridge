@@ -8,11 +8,13 @@ from pydantic import AliasChoices, BaseModel, Field
 
 # TODO: These will be updated in the future to match G2P Request Response specs
 
+
 class StatusEnum(Enum):
     rcvd = "rcvd"
     pdng = "pdng"
     succ = "succ"
     rjct = "rjct"
+
 
 class SyncResponseStatusReasonCodeEnum(Enum):
     rjct_version_invalid = "rjct.version.invalid"
@@ -70,4 +72,3 @@ class RequestHeader(BaseModel):
 class Request(BaseModel):
     header: RequestHeader
     message: object
-

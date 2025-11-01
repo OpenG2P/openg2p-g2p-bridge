@@ -4,4 +4,3 @@ git+https://github.com/openg2p/openg2p-fastapi-common@1.1#subdirectory=openg2p-f
 git+https://github.com/openg2p/openg2p-fastapi-common@1.1#subdirectory=openg2p-fastapi-auth-models
 git+https://github.com/openg2p/openg2p-fastapi-common@1.1#subdirectory=openg2p-fastapi-partner-auth
 git+https://github.com/openg2p/openg2p-fastapi-common@1.1#subdirectory=openg2p-fastapi-auth
-

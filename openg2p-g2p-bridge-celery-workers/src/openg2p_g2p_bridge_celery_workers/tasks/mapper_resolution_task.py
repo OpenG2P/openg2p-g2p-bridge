@@ -110,7 +110,7 @@ async def make_resolve_request(disbursements):
     resolve_request: ResolveRequest = resolve_helper.construct_resolve_request(beneficiary_ids)
 
     mapper = MapperFactory.get_component().get_mapper()
-    resolve_response: ResolveResponse  = await mapper.resolve(resolve_request)
+    resolve_response: ResolveResponse = await mapper.resolve(resolve_request)
     if not resolve_response:
         return None, "Failed to resolve the request"
     return resolve_response, None

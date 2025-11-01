@@ -44,10 +44,10 @@ from .payment_schemas import (
     SponsorBankConfiguration,
 )
 from .bridge_schemas import (
-    StatusEnum, 
+    StatusEnum,
     SyncResponseStatusReasonCodeEnum,
     SyncResponseHeader,
     SyncResponse,
     RequestHeader,
-    Request
+    Request,
 )

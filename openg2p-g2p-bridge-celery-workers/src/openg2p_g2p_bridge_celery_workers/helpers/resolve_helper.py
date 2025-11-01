@@ -2,7 +2,6 @@ import base64
 import enum
 import logging
 import re
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -44,18 +43,12 @@ class ResolveHelper(BaseService):
         self._keymanager_auth_token: str = None
         self._keymanager_auth_token_expiry: datetime = None
 
-    def construct_resolve_request(
-        self, beneficiary_ids: List[str]
-    ) -> ResolveRequest:
-        _logger.info(
-            f"Constructing resolve request for {len(beneficiary_ids)} beneficiary IDs"
-        )
+    def construct_resolve_request(self, beneficiary_ids: List[str]) -> ResolveRequest:
+        _logger.info(f"Constructing resolve request for {len(beneficiary_ids)} beneficiary IDs")
         resolve_request = ResolveRequest(
             beneficiary_ids=beneficiary_ids,
         )
-        _logger.info(
-            f"Constructed resolve request for {len(beneficiary_ids)} single resolve requests"
-        )
+        _logger.info(f"Constructed resolve request for {len(beneficiary_ids)} single resolve requests")
         return resolve_request
 
     def _deconstruct(self, value: str, strategy: str) -> List[KeyValuePair]:
