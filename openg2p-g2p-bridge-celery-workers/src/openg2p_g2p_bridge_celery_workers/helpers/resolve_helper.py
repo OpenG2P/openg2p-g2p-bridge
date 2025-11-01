@@ -51,7 +51,7 @@ class ResolveHelper(BaseService):
             f"Constructing resolve request for {len(beneficiary_ids)} beneficiary IDs"
         )
         resolve_request = ResolveRequest(
-            beneficiary_ids = beneficiary_ids,
+            beneficiary_ids=beneficiary_ids,
         )
         _logger.info(
             f"Constructed resolve request for {len(beneficiary_ids)} single resolve requests"
