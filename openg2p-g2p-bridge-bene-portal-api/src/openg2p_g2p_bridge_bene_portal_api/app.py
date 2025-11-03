@@ -3,7 +3,6 @@ import logging
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
 from openg2p_fastapi_auth.auth.factory import AuthFactory
-from openg2p_fastapi_auth.auth.implementations import BeneficiaryEsignetAuth
 
 from .config import Settings
 from .controllers import DisbursementController
@@ -18,6 +17,5 @@ class Initializer(BaseInitializer):
         super().initialize()
 
         AuthFactory()
-        BeneficiaryEsignetAuth()
         DisbursementService()
         DisbursementController().post_init()
