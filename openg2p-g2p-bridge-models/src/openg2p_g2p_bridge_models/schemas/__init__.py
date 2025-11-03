@@ -43,3 +43,11 @@ from .payment_schemas import (
     AgencyDetailForPayment,
     SponsorBankConfiguration,
 )
+from .bridge_schemas import (
+    StatusEnum,
+    SyncResponseStatusReasonCodeEnum,
+    SyncResponseHeader,
+    SyncResponse,
+    RequestHeader,
+    Request,
+)

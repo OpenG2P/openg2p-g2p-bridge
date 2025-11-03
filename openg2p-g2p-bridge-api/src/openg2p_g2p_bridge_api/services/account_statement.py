@@ -7,8 +7,7 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.models import AccountStatement, AccountStatementLob
-from openg2p_g2p_bridge_models.schemas import AccountStatementResponse
-from openg2p_g2pconnect_common_lib.schemas import StatusEnum, SyncResponseHeader
+from openg2p_g2p_bridge_models.schemas import AccountStatementResponse, StatusEnum, SyncResponseHeader
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from ..config import Settings

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from openg2p_g2pconnect_common_lib.schemas import SyncResponse
+from .bridge_schemas import SyncResponse
 
 
 class AccountStatementResponse(SyncResponse):

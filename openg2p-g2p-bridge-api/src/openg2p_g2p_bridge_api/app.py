@@ -24,7 +24,7 @@ from openg2p_g2p_bridge_models.models import (
     EnvelopeControl,
     NotificationLog,
 )
-from openg2p_g2pconnect_common_lib.jwt_validation_helper import JWTValidationHelper
+from openg2p_fastapi_partner_auth.jwt_validation_helper import JWTValidationHelper
 
 from .controllers import (
     AccountStatementController,

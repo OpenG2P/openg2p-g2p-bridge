@@ -1,4 +1,4 @@
-from openg2p_g2pconnect_common_lib.config import Settings as BaseSettings
+from openg2p_fastapi_common.config import Settings as BaseSettings
 from pydantic_settings import SettingsConfigDict
 
 from . import __version__
@@ -25,5 +25,5 @@ class Settings(BaseSettings):
         "text/plain",
     ]
 
-    jwt_validate_keymanager_app_id: str = "G2PBRIDGE"
+    keymanager_sign_app_id: str = "G2PBRIDGE"
     keymanager_auth_enabled: bool = False

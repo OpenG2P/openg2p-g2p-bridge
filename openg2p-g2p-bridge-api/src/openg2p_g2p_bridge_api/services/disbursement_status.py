@@ -24,7 +24,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementStatusRequest,
     DisbursementStatusResponse,
 )
-from openg2p_g2pconnect_common_lib.schemas import (
+from openg2p_g2p_bridge_models.schemas import (
     StatusEnum,
     SyncResponseHeader,
 )
