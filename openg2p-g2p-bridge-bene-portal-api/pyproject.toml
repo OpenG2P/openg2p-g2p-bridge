@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "openg2p-bridge-bene-portal-api"
+name = "openg2p-g2p-bridge-bene-portal-api"
 authors = [
   { name="OpenG2P", email="info@openg2p.org" },
 ]
-description = "OpenG2P Bridge Bene Portal API"
+description = "OpenG2P G2P Bridge Bene Portal API"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -31,4 +31,4 @@ Repository = "https://github.com/OpenG2P/openg2p-g2p-bridge"
 Source = "https://github.com/OpenG2P/openg2p-g2p-bridge"
 
 [tool.hatch.version]
-path = "src/openg2p_bridge_bene_portal_api/__init__.py"
+path = "src/openg2p_g2p_bridge_bene_portal_api/__init__.py"
