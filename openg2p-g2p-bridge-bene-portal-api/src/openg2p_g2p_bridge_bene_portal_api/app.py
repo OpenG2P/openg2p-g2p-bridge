@@ -2,6 +2,7 @@
 import logging
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
+from openg2p_fastapi_auth.auth.factory import AuthFactory
 
 from .config import Settings
 from .controllers import DisbursementController
@@ -15,5 +16,6 @@ class Initializer(BaseInitializer):
     def initialize(self, **kwargs):
         super().initialize()
 
+        AuthFactory()
         DisbursementService()
         DisbursementController().post_init()
