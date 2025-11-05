@@ -13,7 +13,7 @@ from openg2p_g2p_bridge_models.schemas import (
     AccountStatementResponse,
 )
 
-from openg2p_g2p_bridge_api.services import AccountStatementService
+from openg2p_g2p_bridge_partner_api.services import AccountStatementService
 
 from ..config import Settings
 from ..services import RequestValidation
