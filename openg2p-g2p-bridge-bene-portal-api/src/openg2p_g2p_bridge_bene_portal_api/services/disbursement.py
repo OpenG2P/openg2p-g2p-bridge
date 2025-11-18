@@ -31,6 +31,7 @@ from ..config import Settings
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
 
+
 class DisbursementService(BaseService):
     async def get_all_disbursements(
         self, disbursement_request: DisbursementRequestForPortal, auth: AuthCredentials
@@ -51,9 +52,7 @@ class DisbursementService(BaseService):
         # Extract beneficiary_id from auth.sub
         beneficiary_id: str = auth.sub
 
-        session_maker_bridge = async_sessionmaker(
-            dbengine.get(), expire_on_commit=False
-        )
+        session_maker_bridge = async_sessionmaker(dbengine.get(), expire_on_commit=False)
 
         async with session_maker_bridge() as session_bridge:
             # Count total disbursements for the beneficiary
@@ -169,9 +168,7 @@ class DisbursementService(BaseService):
         # Extract beneficiary_id from auth.sub
         beneficiary_id: str = auth.sub
 
-        session_maker_bridge = async_sessionmaker(
-            dbengine.get(), expire_on_commit=False
-        )
+        session_maker_bridge = async_sessionmaker(dbengine.get(), expire_on_commit=False)
 
         async with session_maker_bridge() as session_bridge:
             # Query to get disbursement summary grouped by benefit_code_mnemonic
