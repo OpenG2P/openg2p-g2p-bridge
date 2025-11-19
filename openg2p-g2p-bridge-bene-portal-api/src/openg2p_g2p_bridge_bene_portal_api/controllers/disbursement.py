@@ -2,7 +2,7 @@ import logging
 from typing import Annotated
 from fastapi import Depends
 
-from openg2p_fastapi_auth.auth.factory import AuthFactory
+from openg2p_fastapi_auth.auth import AuthFactory
 from openg2p_fastapi_auth_models.schemas import AuthCredentials
 
 from openg2p_fastapi_common.controller import BaseController

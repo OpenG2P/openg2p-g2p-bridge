@@ -1,14 +1,15 @@
 # ruff: noqa: E402
 import logging
+from .config import Settings
+
+_config = Settings.get_config()
 
 from openg2p_fastapi_common.app import Initializer as BaseInitializer
-from openg2p_fastapi_auth.auth.factory import AuthFactory
+from openg2p_fastapi_auth.auth import AuthFactory
 
-from .config import Settings
 from .controllers import DisbursementController
 from .services import DisbursementService
 
-_config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
 
 

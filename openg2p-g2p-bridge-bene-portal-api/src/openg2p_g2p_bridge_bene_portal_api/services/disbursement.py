@@ -30,7 +30,6 @@ from ..config import Settings
 
 _config = Settings.get_config()
 _logger = logging.getLogger(_config.logging_default_logger_name)
-_engine = dbengine.get()
 
 
 class DisbursementService(BaseService):
@@ -53,9 +52,7 @@ class DisbursementService(BaseService):
         # Extract beneficiary_id from auth.sub
         beneficiary_id: str = auth.sub
 
-        session_maker_bridge = async_sessionmaker(
-            bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-        )
+        session_maker_bridge = async_sessionmaker(dbengine.get(), expire_on_commit=False)
 
         async with session_maker_bridge() as session_bridge:
             # Count total disbursements for the beneficiary
@@ -105,7 +102,7 @@ class DisbursementService(BaseService):
                         cycle_code_mnemonic=envelope.cycle_code_mnemonic,
                         disbursement_quantity=disbursement.disbursement_quantity,
                         benefit_code=envelope.benefit_code_mnemonic,
-                        benefit_type=envelope.benefit_type.value,
+                        benefit_type=envelope.benefit_type,
                         agency_mnemonic="AGENCY_PLACEHOLDER",  # TODO: Map from actual agency data
                         measurement_unit=envelope.measurement_unit,
                         disbursement_schedule_date=envelope.disbursement_schedule_date,
@@ -171,9 +168,7 @@ class DisbursementService(BaseService):
         # Extract beneficiary_id from auth.sub
         beneficiary_id: str = auth.sub
 
-        session_maker_bridge = async_sessionmaker(
-            bind=_engine.get("db_engine_bridge"), expire_on_commit=False
-        )
+        session_maker_bridge = async_sessionmaker(dbengine.get(), expire_on_commit=False)
 
         async with session_maker_bridge() as session_bridge:
             # Query to get disbursement summary grouped by benefit_code_mnemonic
@@ -211,7 +206,7 @@ class DisbursementService(BaseService):
                 disbursement_summaries.append(
                     DisbursementSummary(
                         benefit_code_mnemonic=row.benefit_code_mnemonic,
-                        benefit_type=row.benefit_type.value,
+                        benefit_type=row.benefit_type,
                         measurement_unit=row.measurement_unit,
                         total_quantity_received=float(row.total_quantity_received),
                     )
