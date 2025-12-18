@@ -36,7 +36,7 @@ jobs:
           python -m pip install -e ./openg2p-g2p-bridge-celery-workers
       - name: Run test suite
         run: |
-          pytest --cov-branch --cov-report=term-missing --cov=openg2p_g2p_bridge_api --cov=tests openg2p-g2p-bridge-api
+          pytest --cov-branch --cov-report=term-missing --cov=openg2p_g2p_bridge_partner_api --cov=tests openg2p-g2p-bridge-api
           pytest --cov-branch --cov-report=term-missing --cov=openg2p_g2p_bridge_bank_connectors --cov=tests openg2p-g2p-bridge-bank-connectors --cov-append
           pytest --cov-branch --cov-report=term-missing --cov=openg2p_g2p_bridge_celery_beat_producers --cov=tests openg2p-g2p-bridge-celery-beat-producers --cov-append
           pytest --cov-branch --cov-report=term-missing --cov=openg2p_g2p_bridge_celery_workers --cov=tests openg2p-g2p-bridge-celery-workers --cov-append

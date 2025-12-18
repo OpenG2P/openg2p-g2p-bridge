@@ -7,7 +7,7 @@ from . import __version__
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="g2p_bridge_", env_file=".env", extra="allow")
 
-    openapi_title: str = "OpenG2P G2P Bridge API"
+    openapi_title: str = "OpenG2P G2P Bridge Partner API"
     openapi_description: str = """
         This module enables cash transfers from PBMS
         ***********************************
