@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from openg2p_g2p_bridge_api.controllers import DisbursementStatusController
+from openg2p_g2p_bridge_partner_api.controllers import DisbursementStatusController
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementStatusException
 from openg2p_g2p_bridge_models.schemas import (
@@ -18,8 +18,8 @@ from openg2p_g2p_bridge_models.schemas import (
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementStatusService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementStatusService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_get_disbursement_status_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
@@ -79,8 +79,8 @@ async def test_get_disbursement_status_success(mock_request_validation, mock_ser
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementStatusService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementStatusService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 @pytest.mark.parametrize("error_code", list(G2PBridgeErrorCodes))
 async def test_get_disbursement_status_failure(
     mock_request_validation, mock_service_get_component, error_code

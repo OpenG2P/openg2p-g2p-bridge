@@ -2,7 +2,7 @@ from datetime import date, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from openg2p_g2p_bridge_api.controllers import DisbursementEnvelopeController
+from openg2p_g2p_bridge_partner_api.controllers import DisbursementEnvelopeController
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.errors.exceptions import DisbursementEnvelopeException
 from openg2p_g2p_bridge_models.models import (
@@ -48,8 +48,8 @@ def mock_create_disbursement_envelope(is_valid, error_code=None):
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_create_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
@@ -99,8 +99,8 @@ async def test_create_disbursement_envelope_success(mock_request_validation, moc
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 @pytest.mark.parametrize("error_code", list(G2PBridgeErrorCodes))
 async def test_create_disbursement_envelope_errors(
     mock_request_validation, mock_service_get_component, error_code
@@ -189,8 +189,8 @@ def mock_cancel_disbursement_envelope(is_valid, error_code=None):
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_cancel_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
@@ -228,8 +228,8 @@ async def test_cancel_disbursement_envelope_success(mock_request_validation, moc
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 @pytest.mark.parametrize(
     "error_code",
     [
@@ -315,8 +315,8 @@ def mock_amend_disbursement_envelope(is_valid, error_code=None):
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_amend_disbursement_envelope_success(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
@@ -367,8 +367,8 @@ async def test_amend_disbursement_envelope_success(mock_request_validation, mock
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 @pytest.mark.parametrize("error_code", list(G2PBridgeErrorCodes))
 async def test_amend_disbursement_envelope_errors(
     mock_request_validation, mock_service_get_component, error_code
@@ -428,8 +428,8 @@ async def test_amend_disbursement_envelope_errors(
         BenefitType.CASH_PHYSICAL,
     ],
 )
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_create_envelope_various_benefit_types(
     mock_request_validation, mock_service_get_component, benefit_type
 ):
@@ -486,8 +486,8 @@ async def test_create_envelope_various_benefit_types(
 
 
 @pytest.mark.asyncio
-@patch("openg2p_g2p_bridge_api.services.DisbursementEnvelopeService.get_component")
-@patch("openg2p_g2p_bridge_api.services.RequestValidation.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.DisbursementEnvelopeService.get_component")
+@patch("openg2p_g2p_bridge_partner_api.services.RequestValidation.get_component")
 async def test_bulk_create_mixed_benefit_types(mock_request_validation, mock_service_get_component):
     mock_request_validation.validate_signature.return_value = None
     mock_request_validation.validate_request.return_value = None
