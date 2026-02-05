@@ -188,7 +188,12 @@ def construct_disbursement_payloads_for_digital_cash(
     _logger.info(f"Constructing disbursement payloads for digital cash: {disbursement_batch_control_id}")
     disbursements = (
         session.query(Disbursement)
+        .join(
+            DisbursementResolutionFinancialAddress,
+            DisbursementResolutionFinancialAddress.disbursement_id == Disbursement.id,
+        )
         .filter(Disbursement.disbursement_batch_control_id == disbursement_batch_control_id)
+        .distinct()
         .all()
     )
 
