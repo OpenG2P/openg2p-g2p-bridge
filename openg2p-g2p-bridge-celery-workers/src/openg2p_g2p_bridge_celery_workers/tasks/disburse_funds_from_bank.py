@@ -193,7 +193,7 @@ def construct_disbursement_payloads_for_digital_cash(
             DisbursementResolutionFinancialAddress.disbursement_id == Disbursement.id,
         )
         .filter(Disbursement.disbursement_batch_control_id == disbursement_batch_control_id)
-        .distinct()
+        .distinct(Disbursement.id)
         .all()
     )
 
