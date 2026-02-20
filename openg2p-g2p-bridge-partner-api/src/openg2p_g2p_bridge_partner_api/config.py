@@ -25,5 +25,5 @@ class Settings(BaseSettings):
         "text/plain",
     ]
 
-    keymanager_sign_app_id: str = "G2PBRIDGE"
+    keymanager_sign_app_id: str = "OPENG2P_BRIDGE"
     keymanager_auth_enabled: bool = False
