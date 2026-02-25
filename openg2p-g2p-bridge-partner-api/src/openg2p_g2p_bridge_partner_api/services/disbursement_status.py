@@ -17,16 +17,18 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementBatchControlPayload,
     DisbursementBatchControlRequest,
     DisbursementBatchControlResponse,
+    DisbursementBatchControlResponseBody,
     DisbursementErrorReconPayload,
     DisbursementReconPayload,
     DisbursementReconRecords,
     DisbursementStatusPayload,
     DisbursementStatusRequest,
     DisbursementStatusResponse,
+    DisbursementStatusResponseBody,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    StatusEnum,
-    SyncResponseHeader,
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.future import select
@@ -46,7 +48,7 @@ class DisbursementStatusService(BaseService):
         async with session_maker() as session:
             try:
                 disbursement_status_payloads = []
-                for disbursement_id in disbursement_status_request.message:
+                for disbursement_id in disbursement_status_request.request_body.request_payload:
                     disbursement_recon_records = await self.get_disbursement_recon_records(
                         session, disbursement_id
                     )
@@ -147,7 +149,7 @@ class DisbursementStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id == disbursement_batch_control_request.message
+                            DisbursementBatchControl.id == disbursement_batch_control_request.request_body.request_payload
                         )
                     )
                 )
@@ -249,14 +251,16 @@ class DisbursementStatusService(BaseService):
     ) -> DisbursementStatusResponse:
         _logger.info("Constructing disbursement status error response")
         response = DisbursementStatusResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_status_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_status_request.header.action,
-                status=StatusEnum.rjct,
-                status_reason_message=code,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_status_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=code,
+                response_error_message=code,
+                response_timestamp=datetime.now(),
             ),
-            message={},
+            response_body=DisbursementStatusResponseBody(
+                response_payload=[],
+            ),
         )
 
         _logger.info("Disbursement status error response constructed")
@@ -269,13 +273,16 @@ class DisbursementStatusService(BaseService):
     ) -> DisbursementStatusResponse:
         _logger.info("Constructing disbursement status success response")
         response = DisbursementStatusResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_status_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_status_request.header.action,
-                status=StatusEnum.succ,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_status_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_status_payloads,
+            response_body=DisbursementStatusResponseBody(
+                response_payload=disbursement_status_payloads,
+            ),
         )
         _logger.info("Disbursement status success response constructed")
         return response
@@ -287,13 +294,16 @@ class DisbursementStatusService(BaseService):
     ) -> DisbursementBatchControlResponse:
         _logger.info("Constructing disbursement batch control success response")
         response = DisbursementBatchControlResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_batch_control_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_batch_control_request.header.action,
-                status=StatusEnum.succ,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_batch_control_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_batch_control_payload,
+            response_body=DisbursementBatchControlResponseBody(
+                response_payload=disbursement_batch_control_payload,
+            ),
         )
         _logger.info("Disbursement batch control success response constructed")
         return response
@@ -305,14 +315,16 @@ class DisbursementStatusService(BaseService):
     ) -> DisbursementBatchControlResponse:
         _logger.info("Constructing disbursement batch control error response")
         response = DisbursementBatchControlResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_batch_control_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_batch_control_request.header.action,
-                status=StatusEnum.rjct,
-                status_reason_message=code,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_batch_control_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=code,
+                response_error_message=code,
+                response_timestamp=datetime.now(),
             ),
-            message={},
+            response_body=DisbursementBatchControlResponseBody(
+                response_payload=None,
+            ),
         )
         _logger.info("Disbursement batch control error response constructed")
         return response

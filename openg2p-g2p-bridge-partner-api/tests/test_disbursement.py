@@ -9,12 +9,14 @@ from openg2p_g2p_bridge_models.models import CancellationStatus
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
     DisbursementRequest,
+    DisbursementRequestBody,
     DisbursementResponse,
+    DisbursementResponseBody,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    RequestHeader,
-    StatusEnum,
-    SyncResponseHeader,
+    G2PRequestHeader,
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 
 
@@ -22,7 +24,7 @@ def mock_create_disbursements(is_valid, disbursement_request):
     if not is_valid:
         raise DisbursementException(
             code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
-            disbursement_payloads=disbursement_request.message,
+            disbursement_payloads=disbursement_request.request_body.request_payload,
         )
     return disbursement_request
 
@@ -40,35 +42,34 @@ async def test_create_disbursements_success(mock_request_validation, mock_servic
             disbursement_id="disb123",
             disbursement_envelope_id="env123",
             beneficiary_id="123AB",
-            disbursement_amount=1000,
+            disbursement_quantity=1000,
         )
     ]
     disbursement_request = DisbursementRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=disbursement_payloads,
+        request_body=DisbursementRequestBody(
+            request_payload=disbursement_payloads,
+        ),
     )
     mock_service_instance.create_disbursements = AsyncMock(
         return_value=mock_create_disbursements(True, disbursement_request)
     )
     mock_service_instance.construct_disbursement_success_response = AsyncMock(
         return_value=DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.succ,
-                status_reason_message="",
+            response_header=G2PResponseHeader(
+                request_id="123",
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
     )
 
@@ -79,7 +80,7 @@ async def test_create_disbursements_success(mock_request_validation, mock_servic
 
     response = await controller.create_disbursements(request_payload, is_signature_valid=True)
 
-    assert response.message == disbursement_payloads
+    assert response.response_body.response_payload == disbursement_payloads
 
 
 @pytest.mark.asyncio
@@ -95,35 +96,34 @@ async def test_create_disbursements_failure(mock_request_validation, mock_servic
             disbursement_id="disb123",
             disbursement_envelope_id="env123",
             beneficiary_id="123AB",
-            disbursement_amount=1000,
+            disbursement_quantity=1000,
         )
     ]
     disbursement_request = DisbursementRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=disbursement_payloads,
+        request_body=DisbursementRequestBody(
+            request_payload=disbursement_payloads,
+        ),
     )
     mock_service_instance.create_disbursements = AsyncMock(
         side_effect=lambda req: mock_create_disbursements(False, req)
     )
     mock_service_instance.construct_disbursement_error_response = AsyncMock(
         return_value=DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.rjct,
-                status_reason_message=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
+            response_header=G2PResponseHeader(
+                request_id="123",
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value,
+                response_error_message=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.description,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
     )
 
@@ -134,16 +134,16 @@ async def test_create_disbursements_failure(mock_request_validation, mock_servic
 
     response = await controller.create_disbursements(request_payload, is_signature_valid=True)
 
-    assert response.header.status_reason_message == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
+    assert response.response_header.response_error_code == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
 
 
 def mock_cancel_disbursements(is_valid, disbursement_request):
     if not is_valid:
         raise DisbursementException(
             code=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED,
-            disbursement_payloads=disbursement_request.message,
+            disbursement_payloads=disbursement_request.request_body.request_payload,
         )
-    for payload in disbursement_request.message:
+    for payload in disbursement_request.request_body.request_payload:
         payload.cancellation_status = CancellationStatus.CANCELLED
         payload.cancellation_time_stamp = datetime.now()
     return disbursement_request
@@ -161,36 +161,35 @@ async def test_cancel_disbursements_success(mock_request_validation, mock_servic
         DisbursementPayload(
             disbursement_id="123",
             beneficiary_id="123AB",
-            disbursement_amount=1000,
+            disbursement_quantity=1000,
             cancellation_status=None,
         )
     ]
     disbursement_request = DisbursementRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=disbursement_payloads,
+        request_body=DisbursementRequestBody(
+            request_payload=disbursement_payloads,
+        ),
     )
     mock_service_instance.cancel_disbursements = AsyncMock(
         return_value=mock_cancel_disbursements(True, disbursement_request)
     )
     mock_service_instance.construct_disbursement_success_response = AsyncMock(
         return_value=DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.succ,
-                status_reason_message="",
+            response_header=G2PResponseHeader(
+                request_id="123",
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
     )
 
@@ -201,8 +200,11 @@ async def test_cancel_disbursements_success(mock_request_validation, mock_servic
 
     response = await controller.cancel_disbursements(request_payload, is_signature_valid=True)
 
-    assert response.header.status == StatusEnum.succ
-    assert all(payload.cancellation_status == CancellationStatus.CANCELLED for payload in response.message)
+    assert response.response_header.response_status == G2PResponseStatus.SUCCESS
+    assert all(
+        payload.cancellation_status == CancellationStatus.CANCELLED
+        for payload in response.response_body.response_payload
+    )
 
 
 @pytest.mark.asyncio
@@ -217,36 +219,35 @@ async def test_cancel_disbursements_failure(mock_request_validation, mock_servic
         DisbursementPayload(
             disbursement_id="123",
             beneficiary_id="123AB",
-            disbursement_amount=1000,
+            disbursement_quantity=1000,
             cancellation_status=None,
         )
     ]
     disbursement_request = DisbursementRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=disbursement_payloads,
+        request_body=DisbursementRequestBody(
+            request_payload=disbursement_payloads,
+        ),
     )
     mock_service_instance.cancel_disbursements = AsyncMock(
         side_effect=lambda req: mock_cancel_disbursements(False, req)
     )
     mock_service_instance.construct_disbursement_error_response = AsyncMock(
         return_value=DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.rjct,
-                status_reason_message=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED,
+            response_header=G2PResponseHeader(
+                request_id="123",
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value,
+                response_error_message=G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.description,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
     )
 
@@ -257,5 +258,5 @@ async def test_cancel_disbursements_failure(mock_request_validation, mock_servic
 
     response = await controller.cancel_disbursements(request_payload, is_signature_valid=True)
 
-    assert response.header.status == StatusEnum.rjct
-    assert response.header.status_reason_message == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value
+    assert response.response_header.response_status == G2PResponseStatus.ERROR
+    assert response.response_header.response_error_code == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value

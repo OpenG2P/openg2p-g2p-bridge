@@ -22,10 +22,11 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
     DisbursementRequest,
     DisbursementResponse,
+    DisbursementResponseBody
 )
 from openg2p_g2p_bridge_models.schemas import (
-    StatusEnum,
-    SyncResponseHeader,
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -47,20 +48,20 @@ class DisbursementService(BaseService):
             try:
                 await self.validate_disbursement_envelope(
                     session=session,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                 )
             except DisbursementException as e:
                 _logger.error(f"Error validating disbursement envelope: {str(e)}")
                 raise e
             is_error_free = await self.validate_disbursement_request(
-                disbursement_payloads=disbursement_request.message
+                disbursement_payloads=disbursement_request.request_body.request_payload
             )
 
             if not is_error_free:
                 _logger.error("Error validating disbursement request")
                 raise DisbursementException(
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                 )
             try:
                 disbursement_envelope = (
@@ -68,7 +69,7 @@ class DisbursementService(BaseService):
                         await session.execute(
                             select(DisbursementEnvelope).where(
                                 DisbursementEnvelope.id
-                                == str(disbursement_request.message[0].disbursement_envelope_id)
+                                == str(disbursement_request.request_body.request_payload[0].disbursement_envelope_id)
                             )
                         )
                     )
@@ -78,13 +79,13 @@ class DisbursementService(BaseService):
 
                 disbursement_batch_control: DisbursementBatchControl = (
                     await self.construct_disbursement_batch_control(
-                        disbursement_request.disbursement_batch_control_id,
+                        disbursement_request.request_body.disbursement_batch_control_id,
                         disbursement_envelope=disbursement_envelope,
                     )
                 )
 
                 disbursements: List[Disbursement] = await self.construct_disbursements(
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                     disbursement_batch_control_id=disbursement_batch_control.id,
                 )
                 _logger.info(f"***Length of disbursements before updating: {len(disbursements)}***")
@@ -97,7 +98,7 @@ class DisbursementService(BaseService):
                 # No need to create a separate bank disbursement status; this is now handled by DisbursementBatchControl
                 await session.commit()
                 _logger.info("Disbursements Created Successfully!")
-                return disbursement_request.message
+                return disbursement_request.request_body.request_payload
             except Exception as e:
                 _logger.error(f"Disbursement creation failed: {str(e)}")
                 session.rollback()
@@ -333,14 +334,16 @@ class DisbursementService(BaseService):
     ) -> DisbursementResponse:
         _logger.info("Constructing Disbursement Error Response")
         disbursement_response: DisbursementResponse = DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_request.header.action,
-                status=StatusEnum.rjct,
-                status_reason_message=code.value,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=code.value,
+                response_error_message=code.description,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
         _logger.info("Disbursement Error Response Constructed!")
         return disbursement_response
@@ -352,13 +355,16 @@ class DisbursementService(BaseService):
     ) -> DisbursementResponse:
         _logger.info("Constructing Disbursement Success Response")
         disbursement_response: DisbursementResponse = DisbursementResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_request.header.action,
-                status=StatusEnum.succ,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=disbursement_payloads,
+            response_body=DisbursementResponseBody(
+                response_payload=disbursement_payloads,
+            ),
         )
         _logger.info("Disbursement Success Response Constructed!")
         return disbursement_response
@@ -370,14 +376,14 @@ class DisbursementService(BaseService):
         session_maker = async_sessionmaker(dbengine.get(), expire_on_commit=False)
         async with session_maker() as session:
             is_payload_valid = await self.validate_request_payload(
-                disbursement_payloads=disbursement_request.message
+                disbursement_payloads=disbursement_request.request_body.request_payload
             )
 
             if not is_payload_valid:
                 _logger.error("Error validating disbursement request")
                 raise DisbursementException(
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                 )
 
             # Fetch and lock disbursements for update (nowait)
@@ -388,11 +394,11 @@ class DisbursementService(BaseService):
                 _logger.error("Disbursements not found in DB")
                 raise DisbursementException(
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ID,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                 )
 
             try:
-                await self.check_for_single_envelope(disbursements_in_db, disbursement_request.message)
+                await self.check_for_single_envelope(disbursements_in_db, disbursement_request.request_body.request_payload)
             except DisbursementException as e:
                 _logger.error(f"Error checking for single envelope: {str(e)}")
                 raise e
@@ -400,7 +406,7 @@ class DisbursementService(BaseService):
             try:
                 await self.validate_envelope_for_disbursement_cancellation(
                     disbursements_in_db=disbursements_in_db,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                     session=session,
                 )
             except DisbursementException as e:
@@ -413,7 +419,7 @@ class DisbursementService(BaseService):
             if invalid_disbursements_exist:
                 raise DisbursementException(
                     code=G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD,
-                    disbursement_payloads=disbursement_request.message,
+                    disbursement_payloads=disbursement_request.request_body.request_payload,
                 )
 
             for disbursement in disbursements_in_db:
@@ -444,7 +450,7 @@ class DisbursementService(BaseService):
             session.add(envelope_control)
             await session.commit()
             _logger.info("Disbursements Cancelled Successfully!")
-            return disbursement_request.message
+            return disbursement_request.request_body.request_payload
 
     async def check_for_single_envelope(self, disbursements_in_db, disbursement_payloads):
         _logger.info("Checking for Single Envelope")
@@ -463,7 +469,7 @@ class DisbursementService(BaseService):
     async def check_for_invalid_disbursements(self, disbursement_request, disbursements_in_db) -> bool:
         _logger.info("Checking for Invalid Disbursements")
         invalid_disbursements_exist = False
-        for disbursement_payload in disbursement_request.message:
+        for disbursement_payload in disbursement_request.request_body.request_payload:
             if disbursement_payload.disbursement_id not in [
                 disbursement.disbursement_id for disbursement in disbursements_in_db
             ]:
@@ -494,7 +500,7 @@ class DisbursementService(BaseService):
                     select(Disbursement)
                     .where(
                         Disbursement.disbursement_id.in_(
-                            [str(p.disbursement_id) for p in disbursement_request.message]
+                            [str(p.disbursement_id) for p in disbursement_request.request_body.request_payload]
                         )
                     )
                     .with_for_update(nowait=True)

@@ -4,7 +4,7 @@ from typing import List
 
 from openg2p_fastapi_common.context import dbengine
 
-from openg2p_fastapi_common.schemas import G2PResponseStatus
+from openg2p_fastapi_common.schemas import G2PResponseHeader, G2PResponseStatus, G2PPaginationResponse
 from openg2p_fastapi_common.service import BaseService
 from openg2p_fastapi_auth_models.schemas import AuthCredentials
 from openg2p_g2p_bridge_models.errors import BridgeException
@@ -22,6 +22,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementSummaryRequest,
     DisbursementSummaryResponse,
     DisbursementSummaryResponseBody,
+    DisbursementResponseBodyForPortal
 )
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -121,16 +122,18 @@ class DisbursementService(BaseService):
         total_pages: int = 0,
     ) -> DisbursementResponseForPortal:
         disbursement_response = DisbursementResponseForPortal(
-            response_header={
-                "request_id": disbursement_request.request_header.request_id,
-                "response_status": G2PResponseStatus.SUCCESS.value,
-                "response_timestamp": datetime.now(),
-            },
-            response_body=DisbursementResponseBody(
-                pagination_response={
-                    "number_of_items": total_count,
-                    "number_of_pages": total_pages,
-                },
+            response_header=G2PResponseHeader(
+                request_id=disbursement_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_timestamp=datetime.now(),
+                response_error_code=None,
+                response_error_message=None,
+            ),
+            response_body=DisbursementResponseBodyForPortal(
+                pagination_response=G2PPaginationResponse(
+                    number_of_items=total_count,
+                    number_of_pages=total_pages,
+                ),
                 response_payload=disbursements,
             ),
         )
@@ -143,18 +146,14 @@ class DisbursementService(BaseService):
         error_message: str | None = None,
     ) -> DisbursementResponseForPortal:
         disbursement_response = DisbursementResponseForPortal(
-            response_header={
-                "request_id": disbursement_request.request_header.request_id,
-                "response_status": G2PResponseStatus.ERROR.value,
-                "response_error_code": error_code,
-                "response_error_message": error_message,
-                "response_timestamp": datetime.now(),
-            },
-            response_body=DisbursementResponseBody(
-                pagination_response={
-                    "number_of_items": 0,
-                    "number_of_pages": 0,
-                },
+            response_header=G2PResponseHeader(
+                request_id=disbursement_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=error_code,
+                response_error_message=error_message,
+                response_timestamp=datetime.now(),
+            ),
+            response_body=DisbursementResponseBodyForPortal(
                 response_payload=[],
             ),
         )
@@ -222,11 +221,13 @@ class DisbursementService(BaseService):
         disbursement_summaries: List[DisbursementSummary],
     ) -> DisbursementSummaryResponse:
         disbursement_summary_response = DisbursementSummaryResponse(
-            response_header={
-                "request_id": disbursement_summary_request.request_header.request_id,
-                "response_status": G2PResponseStatus.SUCCESS.value,
-                "response_timestamp": datetime.now(),
-            },
+            response_header=G2PResponseHeader(
+                request_id=disbursement_summary_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_timestamp=datetime.now(),
+                response_error_code=None,
+                response_error_message=None,
+            ),
             response_body=DisbursementSummaryResponseBody(
                 response_payload=disbursement_summaries,
             ),
@@ -240,13 +241,13 @@ class DisbursementService(BaseService):
         error_message: str | None = None,
     ) -> DisbursementSummaryResponse:
         disbursement_summary_response = DisbursementSummaryResponse(
-            response_header={
-                "request_id": disbursement_summary_request.request_header.request_id,
-                "response_status": G2PResponseStatus.ERROR.value,
-                "response_error_code": error_code,
-                "response_error_message": error_message,
-                "response_timestamp": datetime.now(),
-            },
+            response_header=G2PResponseHeader(
+                request_id=disbursement_summary_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_timestamp=datetime.now(),
+                response_error_code=error_code,
+                response_error_message=error_message,
+            ),
             response_body=DisbursementSummaryResponseBody(
                 response_payload=[],
             ),

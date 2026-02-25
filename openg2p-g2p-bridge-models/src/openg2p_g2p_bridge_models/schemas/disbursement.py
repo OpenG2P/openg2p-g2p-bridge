@@ -1,13 +1,19 @@
 import datetime
 from typing import List, Optional
 
-from .bridge_schemas import Request, SyncResponse
+from openg2p_fastapi_common.schemas import (
+    G2PRequest,
+    G2PRequestBody,
+    G2PResponse,
+    G2PResponseBody,
+)
 from pydantic import BaseModel
 
 from ..models import DisbursementCancellationStatus
 from .disbursement_envelope import DisbursementBatchControlGeoPayload
 
 
+# Disbursement
 class DisbursementPayload(BaseModel):
     disbursement_id: str
     disbursement_envelope_id: Optional[str] = None
@@ -24,16 +30,25 @@ class DisbursementPayload(BaseModel):
     response_error_codes: Optional[List[str]] = None
 
 
-class DisbursementRequest(Request):
+class DisbursementRequestBody(G2PRequestBody):
     disbursement_batch_control_id: Optional[str] = None
-    message: List[DisbursementPayload]
+    request_payload: List[DisbursementPayload]
 
 
-class DisbursementResponse(SyncResponse):
+class DisbursementRequest(G2PRequest):
+    request_body: DisbursementRequestBody
+
+
+class DisbursementResponseBody(G2PResponseBody):
     disbursement_batch_control_id: Optional[str] = None
-    message: Optional[List[DisbursementPayload]] = None
+    response_payload: Optional[List[DisbursementPayload]] = None
 
 
+class DisbursementResponse(G2PResponse):
+    response_body: DisbursementResponseBody
+
+
+# Disbursement Batch Control
 class DisbursementBatchControlPayload(BaseModel):
     disbursement_batch_control_id: str
     disbursement_cycle_id: int = None
@@ -66,9 +81,17 @@ class DisbursementBatchControlPayload(BaseModel):
     disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
 
-class DisbursementBatchControlRequest(Request):
-    message: str
+class DisbursementBatchControlRequestBody(G2PRequestBody):
+    request_payload: str
 
 
-class DisbursementBatchControlResponse(SyncResponse):
-    message: Optional[DisbursementBatchControlPayload] = None
+class DisbursementBatchControlRequest(G2PRequest):
+    request_body: DisbursementBatchControlRequestBody
+
+
+class DisbursementBatchControlResponseBody(G2PResponseBody):
+    response_payload: Optional[DisbursementBatchControlPayload] = None
+
+
+class DisbursementBatchControlResponse(G2PResponse):
+    response_body: DisbursementBatchControlResponseBody
