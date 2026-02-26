@@ -61,21 +61,6 @@ class DisbursementEnvelopeResponse(G2PResponse):
 
 
 # Disbursement Status
-class DisbursementStatusPayload(BaseModel):
-    disbursement_id: str
-    disbursement_recon_records: Optional[DisbursementReconRecords] = None
-
-class DisbursementStatusRequestBody(G2PRequestBody):
-    request_payload: List[str]
-
-class DisbursementStatusRequest(G2PRequest):
-    request_body: DisbursementStatusRequestBody
-
-class DisbursementStatusResponseBody(G2PResponseBody):
-    response_payload: Optional[List[DisbursementStatusPayload]] = None
-
-class DisbursementStatusResponse(G2PResponse):
-    response_body: DisbursementStatusResponseBody
 
 class DisbursementReconPayload(BaseModel):
     bank_disbursement_batch_id: str
@@ -114,6 +99,23 @@ class DisbursementErrorReconPayload(BaseModel):
 class DisbursementReconRecords(BaseModel):
     disbursement_recon_payloads: Optional[List[DisbursementReconPayload]] = None
     disbursement_error_recon_payloads: Optional[List[DisbursementErrorReconPayload]] = None
+
+class DisbursementStatusPayload(BaseModel):
+    disbursement_id: str
+    disbursement_recon_records: Optional[DisbursementReconRecords] = None
+
+class DisbursementStatusRequestBody(G2PRequestBody):
+    request_payload: List[str]
+
+class DisbursementStatusRequest(G2PRequest):
+    request_body: DisbursementStatusRequestBody
+
+class DisbursementStatusResponseBody(G2PResponseBody):
+    response_payload: Optional[List[DisbursementStatusPayload]] = None
+
+class DisbursementStatusResponse(G2PResponse):
+    response_body: DisbursementStatusResponseBody
+
 
 class DisbursementBatchControlGeoPayload(BaseModel):
     disbursement_batch_control_geo_id: str
