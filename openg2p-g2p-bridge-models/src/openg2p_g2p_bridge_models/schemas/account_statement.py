@@ -8,8 +8,9 @@ from openg2p_fastapi_common.schemas import G2PRequest, G2PRequestBody, G2PRespon
 class AccountStatementPayload(BaseModel):
     statement_id: Optional[str] = None
 
+class AccountStatementResponseBody(G2PResponseBody):
+    response_payload: AccountStatementPayload
+
 class AccountStatementResponse(G2PResponse):
     response_body: AccountStatementResponseBody
     
-class AccountStatementResponseBody(G2PResponseBody):
-    response_payload: AccountStatementPayload

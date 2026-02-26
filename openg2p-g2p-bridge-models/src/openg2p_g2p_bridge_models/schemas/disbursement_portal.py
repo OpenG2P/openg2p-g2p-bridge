@@ -52,14 +52,11 @@ class DisbursementSummary(BaseModel):
 class DisbursementSummaryRequestBody(G2PRequestBody):
     request_payload: Optional[dict] = None
 
-
 class DisbursementSummaryRequest(G2PRequest):
     request_body: DisbursementSummaryRequestBody
 
+class DisbursementSummaryResponseBody(G2PResponseBody):
+    response_payload: List[DisbursementSummary]
 
 class DisbursementSummaryResponse(G2PResponse):
     response_body: DisbursementSummaryResponseBody
-
-
-class DisbursementSummaryResponseBody(G2PResponseBody):
-    response_payload: List[DisbursementSummary]

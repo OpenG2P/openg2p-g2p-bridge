@@ -46,19 +46,18 @@ class DisbursementEnvelopePayload(BaseModel):
     cancellation_status: Optional[CancellationStatus] = None
     cancellation_timestamp: Optional[datetime.datetime] = None
 
+class DisbursementEnvelopeRequestBody(G2PRequestBody):
+    request_payload: List[DisbursementEnvelopePayload]
 
 class DisbursementEnvelopeRequest(G2PRequest):
     request_body: DisbursementEnvelopeRequestBody
 
-class DisbursementEnvelopeRequestBody(G2PRequestBody):
-    request_payload: List[DisbursementEnvelopePayload]
-
+class DisbursementEnvelopeResponseBody(G2PResponseBody):
+    response_payload: Optional[List[DisbursementEnvelopePayload]] = None
 
 class DisbursementEnvelopeResponse(G2PResponse):
     response_body: DisbursementEnvelopeResponseBody
 
-class DisbursementEnvelopeResponseBody(G2PResponseBody):
-    response_payload: Optional[List[DisbursementEnvelopePayload]] = None
 
 
 # Disbursement Status
@@ -66,17 +65,17 @@ class DisbursementStatusPayload(BaseModel):
     disbursement_id: str
     disbursement_recon_records: Optional[DisbursementReconRecords] = None
 
-class DisbursementStatusRequest(G2PRequest):
-    request_body: DisbursementStatusRequestBody
-
 class DisbursementStatusRequestBody(G2PRequestBody):
     request_payload: List[str]
 
-class DisbursementStatusResponse(G2PResponse):
-    response_body: DisbursementStatusResponseBody
+class DisbursementStatusRequest(G2PRequest):
+    request_body: DisbursementStatusRequestBody
 
 class DisbursementStatusResponseBody(G2PResponseBody):
     response_payload: Optional[List[DisbursementStatusPayload]] = None
+
+class DisbursementStatusResponse(G2PResponse):
+    response_body: DisbursementStatusResponseBody
 
 class DisbursementReconPayload(BaseModel):
     bank_disbursement_batch_id: str
@@ -173,14 +172,14 @@ class DisbursementEnvelopeStatusPayload(BaseModel):
     no_of_pods_received: Optional[int] = None
     disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
-class DisbursementEnvelopeStatusRequest(G2PRequest):
-    request_body: DisbursementEnvelopeStatusRequestBody
-
 class DisbursementEnvelopeStatusRequestBody(G2PRequestBody):
     request_payload: str
 
-class DisbursementEnvelopeStatusResponse(G2PResponse):
-    response_body: DisbursementEnvelopeStatusResponseBody
+class DisbursementEnvelopeStatusRequest(G2PRequest):
+    request_body: DisbursementEnvelopeStatusRequestBody
 
 class DisbursementEnvelopeStatusResponseBody(G2PResponseBody):
     response_payload: Optional[DisbursementEnvelopeStatusPayload] = None
+
+class DisbursementEnvelopeStatusResponse(G2PResponse):
+    response_body: DisbursementEnvelopeStatusResponseBody
