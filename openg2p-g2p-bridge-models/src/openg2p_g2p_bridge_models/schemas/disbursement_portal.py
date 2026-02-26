@@ -35,12 +35,12 @@ class DisbursementRequestBody(G2PRequestBody):
 class DisbursementRequest(G2PRequest):
     request_body: Optional[DisbursementRequestBody] = None
 
+class DisbursementResponseBody(G2PResponseBody):
+    response_payload: List[Disbursement]
+
 class DisbursementResponse(G2PResponse):
     response_body: DisbursementResponseBody
 
-
-class DisbursementResponseBody(G2PResponseBody):
-    response_payload: List[Disbursement]
 
 # Disbursement Summary
 class DisbursementSummary(BaseModel):
