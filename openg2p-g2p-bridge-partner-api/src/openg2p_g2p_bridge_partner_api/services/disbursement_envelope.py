@@ -126,7 +126,7 @@ class DisbursementEnvelopeService(BaseService):
                 response_timestamp=datetime.now().isoformat(),
             ),
             response_body=DisbursementEnvelopeResponseBody(
-                request_payload=disbursement_envelope_payloads,
+                response_payload=disbursement_envelope_payloads,
             ),
         )
         _logger.info("Disbursement envelope success response constructed")
@@ -147,7 +147,7 @@ class DisbursementEnvelopeService(BaseService):
                 response_timestamp=datetime.now().isoformat(),
             ),
             response_body=DisbursementEnvelopeResponseBody(
-                request_payload=[],
+                response_payload=[],
             ),
         )
         _logger.error("Disbursement envelope error response constructed")
@@ -272,7 +272,7 @@ class DisbursementEnvelopeService(BaseService):
         self, disbursement_envelope_request: DisbursementEnvelopeRequest
     ) -> bool:
         _logger.info("Validating disbursement envelope amend request")
-        disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.response_body.response_payload[0]
+        disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.request_body.request_payload[0]
         if disbursement_envelope_payload.id is None or disbursement_envelope_payload.id == "":
             _logger.error("Invalid disbursement envelope ID")
             raise DisbursementEnvelopeException(G2PBridgeErrorCodes.INVALID_DISBURSEMENT_ENVELOPE_ID)
@@ -345,7 +345,7 @@ class DisbursementEnvelopeService(BaseService):
             except DisbursementEnvelopeException as e:
                 raise e
 
-            disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.response_body.request_payload[0]
+            disbursement_envelope_payload: DisbursementEnvelopePayload = disbursement_envelope_request.request_body.request_payload[0]
             disbursement_envelope_id: str = disbursement_envelope_payload.id
 
             result = await session.execute(

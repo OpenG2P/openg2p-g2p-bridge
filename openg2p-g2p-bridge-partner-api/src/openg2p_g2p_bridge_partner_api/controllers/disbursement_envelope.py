@@ -60,9 +60,7 @@ class DisbursementEnvelopeController(BaseController):
             _logger.info(f"Request to create disbursement envelopes: {disbursement_envelope_request}")
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_envelope_request)
-            RequestValidation.get_component().validate_create_disbursement_envelope_request_header(
-                disbursement_envelope_request
-            )
+
             disbursement_envelope_payloads: list[DisbursementEnvelopePayload] = (
                 await self.disbursement_envelope_service.create_disbursement_envelopes(
                     disbursement_envelope_request
@@ -102,9 +100,6 @@ class DisbursementEnvelopeController(BaseController):
         try:
             RequestValidation.get_component().validate_signature(is_signature_valid)
             RequestValidation.get_component().validate_request(disbursement_envelope_request)
-            RequestValidation.get_component().validate_cancel_disbursement_envelope_request_header(
-                disbursement_envelope_request
-            )
 
             disbursement_envelope_payload: DisbursementEnvelopePayload = (
                 await self.disbursement_envelope_service.cancel_disbursement_envelope(
