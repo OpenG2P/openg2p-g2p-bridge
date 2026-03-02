@@ -54,6 +54,7 @@ class G2PBridgeErrorCodes(enum.Enum):
     DATABASE_QUERY_ERROR = "DATABASE_QUERY_ERROR"
     DATABASE_TRANSACTION_ERROR = "DATABASE_TRANSACTION_ERROR"
 
+
 class G2PBridgeStatusReasonCodeEnum(enum.Enum):
 
     rjct_version_invalid = "rjct.version.invalid"

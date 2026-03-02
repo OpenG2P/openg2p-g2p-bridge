@@ -23,6 +23,7 @@ from ..models import (
     FundsBlockedWithBankEnum,
 )
 
+
 # Disbursement Envelope
 class DisbursementEnvelopePayload(BaseModel):
     id: Optional[str] = None
@@ -46,21 +47,25 @@ class DisbursementEnvelopePayload(BaseModel):
     cancellation_status: Optional[CancellationStatus] = None
     cancellation_timestamp: Optional[datetime.datetime] = None
 
+
 class DisbursementEnvelopeRequestBody(G2PRequestBody):
     request_payload: List[DisbursementEnvelopePayload]
+
 
 class DisbursementEnvelopeRequest(G2PRequest):
     request_body: DisbursementEnvelopeRequestBody
 
+
 class DisbursementEnvelopeResponseBody(G2PResponseBody):
     response_payload: Optional[List[DisbursementEnvelopePayload]] = None
+
 
 class DisbursementEnvelopeResponse(G2PResponse):
     response_body: DisbursementEnvelopeResponseBody
 
 
-
 # Disbursement Status
+
 
 class DisbursementReconPayload(BaseModel):
     bank_disbursement_batch_id: str
@@ -85,6 +90,7 @@ class DisbursementReconPayload(BaseModel):
     reversal_value_date: Optional[datetime.datetime] = None
     reversal_reason: Optional[str] = None
 
+
 class DisbursementErrorReconPayload(BaseModel):
     statement_id: Optional[str] = None
     statement_number: Optional[str] = None
@@ -96,22 +102,28 @@ class DisbursementErrorReconPayload(BaseModel):
     disbursement_id: str
     bank_reference_number: Optional[str] = None
 
+
 class DisbursementReconRecords(BaseModel):
     disbursement_recon_payloads: Optional[List[DisbursementReconPayload]] = None
     disbursement_error_recon_payloads: Optional[List[DisbursementErrorReconPayload]] = None
+
 
 class DisbursementStatusPayload(BaseModel):
     disbursement_id: str
     disbursement_recon_records: Optional[DisbursementReconRecords] = None
 
+
 class DisbursementStatusRequestBody(G2PRequestBody):
     request_payload: List[str]
+
 
 class DisbursementStatusRequest(G2PRequest):
     request_body: DisbursementStatusRequestBody
 
+
 class DisbursementStatusResponseBody(G2PResponseBody):
     response_payload: Optional[List[DisbursementStatusPayload]] = None
+
 
 class DisbursementStatusResponse(G2PResponse):
     response_body: DisbursementStatusResponseBody
@@ -136,6 +148,7 @@ class DisbursementBatchControlGeoPayload(BaseModel):
     agency_additional_attributes: Optional[str] = None
     warehouse_notification_status: Optional[str] = None
     agency_notification_status: Optional[str] = None
+
 
 # Disbursement Envelope Status
 class DisbursementEnvelopeStatusPayload(BaseModel):
@@ -174,14 +187,18 @@ class DisbursementEnvelopeStatusPayload(BaseModel):
     no_of_pods_received: Optional[int] = None
     disbursement_batch_control_geos: Optional[List[DisbursementBatchControlGeoPayload]] = None
 
+
 class DisbursementEnvelopeStatusRequestBody(G2PRequestBody):
     request_payload: str
+
 
 class DisbursementEnvelopeStatusRequest(G2PRequest):
     request_body: DisbursementEnvelopeStatusRequestBody
 
+
 class DisbursementEnvelopeStatusResponseBody(G2PResponseBody):
     response_payload: Optional[DisbursementEnvelopeStatusPayload] = None
+
 
 class DisbursementEnvelopeStatusResponse(G2PResponse):
     response_body: DisbursementEnvelopeStatusResponseBody

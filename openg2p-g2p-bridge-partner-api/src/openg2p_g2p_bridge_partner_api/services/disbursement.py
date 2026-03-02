@@ -22,7 +22,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementPayload,
     DisbursementRequest,
     DisbursementResponse,
-    DisbursementResponseBody
+    DisbursementResponseBody,
 )
 from openg2p_g2p_bridge_models.schemas import (
     G2PResponseStatus,
@@ -69,7 +69,11 @@ class DisbursementService(BaseService):
                         await session.execute(
                             select(DisbursementEnvelope).where(
                                 DisbursementEnvelope.id
-                                == str(disbursement_request.request_body.request_payload[0].disbursement_envelope_id)
+                                == str(
+                                    disbursement_request.request_body.request_payload[
+                                        0
+                                    ].disbursement_envelope_id
+                                )
                             )
                         )
                     )
@@ -398,7 +402,9 @@ class DisbursementService(BaseService):
                 )
 
             try:
-                await self.check_for_single_envelope(disbursements_in_db, disbursement_request.request_body.request_payload)
+                await self.check_for_single_envelope(
+                    disbursements_in_db, disbursement_request.request_body.request_payload
+                )
             except DisbursementException as e:
                 _logger.error(f"Error checking for single envelope: {str(e)}")
                 raise e
@@ -500,7 +506,10 @@ class DisbursementService(BaseService):
                     select(Disbursement)
                     .where(
                         Disbursement.disbursement_id.in_(
-                            [str(p.disbursement_id) for p in disbursement_request.request_body.request_payload]
+                            [
+                                str(p.disbursement_id)
+                                for p in disbursement_request.request_body.request_payload
+                            ]
                         )
                     )
                     .with_for_update(nowait=True)

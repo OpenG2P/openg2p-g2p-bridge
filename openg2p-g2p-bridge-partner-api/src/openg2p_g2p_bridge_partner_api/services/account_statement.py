@@ -7,7 +7,11 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.models import AccountStatement, AccountStatementLob
-from openg2p_g2p_bridge_models.schemas import AccountStatementResponse, AccountStatementPayload, AccountStatementResponseBody
+from openg2p_g2p_bridge_models.schemas import (
+    AccountStatementResponse,
+    AccountStatementPayload,
+    AccountStatementResponseBody,
+)
 from openg2p_fastapi_common.schemas import G2PResponseHeader, G2PResponseStatus
 from sqlalchemy.ext.asyncio import async_sessionmaker
 

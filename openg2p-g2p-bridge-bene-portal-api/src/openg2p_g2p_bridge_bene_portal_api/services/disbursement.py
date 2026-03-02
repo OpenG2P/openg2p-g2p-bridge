@@ -22,7 +22,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementSummaryRequest,
     DisbursementSummaryResponse,
     DisbursementSummaryResponseBody,
-    DisbursementResponseBodyForPortal
+    DisbursementResponseBodyForPortal,
 )
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker

@@ -28,6 +28,7 @@ class Disbursement(BaseModel):
     measurement_unit: str
     disbursement_schedule_date: date
 
+
 class DisbursementRequestBody(G2PRequestBody):
     request_payload: Optional[dict] = None
 
@@ -35,8 +36,10 @@ class DisbursementRequestBody(G2PRequestBody):
 class DisbursementRequest(G2PRequest):
     request_body: Optional[DisbursementRequestBody] = None
 
+
 class DisbursementResponseBody(G2PResponseBody):
     response_payload: List[Disbursement]
+
 
 class DisbursementResponse(G2PResponse):
     response_body: DisbursementResponseBody
@@ -49,14 +52,18 @@ class DisbursementSummary(BaseModel):
     measurement_unit: str
     total_quantity_received: float
 
+
 class DisbursementSummaryRequestBody(G2PRequestBody):
     request_payload: Optional[dict] = None
+
 
 class DisbursementSummaryRequest(G2PRequest):
     request_body: DisbursementSummaryRequestBody
 
+
 class DisbursementSummaryResponseBody(G2PResponseBody):
     response_payload: List[DisbursementSummary]
+
 
 class DisbursementSummaryResponse(G2PResponse):
     response_body: DisbursementSummaryResponseBody

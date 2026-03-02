@@ -149,7 +149,8 @@ class DisbursementStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementBatchControl).where(
-                            DisbursementBatchControl.id == disbursement_batch_control_request.request_body.request_payload
+                            DisbursementBatchControl.id
+                            == disbursement_batch_control_request.request_body.request_payload
                         )
                     )
                 )

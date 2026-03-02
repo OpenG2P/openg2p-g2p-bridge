@@ -68,9 +68,7 @@ async def test_get_disbursement_envelope_status_success(mock_request_validation,
     )
 
     # Mock service methods
-    mock_service_instance.get_disbursement_envelope_status = AsyncMock(
-        return_value=status_payload
-    )
+    mock_service_instance.get_disbursement_envelope_status = AsyncMock(return_value=status_payload)
 
     request_payload = DisbursementEnvelopeStatusRequest(
         request_header=G2PRequestHeader(

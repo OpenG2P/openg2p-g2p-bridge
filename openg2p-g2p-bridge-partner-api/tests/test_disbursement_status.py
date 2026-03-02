@@ -139,7 +139,10 @@ async def test_get_disbursement_status_failure(
 
     # Assert individual fields to handle mock object comparison issues
     assert actual_response.response_header.response_status == error_response.response_header.response_status
-    assert actual_response.response_header.response_error_code == error_response.response_header.response_error_code
+    assert (
+        actual_response.response_header.response_error_code
+        == error_response.response_header.response_error_code
+    )
     assert actual_response.response_body == error_response.response_body
 
     # Assert overall response equality

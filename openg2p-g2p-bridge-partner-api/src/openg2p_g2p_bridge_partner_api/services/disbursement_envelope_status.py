@@ -19,7 +19,7 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopeStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
-    DisbursementEnvelopeStatusResponseBody
+    DisbursementEnvelopeStatusResponseBody,
 )
 from openg2p_fastapi_common.schemas import (
     G2PResponseStatus,
@@ -45,7 +45,8 @@ class DisbursementEnvelopeStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.id == disbursement_envelope_status_request.request_body.request_payload
+                            DisbursementEnvelope.id
+                            == disbursement_envelope_status_request.request_body.request_payload
                         )
                     )
                 )
@@ -312,9 +313,7 @@ class DisbursementEnvelopeStatusService(BaseService):
                 response_error_message=code,
                 response_timestamp=datetime.now().isoformat(),
             ),
-            response_body=DisbursementEnvelopeStatusResponseBody(
-                response_payload=None
-            ),
+            response_body=DisbursementEnvelopeStatusResponseBody(response_payload=None),
         )
         _logger.info("Disbursement envelope status error response constructed")
         return response

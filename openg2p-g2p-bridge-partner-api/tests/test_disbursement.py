@@ -134,7 +134,9 @@ async def test_create_disbursements_failure(mock_request_validation, mock_servic
 
     response = await controller.create_disbursements(request_payload, is_signature_valid=True)
 
-    assert response.response_header.response_error_code == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
+    assert (
+        response.response_header.response_error_code == G2PBridgeErrorCodes.INVALID_DISBURSEMENT_PAYLOAD.value
+    )
 
 
 def mock_cancel_disbursements(is_valid, disbursement_request):
@@ -259,4 +261,7 @@ async def test_cancel_disbursements_failure(mock_request_validation, mock_servic
     response = await controller.cancel_disbursements(request_payload, is_signature_valid=True)
 
     assert response.response_header.response_status == G2PResponseStatus.ERROR
-    assert response.response_header.response_error_code == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value
+    assert (
+        response.response_header.response_error_code
+        == G2PBridgeErrorCodes.DISBURSEMENT_ALREADY_CANCELED.value
+    )
