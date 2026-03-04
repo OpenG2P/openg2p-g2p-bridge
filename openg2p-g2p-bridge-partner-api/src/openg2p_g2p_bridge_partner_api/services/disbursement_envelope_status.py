@@ -19,10 +19,11 @@ from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopeStatusPayload,
     DisbursementEnvelopeStatusRequest,
     DisbursementEnvelopeStatusResponse,
+    DisbursementEnvelopeStatusResponseBody,
 )
-from openg2p_g2p_bridge_models.schemas import (
-    StatusEnum,
-    SyncResponseHeader,
+from openg2p_fastapi_common.schemas import (
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.future import select
@@ -44,7 +45,8 @@ class DisbursementEnvelopeStatusService(BaseService):
                 (
                     await session.execute(
                         select(DisbursementEnvelope).where(
-                            DisbursementEnvelope.id == disbursement_envelope_status_request.message
+                            DisbursementEnvelope.id
+                            == disbursement_envelope_status_request.request_body.request_payload
                         )
                     )
                 )
@@ -304,14 +306,14 @@ class DisbursementEnvelopeStatusService(BaseService):
     ) -> DisbursementEnvelopeStatusResponse:
         _logger.info("Constructing disbursement envelope status error response")
         response = DisbursementEnvelopeStatusResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_envelope_status_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_envelope_status_request.header.action,
-                status=StatusEnum.rjct,
-                status_reason_message=code,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_envelope_status_request.request_header.request_id,
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=code,
+                response_error_message=code,
+                response_timestamp=datetime.now().isoformat(),
             ),
-            message=None,
+            response_body=DisbursementEnvelopeStatusResponseBody(response_payload=None),
         )
         _logger.info("Disbursement envelope status error response constructed")
         return response
@@ -326,13 +328,14 @@ class DisbursementEnvelopeStatusService(BaseService):
         """
         _logger.info("Constructing disbursement envelope status success response")
         response = DisbursementEnvelopeStatusResponse(
-            header=SyncResponseHeader(
-                message_id=disbursement_envelope_status_request.header.message_id,
-                message_ts=datetime.now().isoformat(),
-                action=disbursement_envelope_status_request.header.action,
-                status=StatusEnum.succ,
+            response_header=G2PResponseHeader(
+                request_id=disbursement_envelope_status_request.request_header.request_id,
+                response_status=G2PResponseStatus.SUCCESS,
+                response_timestamp=datetime.now().isoformat(),
             ),
-            message=disbursement_envelope_batch_status_payload,
+            response_body=DisbursementEnvelopeStatusResponseBody(
+                response_payload=disbursement_envelope_batch_status_payload
+            ),
         )
         _logger.info("Disbursement envelope status success response constructed")
         return response

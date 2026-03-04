@@ -8,12 +8,14 @@ from openg2p_g2p_bridge_models.errors.exceptions import DisbursementStatusExcept
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementStatusPayload,
     DisbursementStatusRequest,
+    DisbursementStatusRequestBody,
     DisbursementStatusResponse,
+    DisbursementStatusResponseBody,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    RequestHeader,
-    StatusEnum,
-    SyncResponseHeader,
+    G2PRequestHeader,
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 
 
@@ -39,19 +41,21 @@ async def test_get_disbursement_status_success(mock_request_validation, mock_ser
     )
 
     expected_response = DisbursementStatusResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
+        response_header=G2PResponseHeader(
+            request_id="123",
+            response_status=G2PResponseStatus.SUCCESS,
+            response_error_code=None,
+            response_error_message=None,
+            response_timestamp=datetime.now(),
         ),
-        message=[
-            DisbursementStatusPayload(
-                disbursement_id="disb123",
-                disbursement_recon_records=None,
-            )
-        ],
+        response_body=DisbursementStatusResponseBody(
+            response_payload=[
+                DisbursementStatusPayload(
+                    disbursement_id="disb123",
+                    disbursement_recon_records=None,
+                )
+            ]
+        ),
     )
 
     mock_service_instance.construct_disbursement_status_success_response = AsyncMock(
@@ -61,17 +65,14 @@ async def test_get_disbursement_status_success(mock_request_validation, mock_ser
     # Instantiate controller and make request
     controller = DisbursementStatusController()
     request_payload = DisbursementStatusRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=["disb123"],
+        request_body=DisbursementStatusRequestBody(
+            request_payload=["disb123"],
+        ),
     )
 
     actual_response = await controller.get_disbursement_status(request_payload, is_signature_valid=True)
@@ -98,14 +99,16 @@ async def test_get_disbursement_status_failure(
     )
 
     error_response = DisbursementStatusResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.rjct,
-            status_reason_message=error_code.value,
+        response_header=G2PResponseHeader(
+            request_id="123",
+            response_status=G2PResponseStatus.ERROR,
+            response_error_code=error_code.value,
+            response_error_message=error_code.value,
+            response_timestamp=datetime.now(),
         ),
-        message=[],
+        response_body=DisbursementStatusResponseBody(
+            response_payload=[],
+        ),
     )
 
     mock_service_instance.construct_disbursement_status_error_response = AsyncMock(
@@ -115,17 +118,14 @@ async def test_get_disbursement_status_failure(
     # Instantiate controller and make request
     controller = DisbursementStatusController()
     request_payload = DisbursementStatusRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=["disb123"],
+        request_body=DisbursementStatusRequestBody(
+            request_payload=["disb123"],
+        ),
     )
 
     # Try to get disbursement status and catch any raised exception
@@ -138,9 +138,12 @@ async def test_get_disbursement_status_failure(
         )
 
     # Assert individual fields to handle mock object comparison issues
-    assert actual_response.header.status == error_response.header.status
-    assert actual_response.header.status_reason_message == error_response.header.status_reason_message
-    assert actual_response.message == error_response.message
+    assert actual_response.response_header.response_status == error_response.response_header.response_status
+    assert (
+        actual_response.response_header.response_error_code
+        == error_response.response_header.response_error_code
+    )
+    assert actual_response.response_body == error_response.response_body
 
     # Assert overall response equality
     assert (

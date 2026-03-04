@@ -7,7 +7,12 @@ from openg2p_fastapi_common.context import dbengine
 from openg2p_fastapi_common.service import BaseService
 from openg2p_g2p_bridge_models.errors.codes import G2PBridgeErrorCodes
 from openg2p_g2p_bridge_models.models import AccountStatement, AccountStatementLob
-from openg2p_g2p_bridge_models.schemas import AccountStatementResponse, StatusEnum, SyncResponseHeader
+from openg2p_g2p_bridge_models.schemas import (
+    AccountStatementResponse,
+    AccountStatementPayload,
+    AccountStatementResponseBody,
+)
+from openg2p_fastapi_common.schemas import G2PResponseHeader, G2PResponseStatus
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from ..config import Settings
@@ -50,14 +55,20 @@ class AccountStatementService(BaseService):
         self, statement_id: str
     ) -> AccountStatementResponse:
         _logger.info("Constructing account statement success response")
+        response_payload = AccountStatementPayload(
+            statement_id=statement_id,
+        )
         return AccountStatementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.succ,
+            response_header=G2PResponseHeader(
+                request_id="",
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=statement_id,
+            response_body=AccountStatementResponseBody(
+                response_payload=response_payload,
+            ),
         )
 
     async def construct_account_statement_error_response(
@@ -65,11 +76,14 @@ class AccountStatementService(BaseService):
     ) -> AccountStatementResponse:
         _logger.error("Constructing account statement error response")
         return AccountStatementResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.rjct,
+            response_header=G2PResponseHeader(
+                request_id="",
+                response_status=G2PResponseStatus.ERROR,
+                response_error_code=code.value,
+                response_error_message=code.description,
+                response_timestamp=datetime.now(),
             ),
-            message=code.value,
+            response_body=AccountStatementResponseBody(
+                response_payload=None,
+            ),
         )
