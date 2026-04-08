@@ -1,4 +1,4 @@
-from .codes import G2PBridgeErrorCodes
+from .codes import G2PBridgeErrorCodes, G2PBridgeStatusReasonCodeEnum
 from .exceptions import (
     AccountStatementException,
     BridgeException,

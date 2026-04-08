@@ -2,8 +2,7 @@ import logging
 import magic
 from fastapi import UploadFile
 from openg2p_fastapi_common.service import BaseService
-from openg2p_g2p_bridge_models.errors.exceptions import RequestValidationException
-from openg2p_g2p_bridge_models.schemas import SyncResponseStatusReasonCodeEnum
+from openg2p_g2p_bridge_models.errors import RequestValidationException, G2PBridgeStatusReasonCodeEnum
 
 from ..config import Settings
 
@@ -17,8 +16,8 @@ class RequestValidation(BaseService):
         if not is_signature_valid:
             _logger.error("Invalid JWT signature")
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_jwt_invalid,
-                message=SyncResponseStatusReasonCodeEnum.rjct_jwt_invalid,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_jwt_invalid,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_jwt_invalid,
             )
 
         _logger.info("Signature validated successfully")
@@ -26,22 +25,22 @@ class RequestValidation(BaseService):
 
     def validate_create_disbursement_envelope_request_header(self, request) -> None:
         _logger.info("Validating create disbursement envelope request header")
-        if request.header.action != "create_disbursement_envelopes":
-            _logger.error(f"Unsupported action: {request.header.action}")
+        if request.request_header.action != "create_disbursement_envelopes":
+            _logger.error(f"Unsupported action: {request.request_header.action}")
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,
-                message=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_action_not_supported,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_action_not_supported,
             )
         _logger.info("Create disbursement envelope request header validated successfully")
         return None
 
     def validate_cancel_disbursement_envelope_request_header(self, request) -> None:
         _logger.info("Validating cancel disbursement envelope request header")
-        if request.header.action != "cancel_disbursement_envelope":
-            _logger.error(f"Unsupported action: {request.header.action}")
+        if request.request_header.action != "cancel_disbursement_envelope":
+            _logger.error(f"Unsupported action: {request.request_header.action}")
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,
-                message=SyncResponseStatusReasonCodeEnum.rjct_action_not_supported,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_action_not_supported,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_action_not_supported,
             )
         _logger.info("Cancel disbursement envelope request header validated successfully")
         return None
@@ -62,16 +61,16 @@ class RequestValidation(BaseService):
                 f"File size {file_size} exceeds maximum allowed size {_config.max_upload_file_size}"
             )
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_file_size_exceeded,
-                message=SyncResponseStatusReasonCodeEnum.rjct_file_size_exceeded,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_file_size_exceeded,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_file_size_exceeded,
             )
 
         # --- header MIME check (optional) ---
         if request.content_type not in _config.supported_file_types:
             _logger.error(f"File type {request.content_type} is not supported")
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
-                message=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_file_type_not_supported,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_file_type_not_supported,
             )
 
         # read a small chunk to detect the real MIME type
@@ -82,8 +81,8 @@ class RequestValidation(BaseService):
         if real_mime not in _config.supported_file_types:
             _logger.error(f"Detected file type {real_mime} is not supported")
             raise RequestValidationException(
-                code=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
-                message=SyncResponseStatusReasonCodeEnum.rjct_file_type_not_supported,
+                code=G2PBridgeStatusReasonCodeEnum.rjct_file_type_not_supported,
+                message=G2PBridgeStatusReasonCodeEnum.rjct_file_type_not_supported,
             )
 
         _logger.info("MT940 file validated successfully")

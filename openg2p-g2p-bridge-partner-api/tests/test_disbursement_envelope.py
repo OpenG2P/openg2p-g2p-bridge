@@ -11,12 +11,14 @@ from openg2p_g2p_bridge_models.models import (
 from openg2p_g2p_bridge_models.schemas import (
     DisbursementEnvelopePayload,
     DisbursementEnvelopeRequest,
+    DisbursementEnvelopeRequestBody,
     DisbursementEnvelopeResponse,
+    DisbursementEnvelopeResponseBody,
 )
 from openg2p_g2p_bridge_models.schemas import (
-    RequestHeader,
-    StatusEnum,
-    SyncResponseHeader,
+    G2PRequestHeader,
+    G2PResponseStatus,
+    G2PResponseHeader,
 )
 
 
@@ -25,7 +27,7 @@ def mock_create_disbursement_envelope(is_valid, error_code=None):
         raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
-        disbursement_envelope_id="env123",
+        id="env123",
         benefit_program_mnemonic="TEST123",
         disbursement_frequency="Monthly",
         cycle_code_mnemonic="CYCLE42",
@@ -35,14 +37,16 @@ def mock_create_disbursement_envelope(is_valid, error_code=None):
         disbursement_schedule_date=date.today(),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.SUCCESS,
+            response_error_code=None,
+            response_error_message=None,
+            response_timestamp=datetime.now(),
         ),
-        message=[disbursement_envelope_payload],
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=[disbursement_envelope_payload],
+        ),
     )
     return disbursement_envelope_response
 
@@ -57,7 +61,7 @@ async def test_create_disbursement_envelope_success(mock_request_validation, moc
 
     mock_service_instance = AsyncMock()
     mock_service_instance.create_disbursement_envelopes = AsyncMock(
-        return_value=[mock_create_disbursement_envelope(True).message[0]]
+        return_value=mock_create_disbursement_envelope(True).response_body.response_payload
     )
     mock_service_instance.construct_disbursement_envelope_success_response = AsyncMock()
 
@@ -78,17 +82,14 @@ async def test_create_disbursement_envelope_success(mock_request_validation, moc
     )
 
     disbursement_request = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[request_payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[request_payload],
+        ),
     )
 
     actual_response = await controller.create_disbursement_envelopes(
@@ -118,12 +119,15 @@ async def test_create_disbursement_envelope_errors(
     mock_service_get_component.return_value = mock_service_instance
 
     error_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.rjct,
-            status_reason_message=error_code,
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.ERROR,
+            response_error_code=error_code.value,
+            response_error_message=error_code.value,
+            response_timestamp=datetime.now(),
+        ),
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=None,
         ),
     )
 
@@ -141,17 +145,14 @@ async def test_create_disbursement_envelope_errors(
     )
 
     request_payload = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[request_payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[request_payload],
+        ),
     )
 
     actual_response = await controller.create_disbursement_envelopes(request_payload, is_signature_valid=True)
@@ -166,7 +167,7 @@ def mock_cancel_disbursement_envelope(is_valid, error_code=None):
         raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
-        disbursement_envelope_id="env123",
+        id="env123",
         benefit_program_mnemonic="TEST123",
         disbursement_frequency="Monthly",
         cycle_code_mnemonic="CYCLE42",
@@ -176,14 +177,16 @@ def mock_cancel_disbursement_envelope(is_valid, error_code=None):
         disbursement_schedule_date=date.today(),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.SUCCESS,
+            response_error_code=None,
+            response_error_message=None,
+            response_timestamp=datetime.now(),
         ),
-        message=[disbursement_envelope_payload],
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=[disbursement_envelope_payload],
+        ),
     )
     return disbursement_envelope_response
 
@@ -210,17 +213,14 @@ async def test_cancel_disbursement_envelope_success(mock_request_validation, moc
 
     controller = DisbursementEnvelopeController()
     request_payload = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[DisbursementEnvelopePayload(disbursement_envelope_id="env123")],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[DisbursementEnvelopePayload(id="env123")],
+        ),
     )
 
     actual_response = await controller.cancel_disbursement_envelope(request_payload, is_signature_valid=True)
@@ -253,32 +253,29 @@ async def test_cancel_disbursement_envelope_failure(
     mock_service_get_component.return_value = mock_service_instance
 
     error_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.rjct,
-            status_reason_message=error_code,
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.ERROR,
+            response_error_code=error_code.value,
+            response_error_message=error_code.value,
+            response_timestamp=datetime.now(),
+        ),
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=None,
         ),
     )
     mock_service_instance.construct_disbursement_envelope_error_response.return_value = error_response
 
     controller = DisbursementEnvelopeController()
-    request_payload = DisbursementEnvelopePayload(
-        disbursement_envelope_id="env123"  # Assuming this ID triggers the error
-    )
     request_payload = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[request_payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[DisbursementEnvelopePayload(id="env123")],
+        ),
     )
 
     actual_response = await controller.cancel_disbursement_envelope(request_payload, is_signature_valid=True)
@@ -292,7 +289,7 @@ def mock_amend_disbursement_envelope(is_valid, error_code=None):
         raise DisbursementEnvelopeException(code=error_code, message=f"{error_code} error.")
 
     disbursement_envelope_payload = DisbursementEnvelopePayload(
-        disbursement_envelope_id="env123",
+        id="env123",
         benefit_program_mnemonic="TEST123",
         disbursement_frequency="Monthly",
         cycle_code_mnemonic="CYCLE42",
@@ -302,14 +299,16 @@ def mock_amend_disbursement_envelope(is_valid, error_code=None):
         disbursement_schedule_date=date.today(),
     )
     disbursement_envelope_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.succ,
-            status_reason_message="",
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.SUCCESS,
+            response_error_code=None,
+            response_error_message=None,
+            response_timestamp=datetime.now(),
         ),
-        message=[disbursement_envelope_payload],
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=[disbursement_envelope_payload],
+        ),
     )
     return disbursement_envelope_response
 
@@ -346,17 +345,14 @@ async def test_amend_disbursement_envelope_success(mock_request_validation, mock
     )
 
     disbursement_request = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[request_payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[request_payload],
+        ),
     )
 
     actual_response = await controller.amend_disbursement_envelope(
@@ -386,31 +382,30 @@ async def test_amend_disbursement_envelope_errors(
     mock_service_get_component.return_value = mock_service_instance
 
     error_response = DisbursementEnvelopeResponse(
-        header=SyncResponseHeader(
-            message_id="",
-            message_ts=datetime.now().isoformat(),
-            action="",
-            status=StatusEnum.rjct,
-            status_reason_message=error_code,
+        response_header=G2PResponseHeader(
+            request_id="",
+            response_status=G2PResponseStatus.ERROR,
+            response_error_code=error_code.value,
+            response_error_message=error_code.value,
+            response_timestamp=datetime.now(),
+        ),
+        response_body=DisbursementEnvelopeResponseBody(
+            response_payload=None,
         ),
     )
 
     mock_service_instance.construct_disbursement_envelope_error_response.return_value = error_response
 
     controller = DisbursementEnvelopeController()
-    request_payload = DisbursementEnvelopePayload(disbursement_envelope_id="env123")  # Trigger the error
     request_payload = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[request_payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[DisbursementEnvelopePayload(id="env123")],
+        ),
     )
 
     actual_response = await controller.amend_disbursement_envelope(request_payload, is_signature_valid=True)
@@ -446,14 +441,16 @@ async def test_create_envelope_various_benefit_types(
 
     mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
         DisbursementEnvelopeResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.succ,
-                status_reason_message="",
+            response_header=G2PResponseHeader(
+                request_id="",
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=[DisbursementEnvelopePayload(benefit_type=benefit_type)],
+            response_body=DisbursementEnvelopeResponseBody(
+                response_payload=[DisbursementEnvelopePayload(benefit_type=benefit_type)],
+            ),
         )
     )
 
@@ -469,20 +466,17 @@ async def test_create_envelope_various_benefit_types(
         disbursement_schedule_date=date.today(),
     )
     request = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=1,
-            is_msg_encrypted=False,
         ),
-        message=[payload],
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=[payload],
+        ),
     )
     actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
-    assert actual_response.message[0].benefit_type == benefit_type
+    assert actual_response.response_body.response_payload[0].benefit_type == benefit_type
 
 
 @pytest.mark.asyncio
@@ -542,34 +536,33 @@ async def test_bulk_create_mixed_benefit_types(mock_request_validation, mock_ser
 
     mock_service_instance.construct_disbursement_envelope_success_response.return_value = (
         DisbursementEnvelopeResponse(
-            header=SyncResponseHeader(
-                message_id="",
-                message_ts=datetime.now().isoformat(),
-                action="",
-                status=StatusEnum.succ,
-                status_reason_message="",
+            response_header=G2PResponseHeader(
+                request_id="",
+                response_status=G2PResponseStatus.SUCCESS,
+                response_error_code=None,
+                response_error_message=None,
+                response_timestamp=datetime.now(),
             ),
-            message=payloads,
+            response_body=DisbursementEnvelopeResponseBody(
+                response_payload=payloads,
+            ),
         )
     )
 
     controller = DisbursementEnvelopeController()
     request = DisbursementEnvelopeRequest(
-        header=RequestHeader(
-            message_id="123",
-            message_ts=datetime.now().isoformat(),
-            action="",
+        request_header=G2PRequestHeader(
+            request_id="123",
+            request_timestamp=datetime.now(),
             sender_id="",
-            sender_uri="",
-            receiver_id="",
-            total_count=4,
-            is_msg_encrypted=False,
         ),
-        message=payloads,
+        request_body=DisbursementEnvelopeRequestBody(
+            request_payload=payloads,
+        ),
     )
     actual_response = await controller.create_disbursement_envelopes(request, is_signature_valid=True)
-    assert len(actual_response.message) == 4
-    assert actual_response.message[0].benefit_type == BenefitType.CASH_DIGITAL
-    assert actual_response.message[1].benefit_type == BenefitType.CASH_PHYSICAL
-    assert actual_response.message[2].benefit_type == BenefitType.COMMODITY
-    assert actual_response.message[3].benefit_type == BenefitType.COMBINATION
+    assert len(actual_response.response_body.response_payload) == 4
+    assert actual_response.response_body.response_payload[0].benefit_type == BenefitType.CASH_DIGITAL
+    assert actual_response.response_body.response_payload[1].benefit_type == BenefitType.CASH_PHYSICAL
+    assert actual_response.response_body.response_payload[2].benefit_type == BenefitType.COMMODITY
+    assert actual_response.response_body.response_payload[3].benefit_type == BenefitType.COMBINATION

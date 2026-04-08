@@ -2,14 +2,20 @@ from datetime import date, datetime
 from typing import List, Optional
 
 from openg2p_fastapi_common.schemas import (
+    G2PRequest,
     G2PRequestHeader,
-    G2PResponseHeader,
+    G2PRequestBody,
     G2PPaginationRequest,
+    G2PResponse,
+    G2PResponseHeader,
+    G2PResponseBody,
     G2PPaginationResponse,
+    G2PResponseStatus,
 )
 from pydantic import BaseModel
 
 
+# Disbursement
 class Disbursement(BaseModel):
     disbursement_id: str
     disbursement_envelope_id: Optional[str] = None
@@ -23,6 +29,23 @@ class Disbursement(BaseModel):
     disbursement_schedule_date: date
 
 
+class DisbursementRequestBody(G2PRequestBody):
+    request_payload: Optional[dict] = None
+
+
+class DisbursementRequest(G2PRequest):
+    request_body: Optional[DisbursementRequestBody] = None
+
+
+class DisbursementResponseBody(G2PResponseBody):
+    response_payload: List[Disbursement]
+
+
+class DisbursementResponse(G2PResponse):
+    response_body: DisbursementResponseBody
+
+
+# Disbursement Summary
 class DisbursementSummary(BaseModel):
     benefit_code_mnemonic: str
     benefit_type: str  # TODO: Add ENUM
@@ -30,39 +53,17 @@ class DisbursementSummary(BaseModel):
     total_quantity_received: float
 
 
-class DisbursementRequestBody(BaseModel):
-    pagination_request: Optional[G2PPaginationRequest] = None
+class DisbursementSummaryRequestBody(G2PRequestBody):
     request_payload: Optional[dict] = None
 
 
-class DisbursementRequest(BaseModel):
-    request_header: G2PRequestHeader
-    request_body: Optional[DisbursementRequestBody] = None
+class DisbursementSummaryRequest(G2PRequest):
+    request_body: DisbursementSummaryRequestBody
 
 
-class DisbursementResponse(BaseModel):
-    response_header: G2PResponseHeader
-    response_body: "DisbursementResponseBody"
-
-
-class DisbursementResponseBody(BaseModel):
-    pagination_response: Optional[G2PPaginationResponse] = None
-    response_payload: List[Disbursement]
-
-
-class DisbursementSummaryRequestBody(BaseModel):
-    equest_payload: Optional[dict] = None
-
-
-class DisbursementSummaryRequest(BaseModel):
-    request_header: G2PRequestHeader
-    request_body: Optional[DisbursementSummaryRequestBody] = None
-
-
-class DisbursementSummaryResponse(BaseModel):
-    response_header: G2PResponseHeader
-    response_body: "DisbursementSummaryResponseBody"
-
-
-class DisbursementSummaryResponseBody(BaseModel):
+class DisbursementSummaryResponseBody(G2PResponseBody):
     response_payload: List[DisbursementSummary]
+
+
+class DisbursementSummaryResponse(G2PResponse):
+    response_body: DisbursementSummaryResponseBody
