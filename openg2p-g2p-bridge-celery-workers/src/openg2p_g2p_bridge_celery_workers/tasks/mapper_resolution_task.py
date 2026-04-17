@@ -154,7 +154,8 @@ def process_and_store_resolution(
             disbursement_resolution_financial_address_list.append(disbursement_resolution_financial_address)
         else:
             _logger.error(f"Failed to resolve the request for beneficiary: {single_response.id}")
-            batch_has_error = True
+            # batch_has_error = True
+            # Skip if no resolution found for beneficiary
 
     session.add_all(disbursement_resolution_financial_address_list)
     if not batch_has_error:
